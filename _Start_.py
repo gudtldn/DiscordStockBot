@@ -552,8 +552,8 @@ async def _StockPrices(ctx: commands.context.Context, *, txt: str):
         UpAndDown = {'상승':'+', '하락':'-', '보합':'', '+':'+', '-':'-'}
         embed = discord.Embed(title=title, description=f'기업번호: {description}', color=RandomEmbedColor())
         embed.add_field(name=f'{price}원', value=f'전일대비: {UpAndDown[UpAndDown_soup]}{lastday} | {UpAndDown[UpAndDown_soup]}{lastday_per}%', inline=False)
-        await ctx.send(embed=embed)
         logger.info('Done.')
+        await ctx.send(embed=embed)
         
 @_StockPrices.error
 async def _StockPrices_error(ctx,error):
@@ -723,10 +723,10 @@ async def _AssetInformation(ctx: commands.context.Context, *mention): #멘션을
         for add_embed in stock_num_array:    
             embed.add_field(name=add_embed[0], value=f'잔고수량: {add_embed[1]:,} | {add_embed[2]:,}원', inline=False)
             
-        await ctx.reply(embed=embed)
         # await ctx.send(f'걸린시간: {time.time() - start_time} 초') #디버그
         # print(f'{time.time() - start_time} seconds')
         logger.info(f'All Done. {time.time() - start_time} seconds')
+        await ctx.reply(embed=embed)
     
 @_AssetInformation.error
 async def _AssetInformation_error(ctx, error):

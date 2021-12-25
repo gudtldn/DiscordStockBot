@@ -26,10 +26,6 @@ from platform import platform
 
 from random import randint
 
-DEBUGING = True #디버그 실행
-
-guilds_id=[915543134648287242, 921706352957620285]
-
 
 '''
 일반, 슬래시 커맨드 코드 위치 (Ctrl + F)
@@ -56,6 +52,10 @@ guilds_id=[915543134648287242, 921706352957620285]
     /정보
 '''
 
+
+DEBUGING = True #디버그 실행
+
+guilds_id=[915543134648287242, 921706352957620285]
 
 ################################################################################ 로깅
 
@@ -559,7 +559,7 @@ async def _StockPrices(ctx: commands.context.Context, *, txt: str):
 async def _StockPrices_error(ctx,error):
     PrintLogger(error)
     
-    if ErrorCheck(error, "Command raised an exception: AttributeError: 'NoneType' object has no attribute 'text'"):#isinstance(error, CommandInvokeError):
+    if ErrorCheck(error, "Command raised an exception: AttributeError: 'NoneType' object has no attribute 'text'"):
         logger.error('주식을 찾지 못하였습니다.')
         await ctx.reply('주식을 찾지 못하였습니다.')
 

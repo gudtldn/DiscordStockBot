@@ -1327,6 +1327,8 @@ async def _Initialization_error(ctx, error):
     connector={'초기화문구': 'string'}
 )
 async def _Initialization(ctx: context.SlashContext, string: str):
+    logger.info(f'{ctx.author.name}: {ctx.invoked_with} {string}')
+    
     if not IsVaildUser(ctx):
         logger.warning('먼저 `.사용자등록` 부터 해 주세요.')
         await ctx.reply('먼저 `.사용자등록` 부터 해 주세요.')

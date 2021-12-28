@@ -123,8 +123,10 @@ def PrintLogger(error):
 
 operation_time = time.time() #가동된 현재 시간
 
-intents = Intents.default()
-intents.members = True
+# intents = Intents.default()
+# intents.members = True
+
+intents = Intents.all()
 
 if DEBUGING:
     game = discord.Game('봇 테스트') # ~하는 중

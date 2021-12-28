@@ -1299,14 +1299,14 @@ async def _Initialization(ctx: commands.context.Context, *, string: str):
         await ctx.reply('초기화가 완료되었습니다.')
     
     else:
-        logger.warning('"내 자산 초기화"를 입력해야 초기화 할 수 있습니다.')
-        await ctx.reply('"내 자산 초기화"를 입력해야 초기화 할 수 있습니다.')
+        logger.warning('.초기화 __[문구]__에 "내 자산 초기화"를 입력해야 초기화 할 수 있습니다.')
+        await ctx.reply('.초기화 __[문구]__에 "내 자산 초기화"를 입력해야 초기화 할 수 있습니다.')
         
 @_Initialization.error
 async def _Initialization_error(ctx, error):
     if isinstance(error, MissingRequiredArgument):
-        logger.warning('"내 자산 초기화"를 입력해야 초기화 할 수 있습니다.')
-        await ctx.reply('"내 자산 초기화"를 입력해야 초기화 할 수 있습니다.')
+        logger.warning('.초기화 __[문구]__에 "내 자산 초기화"를 입력해야 초기화 할 수 있습니다.')
+        await ctx.reply('.초기화 __[문구]__에 "내 자산 초기화"를 입력해야 초기화 할 수 있습니다.')
     
     else:
         await ctx.reply(error)

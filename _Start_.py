@@ -1295,6 +1295,7 @@ async def _Initialization(ctx: commands.context.Context, *, string: str):
         del(json_data[GetUserIDArrayNum(ctx=ctx)])
         json_data.append(AddUser_Json(ctx.author.name, ctx.author.id)) #사용자 추가
         SetUserInformation(json_data)
+        logger.info('초기화가 완료되었습니다.')
         await ctx.reply('초기화가 완료되었습니다.')
     
     else:
@@ -1339,6 +1340,7 @@ async def _Initialization(ctx: context.SlashContext, string: str):
         del(json_data[GetUserIDArrayNum(ctx=ctx)])
         json_data.append(AddUser_Json(ctx.author.name, ctx.author.id)) #사용자 추가
         SetUserInformation(json_data)
+        logger.info('초기화가 완료되었습니다.')
         await ctx.reply('초기화가 완료되었습니다.')
     
     else:

@@ -1283,6 +1283,8 @@ async def _SupportFund(ctx):
 
 @bot.command(name='초기화', aliases=[])
 async def _Initialization(ctx: commands.context.Context, *, string: str):
+    logger.info(f'{ctx.author.name}: {ctx.invoked_with} {string}')
+    
     if not IsVaildUser(ctx):
         logger.warning('먼저 `.사용자등록` 부터 해 주세요.')
         await ctx.reply('먼저 `.사용자등록` 부터 해 주세요.')
@@ -1296,11 +1298,13 @@ async def _Initialization(ctx: commands.context.Context, *, string: str):
         await ctx.reply('초기화가 완료되었습니다.')
     
     else:
+        logger.warning('"내 자산 초기화"를 입력해야 초기화 할 수 있습니다.')
         await ctx.reply('"내 자산 초기화"를 입력해야 초기화 할 수 있습니다.')
         
 @_Initialization.error
 async def _Initialization_error(ctx, error):
     if isinstance(error, MissingRequiredArgument):
+        logger.warning('"내 자산 초기화"를 입력해야 초기화 할 수 있습니다.')
         await ctx.reply('"내 자산 초기화"를 입력해야 초기화 할 수 있습니다.')
     
     else:

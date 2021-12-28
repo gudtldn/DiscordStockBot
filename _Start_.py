@@ -55,7 +55,30 @@ from random import randint
 
 DEBUGING = True #디버그 실행
 
-guilds_id=[915543134648287242, 921706352957620285]
+guilds_id=[915543134648287242, 921706352957620285, 925277183147147265]
+permission = {
+    921706352957620285: [
+        create_permission(
+            id=642288666156466176,
+            id_type=PermissionType.USER,
+            permission=True
+        )
+    ],
+    915543134648287242: [
+        create_permission(
+            id=642288666156466176,
+            id_type=PermissionType.USER,
+            permission=True
+        )
+    ],
+    925277183147147265: [
+        create_permission(
+            id=642288666156466176,
+            id_type=PermissionType.USER,
+            permission=True
+        )
+    ]
+}
 
 ################################################################################ 로깅
 
@@ -261,22 +284,7 @@ async def on_command_error(ctx, error):
     guild_ids=guilds_id,
     options=[],
     default_permission=False,
-    permissions={
-        921706352957620285: [
-            create_permission(
-                id=642288666156466176,
-                id_type=PermissionType.USER,
-                permission=True
-            )
-        ],
-        915543134648287242: [
-            create_permission(
-                id=642288666156466176,
-                id_type=PermissionType.USER,
-                permission=True
-            )
-        ]
-    }
+    permissions=permission
 )
 async def _Information(ctx: context.SlashContext):
     logger.info(f'{ctx.author.name}: {ctx.invoked_with}')
@@ -294,55 +302,6 @@ async def _Information(ctx: context.SlashContext):
 #         await ctx.reply('권한이 없습니다.', hidden=True)
 #     else:
 #         PrintLogger(error)
-    
-################################################################################ /초기화
-
-@slash.slash(
-    name='초기화',
-    description='멘션의 자산을 초기화 합니다.',
-    guild_ids=guilds_id,
-    options=[
-        create_option(
-            name='멘션',
-            description='초기화할 유저를 멘션을 해 주세요.',
-            option_type=OptionType.USER,
-            required=True
-        )
-    ],
-    default_permission=False,
-    permissions={
-        921706352957620285: [
-            create_permission(
-                id=642288666156466176,
-                id_type=PermissionType.USER,
-                permission=True
-            )
-        ],
-        915543134648287242: [
-            create_permission(
-                id=642288666156466176,
-                id_type=PermissionType.USER,
-                permission=True
-            )
-        ]
-    },
-    connector={'멘션': 'mention'}
-)
-async def _Initialization(ctx: context.SlashContext, mention):
-    logger.info(f'{ctx.author.name}: {ctx.invoked_with}')
-    
-    json_data = GetUserInformation()
-    mention = int(mention.replace('<@', '').replace('!', '').replace('>', ''))
-
-    json_data[GetUserIDArrayNum(id=mention)]['Stock'].clear()
-    json_data[GetUserIDArrayNum(id=mention)]['Deposit'] = 10000000
-    json_data[GetUserIDArrayNum(id=mention)]['TotalAssets'] = 10000000
-    json_data[GetUserIDArrayNum(id=mention)]['SupportFund'] = 0
-    json_data[GetUserIDArrayNum(id=mention)]['SupportFundTime'] = 0
-    
-    SetUserInformation(json_data)
-    
-    await ctx.reply('완료되었습니다.', hidden=True)
         
 ################################################################################ /설정
 
@@ -386,22 +345,7 @@ async def _Initialization(ctx: context.SlashContext, mention):
         )
     ],
     default_permission=False,
-    permissions={
-        921706352957620285: [
-            create_permission(
-                id=642288666156466176,
-                id_type=PermissionType.USER,
-                permission=True
-            )
-        ],
-        915543134648287242: [
-            create_permission(
-                id=642288666156466176,
-                id_type=PermissionType.USER,
-                permission=True
-            )
-        ]
-    },
+    permissions=permission,
     connector={
         '설정이름': 'setting_name',
         '기업이름': 'add_stock_name',
@@ -718,7 +662,8 @@ async def _AssetInformation(ctx: commands.context.Context, *mention): #멘션을
         embed.add_field(name='예수금', value=f'{json_data[GetUserIDArrayNum(id=author_id)]["Deposit"]:,}원')
         embed.add_field(name='총 자산', value=f'{json_data[GetUserIDArrayNum(id=author_id)]["TotalAssets"]:,}원')
         embed.add_field(name='지원금으로 얻은 돈', value=f'{json_data[GetUserIDArrayNum(id=author_id)]["SupportFund"]:,}원', inline=False)
-        embed.add_field(name='='*25, value='_ _', inline=False)
+        if len(json_data[GetUserIDArrayNum(id=author_id)]['Stock']) != 0:
+            embed.add_field(name='='*25, value='_ _', inline=False)
         
         for add_embed in stock_num_array:    
             embed.add_field(name=add_embed[0], value=f'잔고수량: {add_embed[1]:,} | {add_embed[2]:,}원', inline=False)
@@ -863,7 +808,8 @@ async def _AssetInformation(ctx: context.SlashContext, mention=None): #멘션을
     embed.add_field(name='예수금', value=f'{json_data[GetUserIDArrayNum(id=author_id)]["Deposit"]:,}원')
     embed.add_field(name='총 자산', value=f'{json_data[GetUserIDArrayNum(id=author_id)]["TotalAssets"]:,}원')
     embed.add_field(name='지원금으로 얻은 돈', value=f'{json_data[GetUserIDArrayNum(id=author_id)]["SupportFund"]:,}원', inline=False)
-    embed.add_field(name='='*25, value='_ _', inline=False)
+    if len(json_data[GetUserIDArrayNum(id=author_id)]['Stock']) != 0:
+        embed.add_field(name='='*25, value='_ _', inline=False)
     
     for add_embed in stock_num_array:    
         embed.add_field(name=add_embed[0], value=f'잔고수량: {add_embed[1]:,} | {add_embed[2]:,}원', inline=False)
@@ -1333,6 +1279,65 @@ async def _SupportFund(ctx):
         logger.warning(f'지원금을 받으려면 {str(now_timedelta)[-8:-6]}시간 {str(now_timedelta)[-5:-3]}분 {str(now_timedelta)[-2:]}초를 더 기다려야 합니다.')
         await ctx.reply(f'지원금을 받으려면 {str(now_timedelta)[-8:-6]}시간 {str(now_timedelta)[-5:-3]}분 {str(now_timedelta)[-2:]}초를 더 기다려야 합니다.')
     
+################################################################################ .초기화
+
+@bot.command(name='초기화', aliases=[])
+async def _Initialization(ctx: commands.context.Context, *, string: str):
+    if not IsVaildUser(ctx):
+        logger.warning('먼저 `.사용자등록` 부터 해 주세요.')
+        await ctx.reply('먼저 `.사용자등록` 부터 해 주세요.')
+        return
+    
+    if string == '내 자산 초기화':
+        json_data = GetUserInformation()
+        del(json_data[GetUserIDArrayNum(ctx=ctx)])
+        json_data.append(AddUser_Json(ctx.author.name, ctx.author.id)) #사용자 추가
+        SetUserInformation(json_data)
+        await ctx.reply('초기화가 완료되었습니다.')
+    
+    else:
+        await ctx.reply('"내 자산 초기화"를 입력해야 초기화 할 수 있습니다.')
+        
+@_Initialization.error
+async def _Initialization_error(ctx, error):
+    if isinstance(error, MissingRequiredArgument):
+        await ctx.reply('"내 자산 초기화"를 입력해야 초기화 할 수 있습니다.')
+    
+    else:
+        await ctx.reply(error)
+
+################################################################################ /초기화
+
+@slash.slash(
+    name='초기화',
+    description='자신의 자산을 초기화 합니다.',
+    guild_ids=guilds_id,
+    options=[
+        create_option(
+            name='초기화문구',
+            description='"내 자산 초기화" 를 입력하면 초기화가 됩니다.',
+            option_type=OptionType.STRING,
+            required=True
+        )
+    ],
+    connector={'초기화문구': 'string'}
+)
+async def _Initialization(ctx: context.SlashContext, string: str):
+    if not IsVaildUser(ctx):
+        logger.warning('먼저 `.사용자등록` 부터 해 주세요.')
+        await ctx.reply('먼저 `.사용자등록` 부터 해 주세요.')
+        return
+    
+    if string == '내 자산 초기화':
+        json_data = GetUserInformation()
+        del(json_data[GetUserIDArrayNum(ctx=ctx)])
+        json_data.append(AddUser_Json(ctx.author.name, ctx.author.id)) #사용자 추가
+        SetUserInformation(json_data)
+        await ctx.reply('초기화가 완료되었습니다.')
+    
+    else:
+        await ctx.reply('"내 자산 초기화"를 입력해야 초기화 할 수 있습니다.')
+        
 ################################################################################ .도움말
 
 @bot.command(name='도움말', aliases=['명령어', '?'])
@@ -1350,6 +1355,7 @@ async def _HelpCommand(ctx: commands.context.Context, command: str=None):
         embed.add_field(name='.매수', value='입력한 기업의 주식을 매수합니다.', inline=False)
         embed.add_field(name='.매도', value='입력한 기업의 주식을 매도합니다.', inline=False)
         embed.add_field(name='.지원금', value='1만원 ~ 10만원 사이에서 랜덤으로 지원금을 지급합니다.', inline=False)
+        embed.add_field(name='.초기화', value='자신의 자산정보를 초기화 합니다.', inline=False)
         embed.set_footer(text='명령어를 자세히 보려면 \'.도움말 <명령어 이름>\' 을 써 주세요.')
         await ctx.reply(embed=embed)
 
@@ -1395,6 +1401,11 @@ async def _HelpCommand(ctx: commands.context.Context, command: str=None):
     elif command == '지원금':
         embed = discord.Embed(title='지원금', description='1만원 ~ 10만원 사이에서 랜덤으로 지급합니다. (쿨타임: 4시간)', color=RandomEmbedColor())
         embed.add_field(name='다른이름', value='돈받기', inline=False)
+        await ctx.reply(embed=embed)
+        
+    elif command == '초기화':
+        embed = discord.Embed(title='초기화', description='"내 자산 초기화"를 입력해 자신의 자산정보를 초기화 합니다.', color=RandomEmbedColor())
+        embed.add_field(name='.초기화 [초기화 문구]', value='초기화 문구에는 "내 자산 초기화"를 입력해 주세요.')
         await ctx.reply(embed=embed)
         
     else:

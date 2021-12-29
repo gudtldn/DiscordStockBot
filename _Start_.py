@@ -532,7 +532,7 @@ async def _StockPrices_error(ctx,error):
     options=[
         create_option(
             name='이름',
-            description='검색 할 기업이름 또는 기업번호',
+            description='「검색 할 기업이름」 또는 「기업번호」',
             option_type=OptionType.STRING,
             required=True
         )
@@ -615,20 +615,20 @@ async def _AssetInformation(ctx: commands.context.Context, *mention): #멘션을
     if len(mention) != 0:
         if mention[0] == '공개여부':
             disclosure_status = {True:'공개', False:'비공개'}
-            logger.warning(f'현재 {ctx.author.name}님의 자산정보 공개여부는 "{disclosure_status[json_data[GetUserIDArrayNum(ctx=ctx)]["InformationDisclosure"]]}"로 설정되어 있습니다.')
-            return await ctx.reply(f'현재 {ctx.author.name}님의 자산정보 공개여부는 "{disclosure_status[json_data[GetUserIDArrayNum(ctx=ctx)]["InformationDisclosure"]]}"로 설정되어 있습니다.')
+            logger.warning(f'현재 {ctx.author.name}님의 자산정보 공개여부는 「{disclosure_status[json_data[GetUserIDArrayNum(ctx=ctx)]["InformationDisclosure"]]}」로 설정되어 있습니다.')
+            return await ctx.reply(f'현재 {ctx.author.name}님의 자산정보 공개여부는 「{disclosure_status[json_data[GetUserIDArrayNum(ctx=ctx)]["InformationDisclosure"]]}」로 설정되어 있습니다.')
 
         elif mention[0] in ('공개', 'true', 'True'):
             json_data[GetUserIDArrayNum(ctx=ctx)]['InformationDisclosure'] = True
             SetUserInformation(json_data)
-            logger.info('자산정보 공개여부가 "공개"로 설정되었습니다.')
-            return await ctx.reply('자산정보 공개여부가 "공개"로 설정되었습니다.')
+            logger.info('자산정보 공개여부가 「공개」로 설정되었습니다.')
+            return await ctx.reply('자산정보 공개여부가 「공개」로 설정되었습니다.')
         
         elif mention[0] in ('비공개', 'false', 'False'):
             json_data[GetUserIDArrayNum(ctx=ctx)]['InformationDisclosure'] = False
             SetUserInformation(json_data)
-            logger.info('자산정보 공개여부가 "비공개"로 설정되었습니다.')
-            return await ctx.reply('자산정보 공개여부가 "비공개"로 설정되었습니다.')
+            logger.info('자산정보 공개여부가 「비공개」로 설정되었습니다.')
+            return await ctx.reply('자산정보 공개여부가 「비공개」로 설정되었습니다.')
         
         else:
             mention : str = mention[0]
@@ -762,20 +762,20 @@ async def _AssetInformation(ctx: context.SlashContext, mention=None): #멘션을
         
         if mention == '공개여부':
             disclosure_status = {True:'공개', False:'비공개'}
-            logger.warning(f'현재 {ctx.author.name}님의 자산정보 공개여부는 "{disclosure_status[json_data[GetUserIDArrayNum(ctx=ctx)]["InformationDisclosure"]]}"로 설정되어 있습니다.')
-            return await ctx.reply(f'현재 {ctx.author.name}님의 자산정보 공개여부는 "{disclosure_status[json_data[GetUserIDArrayNum(ctx=ctx)]["InformationDisclosure"]]}"로 설정되어 있습니다.')
+            logger.warning(f'현재 {ctx.author.name}님의 자산정보 공개여부는 「{disclosure_status[json_data[GetUserIDArrayNum(ctx=ctx)]["InformationDisclosure"]]}」로 설정되어 있습니다.')
+            return await ctx.reply(f'현재 {ctx.author.name}님의 자산정보 공개여부는 「{disclosure_status[json_data[GetUserIDArrayNum(ctx=ctx)]["InformationDisclosure"]]}」로 설정되어 있습니다.')
 
         elif mention in ('공개', 'true', 'True'):
             json_data[GetUserIDArrayNum(ctx=ctx)]['InformationDisclosure'] = True
             SetUserInformation(json_data)
-            logger.info('자산정보 공개여부가 "공개"로 설정되었습니다.')
-            return await ctx.reply('자산정보 공개여부가 "공개"로 설정되었습니다.')
+            logger.info('자산정보 공개여부가 「공개」로 설정되었습니다.')
+            return await ctx.reply('자산정보 공개여부가 「공개」로 설정되었습니다.')
         
         elif mention in ('비공개', 'false', 'False'):
             json_data[GetUserIDArrayNum(ctx=ctx)]['InformationDisclosure'] = False
             SetUserInformation(json_data)
-            logger.info('자산정보 공개여부가 "비공개"로 설정되었습니다.')
-            return await ctx.reply('자산정보 공개여부가 "비공개"로 설정되었습니다.')
+            logger.info('자산정보 공개여부가 「비공개」로 설정되었습니다.')
+            return await ctx.reply('자산정보 공개여부가 「비공개」로 설정되었습니다.')
         
         else:
             author_id = int(mention.replace('<@', '').replace('!', '').replace('>', ''))
@@ -920,8 +920,8 @@ async def _StockPurchase_error(ctx, error):
         await ctx.reply('매수 할 주식의 수를 입력해 주세요.')
         
     elif ErrorCheck(error, f"Command raised an exception: ValueError: invalid literal for int() with base 10: '{ctx.args[2]}'"):
-        logger.error(f'"{ctx.invoked_with} {ctx.args[1]} __{ctx.args[2]}__" 밑줄 친 부분에는 숫자만 입력해 주세요.')
-        await ctx.reply(f'"{ctx.invoked_with} {ctx.args[1]} __{ctx.args[2]}__" 밑줄 친 부분에는 숫자만 입력해 주세요.')
+        logger.error(f'「{ctx.invoked_with} {ctx.args[1]} __{ctx.args[2]}__」 밑줄 친 부분에는 숫자만 입력해 주세요.')
+        await ctx.reply(f'「{ctx.invoked_with} {ctx.args[1]} __{ctx.args[2]}__」밑줄 친 부분에는 숫자만 입력해 주세요.')
         
     elif ErrorCheck(error, "Command raised an exception: AttributeError: 'NoneType' object has no attribute 'text'"):
         logger.error('매수하려는 주식을 찾지 못하였습니다.')
@@ -944,13 +944,13 @@ async def _StockPurchase_error(ctx, error):
     options=[
         create_option(
             name='기업이름',
-            description='"기업이름" 또는 "기업번호"를 적어주세요.',
+            description='「기업이름」 또는 「기업번호」를 적어주세요.',
             option_type=OptionType.STRING,
             required=True
         ),
         create_option(
             name='개수',
-            description='"매수 할 주식 개수" 또는 "풀매수"를 적어주세요.',
+            description='「매수 할 주식 개수」 또는 「풀매수」를 적어주세요.',
             option_type=OptionType.STRING,
             required=True
         )
@@ -1124,8 +1124,8 @@ async def _StockSelling_error(ctx, error):
         await ctx.reply('매도 할 주식의 수를 입력해 주세요.')
     
     elif ErrorCheck(error, f"Command raised an exception: ValueError: invalid literal for int() with base 10: '{ctx.args[2]}'"):
-        logger.error(f'"{ctx.invoked_with} {ctx.args[1]} __{ctx.args[2]}__" 밑줄 친 부분에는 숫자만 입력해 주세요.')
-        await ctx.reply(f'"{ctx.invoked_with} {ctx.args[1]} __{ctx.args[2]}__" 밑줄 친 부분에는 숫자만 입력해 주세요.')
+        logger.error(f'「{ctx.invoked_with} {ctx.args[1]} __{ctx.args[2]}__」 밑줄 친 부분에는 숫자만 입력해 주세요.')
+        await ctx.reply(f'「{ctx.invoked_with} {ctx.args[1]} __{ctx.args[2]}__」 밑줄 친 부분에는 숫자만 입력해 주세요.')
         
     elif ErrorCheck(error, f"Command raised an exception: AttributeError: 'NoneType' object has no attribute 'text'"):
         logger.error('매도하려는 주식을 찾지 못하였습니다.')
@@ -1148,13 +1148,13 @@ async def _StockSelling_error(ctx, error):
     options=[
         create_option(
             name='기업이름',
-            description='"기업이름" 또는 "기업번호"를 적어주세요.',
+            description='「기업이름」 또는 「기업번호」를 적어주세요.',
             option_type=OptionType.STRING,
             required=True
         ),
         create_option(
             name='개수',
-            description='"매도 할 주식 개수" 또는 "풀매도" 또는 "반매도"를 적어주세요.',
+            description='「매도 할 주식 개수」 또는 「풀매도」 또는 「반매도」를 적어주세요.',
             option_type=OptionType.STRING,
             required=True
         )
@@ -1307,14 +1307,14 @@ async def _Initialization(ctx: commands.context.Context, *, string: str):
         await ctx.reply('초기화가 완료되었습니다.')
     
     else:
-        logger.warning('.초기화 __[문구]__에 "내 자산 초기화"를 입력해야 초기화 할 수 있습니다.')
-        await ctx.reply('.초기화 __[문구]__에 "내 자산 초기화"를 입력해야 초기화 할 수 있습니다.')
+        logger.warning('.초기화 __[문구]__에 「내 자산 초기화」를 입력해야 초기화 할 수 있습니다.')
+        await ctx.reply('.초기화 __[문구]__에 「내 자산 초기화」를 입력해야 초기화 할 수 있습니다.')
         
 @_Initialization.error
 async def _Initialization_error(ctx, error):
     if isinstance(error, MissingRequiredArgument):
-        logger.warning('.초기화 __[문구]__에 "내 자산 초기화"를 입력해야 초기화 할 수 있습니다.')
-        await ctx.reply('.초기화 __[문구]__에 "내 자산 초기화"를 입력해야 초기화 할 수 있습니다.')
+        logger.warning('.초기화 __[문구]__에 「내 자산 초기화」를 입력해야 초기화 할 수 있습니다.')
+        await ctx.reply('.초기화 __[문구]__에 「내 자산 초기화」를 입력해야 초기화 할 수 있습니다.')
     
     else:
         logger.error(error)
@@ -1329,7 +1329,7 @@ async def _Initialization_error(ctx, error):
     options=[
         create_option(
             name='초기화확인',
-            description='"내 자산 초기화" 를 입력해 주세요.',
+            description='「내 자산 초기화」 를 입력해 주세요.',
             option_type=OptionType.STRING,
             required=True
         )
@@ -1353,8 +1353,8 @@ async def _Initialization(ctx: context.SlashContext, string: str):
         await ctx.reply('초기화가 완료되었습니다.')
     
     else:
-        logger.warning('"내 자산 초기화"를 입력해야 초기화 할 수 있습니다.')
-        await ctx.reply('"내 자산 초기화"를 입력해야 초기화 할 수 있습니다.')
+        logger.warning('「내 자산 초기화」를 입력해야 초기화 할 수 있습니다.')
+        await ctx.reply('「내 자산 초기화」를 입력해야 초기화 할 수 있습니다.')
         
 ################################################################################ .회원탈퇴
 
@@ -1375,14 +1375,14 @@ async def _Withdrawal(ctx: commands.context.Context, *, string: str):
         await ctx.reply('회원탈퇴가 완료되었습니다.')
     
     else:
-        logger.warning(f'.{ctx.invoked_with} __[문구]__에 "탈퇴확인"를 입력해야 회원탈퇴 할 수 있습니다.')
-        await ctx.reply(f'.{ctx.invoked_with} __[문구]__에 "탈퇴확인"를 입력해야 회원탈퇴 할 수 있습니다.')
+        logger.warning(f'.{ctx.invoked_with} __[문구]__에 「탈퇴확인」를 입력해야 회원탈퇴 할 수 있습니다.')
+        await ctx.reply(f'.{ctx.invoked_with} __[문구]__에 「탈퇴확인」를 입력해야 회원탈퇴 할 수 있습니다.')
 
 @_Withdrawal.error
 async def _Withdrawal_error(ctx, error):
     if isinstance(error, MissingRequiredArgument):
-        logger.warning(f'.{ctx.invoked_with} __[문구]__에 "탈퇴확인"를 입력해야 회원탈퇴 할 수 있습니다.')
-        await ctx.reply(f'.{ctx.invoked_with} __[문구]__에 "탈퇴확인"를 입력해야 회원탈퇴 할 수 있습니다.')
+        logger.warning(f'.{ctx.invoked_with} __[문구]__에 「탈퇴확인」를 입력해야 회원탈퇴 할 수 있습니다.')
+        await ctx.reply(f'.{ctx.invoked_with} __[문구]__에 「탈퇴확인」를 입력해야 회원탈퇴 할 수 있습니다.')
     
     else:
         logger.error(error)
@@ -1397,7 +1397,7 @@ async def _Withdrawal_error(ctx, error):
     options=[
         create_option(
             name='탈퇴확인',
-            description='"탈퇴확인" 이라고 적어주세요.',
+            description='「탈퇴확인」 이라고 적어주세요.',
             option_type=OptionType.STRING,
             required=True
         )
@@ -1420,8 +1420,8 @@ async def _Withdrawal(ctx: context.SlashContext, string: str):
         await ctx.reply('회원탈퇴가 완료되었습니다.')
     
     else:
-        logger.warning('"탈퇴확인"를 입력해야 회원탈퇴 할 수 있습니다.')
-        await ctx.reply('"탈퇴확인"를 입력해야 회원탈퇴 할 수 있습니다.')
+        logger.warning('「탈퇴확인」를 입력해야 회원탈퇴 할 수 있습니다.')
+        await ctx.reply('「탈퇴확인」를 입력해야 회원탈퇴 할 수 있습니다.')
 
 ################################################################################ .도움말
 
@@ -1441,7 +1441,8 @@ async def _HelpCommand(ctx: commands.context.Context, command: str=None):
         embed.add_field(name='.매도', value='입력한 기업의 주식을 매도합니다.', inline=False)
         embed.add_field(name='.지원금', value='1만원 ~ 10만원 사이에서 랜덤으로 지원금을 지급합니다.', inline=False)
         embed.add_field(name='.초기화', value='자신의 자산정보를 초기화 합니다.', inline=False)
-        embed.set_footer(text='명령어를 자세히 보려면 \'.도움말 <명령어 이름>\' 을 써 주세요.')
+        embed.add_field(name='.탈퇴', value='이 봇에 저장되어있는 사용자정보를 삭제합니다.', inline=False)
+        embed.set_footer(text='명령어를 자세히 보려면 「.도움말 <명령어 이름>」 을 써 주세요.')
         await ctx.reply(embed=embed)
 
     elif command == '도움말':
@@ -1489,8 +1490,13 @@ async def _HelpCommand(ctx: commands.context.Context, command: str=None):
         await ctx.reply(embed=embed)
         
     elif command == '초기화':
-        embed = discord.Embed(title='초기화', description='"내 자산 초기화"를 입력해 자신의 자산정보를 초기화 합니다.', color=RandomEmbedColor())
-        embed.add_field(name='.초기화 [초기화 문구]', value='초기화 문구에는 "내 자산 초기화"를 입력해 주세요.')
+        embed = discord.Embed(title='초기화', description='「내 자산 초기화」를 입력해 자신의 자산정보를 초기화 합니다.', color=RandomEmbedColor())
+        embed.add_field(name='.초기화 [확인문구]', value='확인문구에는 「내 자산 초기화」를 입력해 주세요.')
+        await ctx.reply(embed=embed)
+        
+    elif command == '탈퇴':
+        embed = discord.Embed(title='탈퇴', description='「탈퇴확인」를 입력해 저장되어있는 자신의 정보를 삭제합니다.', color=RandomEmbedColor())
+        embed.add_field(name='.탈퇴 [확인문구]', value='확인문구에는 「탈퇴확인」를 입력해 주세요.')
         await ctx.reply(embed=embed)
         
     else:

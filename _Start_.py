@@ -1370,6 +1370,7 @@ async def _Withdrawal(ctx: commands.context.Context, *, string: str):
     if string == '탈퇴확인':
         json_data = GetUserInformation()
         del(json_data[GetUserIDArrayNum(ctx=ctx)])
+        SetUserInformation(json_data)
         logger.info('회원탈퇴가 완료되었습니다.')
         await ctx.reply('회원탈퇴가 완료되었습니다.')
     
@@ -1414,6 +1415,7 @@ async def _Withdrawal(ctx: context.SlashContext, string: str):
     if string == '탈퇴확인':
         json_data = GetUserInformation()
         del(json_data[GetUserIDArrayNum(ctx=ctx)])
+        SetUserInformation(json_data)
         logger.info('회원탈퇴가 완료되었습니다.')
         await ctx.reply('회원탈퇴가 완료되었습니다.')
     

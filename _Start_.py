@@ -40,16 +40,19 @@ from random import randint
     .자산정보
     .매수
     .매도
+    .초기화
+    .회원탈퇴
     
 슬래시 커맨드:
-    /주가
-    /초기화
+    /정보
     /설정
     
     /자산정보
+    /주가
     /매수
     /매도
-    /정보
+    /초기화
+    /회원탈퇴
 '''
 
 
@@ -1273,8 +1276,8 @@ async def _SupportFund(ctx):
         
         SetUserInformation(json_data)
 
-        logger.info(f'{random_added_deposit:,}원이 추가되었습니다.')
-        await ctx.reply(f'{random_added_deposit:,}원이 추가되었습니다.')
+        logger.info(f'{random_added_deposit:,}원이 지급되었습니다.')
+        await ctx.reply(f'{random_added_deposit:,}원이 지급되었습니다.')
         
     else:
         now_timedelta = timedelta(seconds=json_data[GetUserIDArrayNum(ctx=ctx)]['SupportFundTime'] - int(time.time()) + cool_down)
@@ -1311,6 +1314,7 @@ async def _Initialization_error(ctx, error):
         await ctx.reply('.초기화 __[문구]__에 "내 자산 초기화"를 입력해야 초기화 할 수 있습니다.')
     
     else:
+        logger.error(error)
         await ctx.reply(error)
 
 ################################################################################ /초기화
@@ -1321,8 +1325,8 @@ async def _Initialization_error(ctx, error):
     guild_ids=guilds_id,
     options=[
         create_option(
-            name='초기화문구',
-            description='"내 자산 초기화" 를 입력하면 초기화가 됩니다.',
+            name='초기화확인',
+            description='"내 자산 초기화" 를 입력해 주세요.',
             option_type=OptionType.STRING,
             required=True
         )
@@ -1346,8 +1350,74 @@ async def _Initialization(ctx: context.SlashContext, string: str):
         await ctx.reply('초기화가 완료되었습니다.')
     
     else:
+        logger.warning('"내 자산 초기화"를 입력해야 초기화 할 수 있습니다.')
         await ctx.reply('"내 자산 초기화"를 입력해야 초기화 할 수 있습니다.')
         
+################################################################################ .회원탈퇴
+
+@bot.command(name='회원탈퇴', aliases=['탈퇴'])
+async def _Withdrawal(ctx: commands.context.Context, *, string: str):
+    logger.info(f'{ctx.author.name}: {ctx.invoked_with} {string}')
+    
+    if not IsVaildUser(ctx):
+        logger.warning('먼저 `.사용자등록` 부터 해 주세요.')
+        await ctx.reply('먼저 `.사용자등록` 부터 해 주세요.')
+        return
+    
+    if string == '탈퇴확인':
+        json_data = GetUserInformation()
+        del(json_data[GetUserIDArrayNum(ctx=ctx)])
+        logger.info('회원탈퇴가 완료되었습니다.')
+        await ctx.reply('회원탈퇴가 완료되었습니다.')
+    
+    else:
+        logger.warning(f'.{ctx.invoked_with} __[문구]__에 "탈퇴확인"를 입력해야 회원탈퇴 할 수 있습니다.')
+        await ctx.reply(f'.{ctx.invoked_with} __[문구]__에 "탈퇴확인"를 입력해야 회원탈퇴 할 수 있습니다.')
+
+@_Withdrawal.error
+async def _Withdrawal_error(ctx, error):
+    if isinstance(error, MissingRequiredArgument):
+        logger.warning(f'.{ctx.invoked_with} __[문구]__에 "탈퇴확인"를 입력해야 회원탈퇴 할 수 있습니다.')
+        await ctx.reply(f'.{ctx.invoked_with} __[문구]__에 "탈퇴확인"를 입력해야 회원탈퇴 할 수 있습니다.')
+    
+    else:
+        logger.error(error)
+        await ctx.reply(error)
+
+################################################################################ /회원탈퇴
+
+@slash.slash(
+    name='회원탈퇴',
+    description='이 봇에 저장되있는 사용자의 정보를 삭제합니다.',
+    guild_ids=guilds_id,
+    options=[
+        create_option(
+            name='탈퇴확인',
+            description='"탈퇴확인" 이라고 적어주세요.',
+            option_type=OptionType.STRING,
+            required=True
+        )
+    ],
+    connector={'탈퇴확인': 'string'}
+)
+async def _Withdrawal(ctx: context.SlashContext, string: str):
+    logger.info(f'{ctx.author.name}: {ctx.invoked_with} {string}')
+    
+    if not IsVaildUser(ctx):
+        logger.warning('먼저 `.사용자등록` 부터 해 주세요.')
+        await ctx.reply('먼저 `.사용자등록` 부터 해 주세요.')
+        return
+    
+    if string == '탈퇴확인':
+        json_data = GetUserInformation()
+        del(json_data[GetUserIDArrayNum(ctx=ctx)])
+        logger.info('회원탈퇴가 완료되었습니다.')
+        await ctx.reply('회원탈퇴가 완료되었습니다.')
+    
+    else:
+        logger.warning('"탈퇴확인"를 입력해야 회원탈퇴 할 수 있습니다.')
+        await ctx.reply('"탈퇴확인"를 입력해야 회원탈퇴 할 수 있습니다.')
+
 ################################################################################ .도움말
 
 @bot.command(name='도움말', aliases=['명령어', '?'])

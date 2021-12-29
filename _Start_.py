@@ -172,10 +172,13 @@ def GetStockDictionary() -> dict:
         json_data = json.load(Inf)
     return json_data
 
-def GetUserInformation() -> list: #Information.json에 있는 값 불러오기
+def GetUserInformation(array_num: int = None) -> list: #Information.json에 있는 값 불러오기
     with open('./json/UserInformation.json', 'r', encoding='utf-8') as Inf:
         json_data = json.load(Inf)
-    return json_data
+        if array_num is None:
+            return json_data
+        else:
+            return json_data[array_num]
 
 def SetUserInformation(json_data: dict):
     with open('./json/UserInformation.json', 'w', encoding='utf-8') as Inf:

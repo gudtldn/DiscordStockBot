@@ -505,7 +505,7 @@ async def _StockPrices(ctx: commands.context.Context, *, txt: str):
         embed = discord.Embed(title=title, description=f'기업번호: {description}', color=RandomEmbedColor())
         embed.add_field(name=f'{price}원', value=f'전일대비: {UpAndDown[UpAndDown_soup]}{lastday} | {UpAndDown[UpAndDown_soup]}{lastday_per}%', inline=False)
         logger.info('Done.')
-        await ctx.send(embed=embed)
+        await ctx.reply(embed=embed)
         
 @_StockPrices.error
 async def _StockPrices_error(ctx,error):
@@ -584,7 +584,7 @@ async def _StockPrices(ctx: context.SlashContext, txt: str):
     UpAndDown = {'상승':'+', '하락':'-', '보합':'', '+':'+', '-':'-'}
     embed = discord.Embed(title=title, description=f'기업번호: {description}', color=RandomEmbedColor())
     embed.add_field(name=f'{price}원', value=f'전일대비: {UpAndDown[UpAndDown_soup]}{lastday} | {UpAndDown[UpAndDown_soup]}{lastday_per}%', inline=False)
-    await ctx.send(embed=embed)
+    await ctx.reply(embed=embed)
     logger.info('Done.')
         
 @_StockPrices.error

@@ -464,48 +464,47 @@ async def _StockPrices(ctx: commands.context.Context, *, txt: str):
         
     ua = UserAgent()
     
-    async with ctx.typing():
-    
-        try:
-            int(txt) #입력받은 문자가 숫자일 경우
-        except:
-            if txt in GetStockDictionary().keys():
-                txt = GetStockDictionary()[txt]
-            else:
-                url = f'https://www.google.com/search?q={quote_plus(txt)}+주가'
-                soup = bs(requests.get(url, headers={'User-agent' : ua.random}).text, 'lxml')
-                txt = soup.select_one('#main > div:nth-child(6) > div > div:nth-child(3) > div > div > div > div > div:nth-child(2) > div > div > div > div > span').text
-                txt = txt[0:txt.find('(')]
-            
-        url = f'https://finance.naver.com/item/main.naver?code={txt}'
-        soup = bs(requests.get(url, headers={'User-agent' : ua.random}).text, 'lxml')
+
+    try:
+        int(txt) #입력받은 문자가 숫자일 경우
+    except:
+        if txt in GetStockDictionary().keys():
+            txt = GetStockDictionary()[txt]
+        else:
+            url = f'https://www.google.com/search?q={quote_plus(txt)}+주가'
+            soup = bs(requests.get(url, headers={'User-agent' : ua.random}).text, 'lxml')
+            txt = soup.select_one('#main > div:nth-child(6) > div > div:nth-child(3) > div > div > div > div > div:nth-child(2) > div > div > div > div > span').text
+            txt = txt[0:txt.find('(')]
+        
+    url = f'https://finance.naver.com/item/main.naver?code={txt}'
+    soup = bs(requests.get(url, headers={'User-agent' : ua.random}).text, 'lxml')
 
 
-        title = soup.select_one('#middle > div.h_company > div.wrap_company > h2 > a').text #주식회사 이름
-        description = soup.select_one('#middle > div.h_company > div.wrap_company > div > span.code').text #기업코드
-        price = soup.select_one('#chart_area > div.rate_info > div > p.no_today').select_one('span.blind').text.replace('\n', '') #현재 시세
-        lastday = soup.select_one('#chart_area > div.rate_info > div > p.no_exday > em:nth-child(2)').select_one('span.blind').text.replace('\n', '') #어제 대비 시세
-        lastday_per = soup.select_one('#chart_area > div.rate_info > div > p.no_exday > em:nth-child(4)').select_one('span.blind').text.replace('\n', '') #어제 대비 시세%
+    title = soup.select_one('#middle > div.h_company > div.wrap_company > h2 > a').text #주식회사 이름
+    description = soup.select_one('#middle > div.h_company > div.wrap_company > div > span.code').text #기업코드
+    price = soup.select_one('#chart_area > div.rate_info > div > p.no_today').select_one('span.blind').text.replace('\n', '') #현재 시세
+    lastday = soup.select_one('#chart_area > div.rate_info > div > p.no_exday > em:nth-child(2)').select_one('span.blind').text.replace('\n', '') #어제 대비 시세
+    lastday_per = soup.select_one('#chart_area > div.rate_info > div > p.no_exday > em:nth-child(4)').select_one('span.blind').text.replace('\n', '') #어제 대비 시세%
+    try:
+        UpAndDown_soup = soup.select_one('#chart_area > div.rate_info > div > p.no_exday > em:nth-child(2) > span.ico.up').text #+
+    except:
         try:
-            UpAndDown_soup = soup.select_one('#chart_area > div.rate_info > div > p.no_exday > em:nth-child(2) > span.ico.up').text #+
+            UpAndDown_soup = soup.select_one('#chart_area > div.rate_info > div > p.no_exday > em:nth-child(2) > span.ico.down').text #-
         except:
             try:
-                UpAndDown_soup = soup.select_one('#chart_area > div.rate_info > div > p.no_exday > em:nth-child(2) > span.ico.down').text #-
+                UpAndDown_soup = soup.select_one('#chart_area > div.rate_info > div > p.no_exday > em:nth-child(2) > span.ico.sam').text #X
             except:
                 try:
-                    UpAndDown_soup = soup.select_one('#chart_area > div.rate_info > div > p.no_exday > em:nth-child(2) > span.ico.sam').text #X
+                    UpAndDown_soup = soup.select_one('#chart_area > div.rate_info > div > p.no_exday > em:nth-child(4) > span.ico.plus').text #+
                 except:
-                    try:
-                        UpAndDown_soup = soup.select_one('#chart_area > div.rate_info > div > p.no_exday > em:nth-child(4) > span.ico.plus').text #+
-                    except:
-                        UpAndDown_soup = soup.select_one('#chart_area > div.rate_info > div > p.no_exday > em:nth-child(4) > span.ico.minus').text #-
+                    UpAndDown_soup = soup.select_one('#chart_area > div.rate_info > div > p.no_exday > em:nth-child(4) > span.ico.minus').text #-
 
 
-        UpAndDown = {'상승':'+', '하락':'-', '보합':'', '+':'+', '-':'-'}
-        embed = discord.Embed(title=title, description=f'기업번호: {description}', color=RandomEmbedColor())
-        embed.add_field(name=f'{price}원', value=f'전일대비: {UpAndDown[UpAndDown_soup]}{lastday} | {UpAndDown[UpAndDown_soup]}{lastday_per}%', inline=False)
-        logger.info('Done.')
-        await ctx.reply(embed=embed)
+    UpAndDown = {'상승':'+', '하락':'-', '보합':'', '+':'+', '-':'-'}
+    embed = discord.Embed(title=title, description=f'기업번호: {description}', color=RandomEmbedColor())
+    embed.add_field(name=f'{price}원', value=f'전일대비: {UpAndDown[UpAndDown_soup]}{lastday} | {UpAndDown[UpAndDown_soup]}{lastday_per}%', inline=False)
+    logger.info('Done.')
+    await ctx.reply(embed=embed)
         
 @_StockPrices.error
 async def _StockPrices_error(ctx,error):

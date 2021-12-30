@@ -1441,52 +1441,70 @@ async def _HelpCommand(ctx: commands.context.Context, command: str=None):
         embed.add_field(name='.매도', value='입력한 기업의 주식을 매도합니다.', inline=False)
         embed.add_field(name='.지원금', value='1만원 ~ 10만원 사이에서 랜덤으로 지원금을 지급합니다.', inline=False)
         embed.add_field(name='.초기화', value='자신의 자산정보를 초기화 합니다.', inline=False)
-        embed.add_field(name='.탈퇴', value='이 봇에 저장되어있는 사용자정보를 삭제합니다.', inline=False)
+        embed.add_field(name='.탈퇴', value='이 봇에 저장되어있는 사용자의 정보를 삭제합니다.', inline=False)
         embed.set_footer(text='명령어를 자세히 보려면 「.도움말 <명령어 이름>」 을 써 주세요.')
         await ctx.reply(embed=embed)
 
-    elif command == '도움말':
+    elif command in ('도움말', '명령어', '?'):
+        command_list = ["도움말", "명령어", "?"]
+        command_list.remove(command)
+        
         embed = discord.Embed(title='도움말', description='등록되어있는 명령어들을 출력합니다.', color=RandomEmbedColor())
-        embed.add_field(name='다른이름', value='명령어, ?', inline=False)
+        embed.add_field(name='다른이름', value=f'{", ".join(command_list)}', inline=False)
         await ctx.reply(embed=embed)
 
     elif command == '사용자등록':
         embed = discord.Embed(title='사용자등록', description='데이터 베이스에 사용자를 등록합니다.', color=RandomEmbedColor())
         await ctx.reply(embed=embed)
     
-    elif command == '자산정보':
+    elif command in ('자산정보', '자산조회'):
+        command_list = ["자산정보", "자산조회"]
+        command_list.remove(command)
+        
         embed = discord.Embed(title='자산정보', description='자신의 자산정보를 확인합니다.', color=RandomEmbedColor())
-        embed.add_field(name='다른이름', value='자산조회', inline=False)
+        embed.add_field(name='다른이름', value=f'{", ".join(command_list)}', inline=False)
         embed.add_field(name='.자산정보 <@유저>', value='@유저의 자산정보를 확인합니다.', inline=False)
         embed.add_field(name='.자산정보 <공개여부>', value='자신의 자산공개여부를 확인합니다.', inline=False)
         embed.add_field(name='.자산정보 <공개>', value='자신의 자산공개여부를 공개로 설정합니다.', inline=False)
         embed.add_field(name='.자산정보 <비공개>', value='자신의 자산공개여부를 비공개로 설정합니다.', inline=False)
         await ctx.reply(embed=embed)
         
-    elif command == '주가':
+    elif command in ('주가', '시세'):
+        command_list = ["주가", "시세"]
+        command_list.remove(command)
+        
         embed = discord.Embed(title='주가', description='검색한 기업의 현재 주가를 확인합니다.', color=RandomEmbedColor())
-        embed.add_field(name='다른이름', value='시세', inline=False)
+        embed.add_field(name='다른이름', value=f'{", ".join(command_list)}', inline=False)
         embed.add_field(name='.주가 [기업이름 | 기업번호]', value='기업이름 또는 기업번호로 검색합니다.', inline=False)
         await ctx.reply(embed=embed)
 
-    elif command == '매수':
+    elif command in ('매수', '구매', '주식구매', '주식매수'):
+        command_list = ["매수", "구매", "주식구매", "주식매수"]
+        command_list.remove(command)
+        
         embed = discord.Embed(title='매수', description='입력한 기업의 주식을 매수합니다.', color=RandomEmbedColor())
-        embed.add_field(name='다른이름', value='구매, 주식구매, 주식매수', inline=False)
+        embed.add_field(name='다른이름', value=f'{", ".join(command_list)}', inline=False)
         embed.add_field(name='.매수 [기업이름 | 기업번호] [매수 할 주식 개수]', value='입력한 기업의 주식을, 주식 개수만큼 매수합니다.', inline=False)
         embed.add_field(name='.매수 [기업이름 | 기업번호] [풀매수]', value='입력한 기업의 주식을 최대까지 매수합니다.', inline=False)
         await ctx.reply(embed=embed)
         
-    elif command == '매도':
+    elif command in ('매도', '판매', '주식판매', '주식매도'):
+        command_list = ["매도", "판매", "주식판매", "주식매도"]
+        command_list.remove(command)
+        
         embed = discord.Embed(title='매도', description='입력한 기업의 주식을 매도합니다.', color=RandomEmbedColor())
-        embed.add_field(name='다른이름', value='판매, 주식판매, 주식매도', inline=False)
+        embed.add_field(name='다른이름', value=f'{", ".join(command_list)}', inline=False)
         embed.add_field(name='.매도 [기업이름 | 기업번호] [매도 할 주식 개수]', value='입력한 기업의 주식을, 주식 개수만큼 매도합니다.', inline=False)
         embed.add_field(name='.매도 [기업이름 | 기업번호] [반매도]', value='입력한 기업의 주식의 절반을 매도합니다.', inline=False)
         embed.add_field(name='.매도 [기업이름 | 기업번호] [풀매도]', value='입력한 기업의 주식을 모두 매도합니다.', inline=False)
         await ctx.reply(embed=embed)
     
-    elif command == '지원금':
+    elif command in ('지원금', '돈받기'):
+        command_list = ["지원금", "돈받기"]
+        command_list.remove(command)
+        
         embed = discord.Embed(title='지원금', description='1만원 ~ 10만원 사이에서 랜덤으로 지급합니다. (쿨타임: 4시간)', color=RandomEmbedColor())
-        embed.add_field(name='다른이름', value='돈받기', inline=False)
+        embed.add_field(name='다른이름', value=f'{", ".join(command_list)}', inline=False)
         await ctx.reply(embed=embed)
         
     elif command == '초기화':
@@ -1494,8 +1512,12 @@ async def _HelpCommand(ctx: commands.context.Context, command: str=None):
         embed.add_field(name='.초기화 [확인문구]', value='확인문구에는 「내 자산 초기화」를 입력해 주세요.')
         await ctx.reply(embed=embed)
         
-    elif command == '탈퇴':
+    elif command in ('탈퇴', '회원탈퇴'):
+        command_list = ["탈퇴", "회원탈퇴"]
+        command_list.remove(command)
+        
         embed = discord.Embed(title='탈퇴', description='「탈퇴확인」를 입력해 저장되어있는 자신의 정보를 삭제합니다.', color=RandomEmbedColor())
+        embed.add_field(name='다른이름', value=f'{", ".join(command_list)}', inline=False)
         embed.add_field(name='.탈퇴 [확인문구]', value='확인문구에는 「탈퇴확인」를 입력해 주세요.')
         await ctx.reply(embed=embed)
         

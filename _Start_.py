@@ -58,29 +58,15 @@ from random import randint
 
 DEBUGING = True #디버그 실행
 
-guilds_id=[915543134648287242, 921706352957620285, 925277183147147265]
-permission = {
-    921706352957620285: [
+guilds_id=(915543134648287242, 921706352957620285, 925277183147147265)
+permission_setting = {
+    id: [
         create_permission(
             id=642288666156466176,
             id_type=PermissionType.USER,
             permission=True
         )
-    ],
-    915543134648287242: [
-        create_permission(
-            id=642288666156466176,
-            id_type=PermissionType.USER,
-            permission=True
-        )
-    ],
-    925277183147147265: [
-        create_permission(
-            id=642288666156466176,
-            id_type=PermissionType.USER,
-            permission=True
-        )
-    ]
+    ] for id in guilds_id
 }
 
 ################################################################################ 로깅
@@ -292,7 +278,7 @@ async def on_command_error(ctx, error):
     guild_ids=guilds_id,
     options=[],
     default_permission=False,
-    permissions=permission
+    permissions=permission_setting
 )
 async def _Information(ctx: context.SlashContext):
     logger.info(f'{ctx.author.name}: {ctx.invoked_with}')
@@ -353,7 +339,7 @@ async def _Information(ctx: context.SlashContext):
         )
     ],
     default_permission=False,
-    permissions=permission,
+    permissions=permission_setting,
     connector={
         '설정이름': 'setting_name',
         '기업이름': 'add_stock_name',
@@ -672,7 +658,7 @@ async def _AssetInformation(ctx: commands.context.Context, *mention): #멘션을
         if len(json_data[GetUserIDArrayNum(id=author_id)]['Stock']) != 0:
             embed.add_field(name='='*25, value='_ _', inline=False)
         
-        for add_embed in stock_num_array:    
+        for add_embed in stock_num_array:
             embed.add_field(name=add_embed[0], value=f'잔고수량: {add_embed[1]:,} | {add_embed[2]:,}원', inline=False)
             
         # await ctx.send(f'걸린시간: {time.time() - start_time} 초') #디버그
@@ -790,7 +776,7 @@ async def _AssetInformation(ctx: context.SlashContext, mention=None): #멘션을
     else:
         author_id = ctx.author.id
     
-    hidden = not json_data[GetUserIDArrayNum(ctx=ctx)]["InformationDisclosure"]
+    hidden = not json_data[GetUserIDArrayNum(id=author_id)]["InformationDisclosure"]
     await ctx.defer(hidden=hidden) #인터렉션 타임아웃때문에 기다리기
     
     global stock_num_array
@@ -818,7 +804,7 @@ async def _AssetInformation(ctx: context.SlashContext, mention=None): #멘션을
     if len(json_data[GetUserIDArrayNum(id=author_id)]['Stock']) != 0:
         embed.add_field(name='='*25, value='_ _', inline=False)
     
-    for add_embed in stock_num_array:    
+    for add_embed in stock_num_array:
         embed.add_field(name=add_embed[0], value=f'잔고수량: {add_embed[1]:,} | {add_embed[2]:,}원', inline=False)
     
     await ctx.reply(embed=embed)

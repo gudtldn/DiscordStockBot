@@ -195,7 +195,7 @@ def IsVaildUser(ctx): #ctx.author.id를 가진 유저가 Information.json에 존
     return False
 
 def ErrorCheck(error, error_context): #찾으려는 에러가 error.args에 있는지 여부
-    logger.error(error)
+    # logger.error(error)
     return any(error_context in i for i in error.args)
 
 ################################################################################ 자산정보 코루틴 선언 ################################################################################
@@ -295,7 +295,7 @@ async def _Information(ctx: context.SlashContext):
 #         logger.error('권한이 없습니다.')
 #         await ctx.reply('권한이 없습니다.', hidden=True)
 #     else:
-#         PrintLogger(error)
+#        PrintLogger(error)
         
 ################################################################################ /설정
 
@@ -471,6 +471,7 @@ async def _StockPrices(ctx: commands.context.Context, *, txt: str):
     price = soup.select_one('#chart_area > div.rate_info > div > p.no_today').select_one('span.blind').text.replace('\n', '') #현재 시세
     lastday = soup.select_one('#chart_area > div.rate_info > div > p.no_exday > em:nth-child(2)').select_one('span.blind').text.replace('\n', '') #어제 대비 시세
     lastday_per = soup.select_one('#chart_area > div.rate_info > div > p.no_exday > em:nth-child(4)').select_one('span.blind').text.replace('\n', '') #어제 대비 시세%
+    stock_time = soup.select_one('#time > em > span').text; stock_time = stock_time[stock_time.find('(')+1:stock_time.find(')')] #장중 & 장 마감
     try:
         UpAndDown_soup = soup.select_one('#chart_area > div.rate_info > div > p.no_exday > em:nth-child(2) > span.ico.up').text #+
     except:
@@ -487,14 +488,14 @@ async def _StockPrices(ctx: commands.context.Context, *, txt: str):
 
 
     UpAndDown = {'상승':'+', '하락':'-', '보합':'', '+':'+', '-':'-'}
-    embed = discord.Embed(title=title, description=f'기업번호: {description}', color=RandomEmbedColor())
+    embed = discord.Embed(title=f'{title}({stock_time})', description=f'기업번호: {description}', color=RandomEmbedColor())
     embed.add_field(name=f'{price}원', value=f'전일대비: {UpAndDown[UpAndDown_soup]}{lastday} | {UpAndDown[UpAndDown_soup]}{lastday_per}%', inline=False)
     logger.info('Done.')
     await ctx.reply(embed=embed)
         
 @_StockPrices.error
 async def _StockPrices_error(ctx,error):
-    PrintLogger(error)
+    # PrintLogger(error)
     
     if ErrorCheck(error, "Command raised an exception: AttributeError: 'NoneType' object has no attribute 'text'"):
         logger.error('주식을 찾지 못하였습니다.')
@@ -551,6 +552,8 @@ async def _StockPrices(ctx: context.SlashContext, txt: str):
     price = soup.select_one('#chart_area > div.rate_info > div > p.no_today').select_one('span.blind').text.replace('\n', '') #현재 시세
     lastday = soup.select_one('#chart_area > div.rate_info > div > p.no_exday > em:nth-child(2)').select_one('span.blind').text.replace('\n', '') #어제 대비 시세
     lastday_per = soup.select_one('#chart_area > div.rate_info > div > p.no_exday > em:nth-child(4)').select_one('span.blind').text.replace('\n', '') #어제 대비 시세%
+    stock_time = soup.select_one('#time > em > span').text; stock_time = stock_time[stock_time.find('(')+1:stock_time.find(')')] #장중 & 장 마감
+    print(stock_time)
     try:
         UpAndDown_soup = soup.select_one('#chart_area > div.rate_info > div > p.no_exday > em:nth-child(2) > span.ico.up').text #+
     except:
@@ -567,14 +570,14 @@ async def _StockPrices(ctx: context.SlashContext, txt: str):
 
 
     UpAndDown = {'상승':'+', '하락':'-', '보합':'', '+':'+', '-':'-'}
-    embed = discord.Embed(title=title, description=f'기업번호: {description}', color=RandomEmbedColor())
+    embed = discord.Embed(title=f'{title}({stock_time})', description=f'기업번호: {description}', color=RandomEmbedColor())
     embed.add_field(name=f'{price}원', value=f'전일대비: {UpAndDown[UpAndDown_soup]}{lastday} | {UpAndDown[UpAndDown_soup]}{lastday_per}%', inline=False)
     await ctx.reply(embed=embed)
     logger.info('Done.')
         
 @_StockPrices.error
 async def _StockPrices_error(ctx,error):
-    PrintLogger(error)
+    # PrintLogger(error)
         
     if ErrorCheck(error, "'NoneType' object has no attribute 'text'"):
         logger.error('주식을 찾지 못하였습니다.')
@@ -668,7 +671,7 @@ async def _AssetInformation(ctx: commands.context.Context, *mention): #멘션을
     
 @_AssetInformation.error
 async def _AssetInformation_error(ctx, error):
-    PrintLogger(error)
+    # PrintLogger(error)
 
     if ErrorCheck(error, "Command raised an exception: AttributeError: 'NoneType' object has no attribute 'text'"):
         logger.error('검색하던중 알 수 없는 에러가 발생하였습니다. 다시 입력해 주세요.')
@@ -814,7 +817,7 @@ async def _AssetInformation(ctx: context.SlashContext, mention=None): #멘션을
     
 @_AssetInformation.error
 async def _AssetInformation_error(ctx, error):
-    PrintLogger(error)
+    # PrintLogger(error)
 
     if ErrorCheck(error, "'NoneType' object has no attribute 'text'"):
         logger.error('검색하던중 알 수 없는 에러가 발생하였습니다. 다시 입력해 주세요.')
@@ -894,7 +897,7 @@ async def _StockPurchase(ctx: commands.context.Context, stock_name: str, num: st
     
 @_StockPurchase.error
 async def _StockPurchase_error(ctx, error):
-    PrintLogger(error)
+    # PrintLogger(error)
     
     if ErrorCheck(error, "stock_name is a required argument that is missing."):
         logger.error('매수 할 주식을 입력해 주세요.')
@@ -1008,7 +1011,7 @@ async def _StockPurchase(ctx: context.SlashContext, stock_name: str, num: str): 
     
 @_StockPurchase.error
 async def _StockPurchase_error(ctx, error):
-    PrintLogger(error)
+    # PrintLogger(error)
         
     if ErrorCheck(error, f"invalid literal for int() with base 10: '{ctx.args[1]}'"):
         logger.error('`매수 할 주식개수(숫자만)` 또는 `풀매수`만 입력해 주세요.')
@@ -1098,7 +1101,7 @@ async def _StockSelling(ctx: commands.context.Context, stock_name: str, num: str
   
 @_StockSelling.error
 async def _StockSelling_error(ctx, error):
-    PrintLogger(error)
+    # PrintLogger(error)
     
     if ErrorCheck(error, "stock_name is a required argument that is missing."):
         logger.error('매도 할 주식을 입력해 주세요.')
@@ -1214,7 +1217,7 @@ async def _StockSelling(ctx: context.SlashContext, stock_name: str, num: str):
   
 @_StockSelling.error
 async def _StockSelling_error(ctx, error):
-    PrintLogger(error)
+    # PrintLogger(error)
     
     if ErrorCheck(error, f"invalid literal for int() with base 10: '{ctx.args[1]}'"):
         logger.error('`매도 할 주식개수(숫자만)` 또는 `풀매도`, `반매도`만 입력해 주세요.')

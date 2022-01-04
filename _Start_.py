@@ -553,7 +553,6 @@ async def _StockPrices(ctx: context.SlashContext, txt: str):
     lastday = soup.select_one('#chart_area > div.rate_info > div > p.no_exday > em:nth-child(2)').select_one('span.blind').text.replace('\n', '') #어제 대비 시세
     lastday_per = soup.select_one('#chart_area > div.rate_info > div > p.no_exday > em:nth-child(4)').select_one('span.blind').text.replace('\n', '') #어제 대비 시세%
     stock_time = soup.select_one('#time > em > span').text; stock_time = stock_time[stock_time.find('(')+1:stock_time.find(')')] #장중 & 장 마감
-    print(stock_time)
     try:
         UpAndDown_soup = soup.select_one('#chart_area > div.rate_info > div > p.no_exday > em:nth-child(2) > span.ico.up').text #+
     except:

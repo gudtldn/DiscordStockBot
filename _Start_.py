@@ -1255,8 +1255,7 @@ async def _SupportFund(ctx):
     
     cool_down = 3600 * 4 #쿨타임
     
-    if json_data[GetUserIDArrayNum(ctx=ctx)]['SupportFundTime'] == 0 or \
-    int(time.time()) - json_data[GetUserIDArrayNum(ctx=ctx)]['SupportFundTime'] > cool_down: #만약 저장되있는 현재시간 - 저장된시간이 cool_down을 넘는다면
+    if int(time.time()) - json_data[GetUserIDArrayNum(ctx=ctx)]['SupportFundTime'] > cool_down: #만약 저장되있는 현재시간 - 저장된시간이 cool_down을 넘는다면
         
         random_added_deposit = randint(1, 10) * 10000
 

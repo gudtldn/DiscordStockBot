@@ -372,7 +372,7 @@ async def _BotSetting(ctx: context.SlashContext, setting_name: str, add_stock_na
             url = f'https://finance.naver.com/item/main.naver?code={add_stock_num}'
             soup = bs(requests.get(url, headers={'User-agent' : ua.random}).text, 'lxml')
             
-            add_stock_name = soup.select_one('#middle > div.h_company > div.wrap_company > h2 > a').text #주식회사 이름
+            add_stock_name = soup.select_one('#middle > div.h_company > div.wrap_company > h2 > a').text.lower() #주식회사 이름
             add_stock_num = soup.select_one('#middle > div.h_company > div.wrap_company > div > span.code').text #기업코드
             
         for i in stock_json:
@@ -445,24 +445,24 @@ async def _AddUser(ctx):
 ################################################################################ .주가
 
 @bot.command(name='주가', aliases=['시세'])
-async def _StockPrices(ctx: commands.context.Context, *, txt: str):
-    logger.info(f'{ctx.author.name}: {ctx.invoked_with} {txt}')
+async def _StockPrices(ctx: commands.context.Context, *, stock_name: str):
+    logger.info(f'{ctx.author.name}: {ctx.invoked_with} {stock_name}')
         
     ua = UserAgent()
-    
+    stock_name = stock_name.lower()
 
     try:
-        int(txt) #입력받은 문자가 숫자일 경우
+        int(stock_name) #입력받은 문자가 숫자일 경우
     except:
-        if txt in GetStockDictionary().keys():
-            txt = GetStockDictionary()[txt]
+        if stock_name in GetStockDictionary().keys():
+            stock_name = GetStockDictionary()[stock_name]
         else:
-            url = f'https://www.google.com/search?q={quote_plus(txt)}+주가'
+            url = f'https://www.google.com/search?q={quote_plus(stock_name)}+주가'
             soup = bs(requests.get(url, headers={'User-agent' : ua.random}).text, 'lxml')
-            txt = soup.select_one('#main > div:nth-child(6) > div > div:nth-child(3) > div > div > div > div > div:nth-child(2) > div > div > div > div > span').text
-            txt = txt[0:txt.find('(')]
+            stock_name = soup.select_one('#main > div:nth-child(6) > div > div:nth-child(3) > div > div > div > div > div:nth-child(2) > div > div > div > div > span').text
+            stock_name = stock_name[0:stock_name.find('(')]
         
-    url = f'https://finance.naver.com/item/main.naver?code={txt}'
+    url = f'https://finance.naver.com/item/main.naver?code={stock_name}'
     soup = bs(requests.get(url, headers={'User-agent' : ua.random}).text, 'lxml')
 
 
@@ -523,27 +523,28 @@ async def _StockPrices_error(ctx,error):
             required=True
         )
     ],
-    connector={'이름': 'txt'}
+    connector={'이름': 'stock_name'}
 )
-async def _StockPrices(ctx: context.SlashContext, txt: str):
-    logger.info(f'{ctx.author.name}: {ctx.invoked_with} {txt}')
+async def _StockPrices(ctx: context.SlashContext, stock_name: str):
+    logger.info(f'{ctx.author.name}: {ctx.invoked_with} {stock_name}')
     
     await ctx.defer() #인터렉션 타임아웃때문에 기다리기
     
     ua = UserAgent()
+    stock_name = stock_name.lower()
     
     try:
-        int(txt) #입력받은 문자가 숫자일 경우
+        int(stock_name) #입력받은 문자가 숫자일 경우
     except:
-        if txt in GetStockDictionary().keys():
-            txt = GetStockDictionary()[txt]
+        if stock_name in GetStockDictionary().keys():
+            stock_name = GetStockDictionary()[stock_name]
         else:
-            url = f'https://www.google.com/search?q={quote_plus(txt)}+주가'
+            url = f'https://www.google.com/search?q={quote_plus(stock_name)}+주가'
             soup = bs(requests.get(url, headers={'User-agent' : ua.random}).text, 'lxml')
-            txt = soup.select_one('#main > div:nth-child(6) > div > div:nth-child(3) > div > div > div > div > div:nth-child(2) > div > div > div > div > span').text
-            txt = txt[0:txt.find('(')]
+            stock_name = soup.select_one('#main > div:nth-child(6) > div > div:nth-child(3) > div > div > div > div > div:nth-child(2) > div > div > div > div > span').text
+            stock_name = stock_name[0:stock_name.find('(')]
         
-    url = f'https://finance.naver.com/item/main.naver?code={txt}'
+    url = f'https://finance.naver.com/item/main.naver?code={stock_name}'
     soup = bs(requests.get(url, headers={'User-agent' : ua.random}).text, 'lxml')
 
 
@@ -853,6 +854,8 @@ async def _StockPurchase(ctx: commands.context.Context, stock_name: str, num: st
     
     ua = UserAgent()
     
+    stock_name = stock_name.lower()
+    
     async with ctx.typing():
         try:
             int(stock_name) #입력받은 문자가 숫자일 경우
@@ -964,6 +967,8 @@ async def _StockPurchase(ctx: context.SlashContext, stock_name: str, num: str): 
     
     ua = UserAgent()
     
+    stock_name = stock_name.lower()
+    
     await ctx.defer() #인터렉션 타임아웃때문에 기다리기
     
     try:
@@ -1050,6 +1055,8 @@ async def _StockSelling(ctx: commands.context.Context, stock_name: str, num: str
     json_data = GetUserInformation()
     
     ua = UserAgent()
+    
+    stock_name = stock_name.lower()
     
     async with ctx.typing():
         try:
@@ -1167,6 +1174,8 @@ async def _StockSelling(ctx: context.SlashContext, stock_name: str, num: str):
     json_data = GetUserInformation()
     
     ua = UserAgent()
+    
+    stock_name = stock_name.lower()
     
     try:
         int(stock_name) #입력받은 문자가 숫자일 경우

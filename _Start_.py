@@ -173,12 +173,12 @@ def SetUserInformation(json_data: dict):
 def GetUserIDArrayNum(ctx=None, id=None): #ctx.author.id가 들어있는 배열의 번호를 반환
     json_data = GetUserInformation()
     
-    if id is None or ctx is not None:
+    if id is None and ctx is not None:
         for num, i in enumerate(json_data):
             if i["UserID"] == ctx.author.id:
                 return num
     
-    elif ctx is None or id is not None:
+    elif ctx is None and id is not None:
         for num, i in enumerate(json_data):
             if i["UserID"] == id:
                 return num
@@ -856,46 +856,45 @@ async def _StockPurchase(ctx: commands.context.Context, stock_name: str, num: st
     
     stock_name = stock_name.lower()
     
-    async with ctx.typing():
-        try:
-            int(stock_name) #입력받은 문자가 숫자일 경우
-        except:
-            if stock_name in GetStockDictionary().keys():
-                stock_name = GetStockDictionary()[stock_name]
-            else:
-                url = f'https://www.google.com/search?q={quote_plus(stock_name)}+주가'
-                soup = bs(requests.get(url, headers={'User-agent' : ua.random}).text, 'lxml')
-                stock_name = soup.select_one('#main > div:nth-child(6) > div > div:nth-child(3) > div > div > div > div > div:nth-child(2) > div > div > div > div > span').text
-                stock_name = stock_name[0:stock_name.find('(')]
-            
-        url = f'https://finance.naver.com/item/main.naver?code={stock_name}'
-        soup = bs(requests.get(url, headers={'User-agent' : ua.random}).text, 'lxml')
-
-        price = soup.select_one('#chart_area > div.rate_info > div > p.no_today').select_one('span.blind').text.replace('\n', '').replace(',', '') #현재 시세
-        title = soup.select_one('#middle > div.h_company > div.wrap_company > h2 > a').text #주식회사 이름
+    try:
+        int(stock_name) #입력받은 문자가 숫자일 경우
+    except:
+        if stock_name in GetStockDictionary().keys():
+            stock_name = GetStockDictionary()[stock_name]
+        else:
+            url = f'https://www.google.com/search?q={quote_plus(stock_name)}+주가'
+            soup = bs(requests.get(url, headers={'User-agent' : ua.random}).text, 'lxml')
+            stock_name = soup.select_one('#main > div:nth-child(6) > div > div:nth-child(3) > div > div > div > div > div:nth-child(2) > div > div > div > div > span').text
+            stock_name = stock_name[0:stock_name.find('(')]
         
-        if num == '풀매수':
-            num = json_data[GetUserIDArrayNum(ctx=ctx)]['Deposit'] / int(price)
-            if num < 1:
-                logger.warning('예수금이 부족합니다.')
-                return await ctx.reply('예수금이 부족합니다.')
-            else:
-                num = int(num)
-        
-        elif json_data[GetUserIDArrayNum(ctx=ctx)]['Deposit'] - (int(price) * num) < 0:
+    url = f'https://finance.naver.com/item/main.naver?code={stock_name}'
+    soup = bs(requests.get(url, headers={'User-agent' : ua.random}).text, 'lxml')
+    
+    price = soup.select_one('#chart_area > div.rate_info > div > p.no_today').select_one('span.blind').text.replace('\n', '').replace(',', '') #현재 시세
+    title = soup.select_one('#middle > div.h_company > div.wrap_company > h2 > a').text #주식회사 이름
+    
+    if num == '풀매수':
+        num = json_data[GetUserIDArrayNum(ctx=ctx)]['Deposit'] / int(price)
+        if num < 1:
             logger.warning('예수금이 부족합니다.')
             return await ctx.reply('예수금이 부족합니다.')
-
-        if any(stock_name in i for i in list(json_data[GetUserIDArrayNum(ctx=ctx)]["Stock"].keys())): #Stock안에 corporation_num이 있는가?
-            json_data[GetUserIDArrayNum(ctx=ctx)]["Stock"][stock_name] += num
         else:
-            json_data[GetUserIDArrayNum(ctx=ctx)]["Stock"][stock_name] = num
-        
-        json_data[GetUserIDArrayNum(ctx=ctx)]['Deposit'] -= (int(price) * num) #예수금 저장
-        SetUserInformation(json_data)
-        
-        logger.info(f'{title}의 주식이 {int(price):,}원에 {num:,}주가 매수되었습니다.')
-        await ctx.reply(f'{title}의 주식이 {int(price):,}원에 {num:,}주가 매수되었습니다.')
+            num = int(num)
+    
+    elif json_data[GetUserIDArrayNum(ctx=ctx)]['Deposit'] - (int(price) * num) < 0:
+        logger.warning('예수금이 부족합니다.')
+        return await ctx.reply('예수금이 부족합니다.')
+    
+    if any(stock_name in i for i in list(json_data[GetUserIDArrayNum(ctx=ctx)]["Stock"].keys())): #Stock안에 corporation_num이 있는가?
+        json_data[GetUserIDArrayNum(ctx=ctx)]["Stock"][stock_name] += num
+    else:
+        json_data[GetUserIDArrayNum(ctx=ctx)]["Stock"][stock_name] = num
+    
+    json_data[GetUserIDArrayNum(ctx=ctx)]['Deposit'] -= (int(price) * num) #예수금 저장
+    SetUserInformation(json_data)
+    
+    logger.info(f'{title}의 주식이 {int(price):,}원에 {num:,}주가 매수되었습니다.')
+    await ctx.reply(f'{title}의 주식이 {int(price):,}원에 {num:,}주가 매수되었습니다.')
     
 @_StockPurchase.error
 async def _StockPurchase_error(ctx, error):
@@ -1058,52 +1057,51 @@ async def _StockSelling(ctx: commands.context.Context, stock_name: str, num: str
     
     stock_name = stock_name.lower()
     
-    async with ctx.typing():
-        try:
-            int(stock_name) #입력받은 문자가 숫자일 경우
-        except:
-            if stock_name in GetStockDictionary().keys():
-                stock_name = GetStockDictionary()[stock_name]
-            else:
-                url = f'https://www.google.com/search?q={quote_plus(stock_name)}+주가'
-                soup = bs(requests.get(url, headers={'User-agent' : ua.random}).text, 'lxml')
-                stock_name = soup.select_one('#main > div:nth-child(6) > div > div:nth-child(3) > div > div > div > div > div:nth-child(2) > div > div > div > div > span').text
-                stock_name = stock_name[0:stock_name.find('(')]
-            
-        url = f'https://finance.naver.com/item/main.naver?code={stock_name}'
-        soup = bs(requests.get(url, headers={'User-agent' : ua.random}).text, 'lxml')
-
-        price = soup.select_one('#chart_area > div.rate_info > div > p.no_today').select_one('span.blind').text.replace('\n', '').replace(',', '') #현재 시세
-        title = soup.select_one('#middle > div.h_company > div.wrap_company > h2 > a').text #주식회사 이름
-
-        if any(stock_name in i for i in list(json_data[GetUserIDArrayNum(ctx=ctx)]['Stock'].keys())):
-            if num == '풀매도':
-                num = json_data[GetUserIDArrayNum(ctx=ctx)]['Stock'][stock_name] #보유주식의 수 만큼 설정
-                
-            elif num == '반매도':
-                num = json_data[GetUserIDArrayNum(ctx=ctx)]['Stock'][stock_name] // 2
-                if num == 0:
-                    logger.warning(f'매도하려는 {title}의 주식이 1주밖에 없어 반매도 할 수 없습니다.')
-                    return await ctx.reply(f'매도하려는 {title}의 주식이 1주밖에 없어 반매도 할 수 없습니다.')
-                
-            
-            if num <= json_data[GetUserIDArrayNum(ctx=ctx)]['Stock'][stock_name]:
-                json_data[GetUserIDArrayNum(ctx=ctx)]['Stock'][stock_name] -= num
-                json_data[GetUserIDArrayNum(ctx=ctx)]['Deposit'] += (int(price) * num)
-                
-                if json_data[GetUserIDArrayNum(ctx=ctx)]['Stock'][stock_name] == 0:
-                    del(json_data[GetUserIDArrayNum(ctx=ctx)]['Stock'][stock_name])
-                
-                SetUserInformation(json_data)
-                
-                logger.info(f'{title}의 주식이 {int(price):,}원에 {num:,}주가 매도되었습니다.')
-                await ctx.reply(f'{title}의 주식이 {int(price):,}원에 {num:,}주가 매도되었습니다.')
-            else:
-                logger.warning(f'매도 하려는 주식개수가 현재 {title}의 주식 보유수량보다 더 높습니다. (현재 보유수량: {json_data[GetUserIDArrayNum(ctx=ctx)]["Stock"][stock_name]}주)')
-                return await ctx.reply(f'매도 하려는 주식개수가 현재 {title}의 주식 보유수량보다 더 높습니다. (현재 보유수량: {json_data[GetUserIDArrayNum(ctx=ctx)]["Stock"][stock_name]}주)')
+    try:
+        int(stock_name) #입력받은 문자가 숫자일 경우
+    except:
+        if stock_name in GetStockDictionary().keys():
+            stock_name = GetStockDictionary()[stock_name]
         else:
-            logger.warning(f'{title}의 주식이 자산에 없습니다.')
-            return await ctx.reply(f'{title}의 주식이 자산에 없습니다.')
+            url = f'https://www.google.com/search?q={quote_plus(stock_name)}+주가'
+            soup = bs(requests.get(url, headers={'User-agent' : ua.random}).text, 'lxml')
+            stock_name = soup.select_one('#main > div:nth-child(6) > div > div:nth-child(3) > div > div > div > div > div:nth-child(2) > div > div > div > div > span').text
+            stock_name = stock_name[0:stock_name.find('(')]
+        
+    url = f'https://finance.naver.com/item/main.naver?code={stock_name}'
+    soup = bs(requests.get(url, headers={'User-agent' : ua.random}).text, 'lxml')
+
+    price = soup.select_one('#chart_area > div.rate_info > div > p.no_today').select_one('span.blind').text.replace('\n', '').replace(',', '') #현재 시세
+    title = soup.select_one('#middle > div.h_company > div.wrap_company > h2 > a').text #주식회사 이름
+
+    if any(stock_name in i for i in list(json_data[GetUserIDArrayNum(ctx=ctx)]['Stock'].keys())):
+        if num == '풀매도':
+            num = json_data[GetUserIDArrayNum(ctx=ctx)]['Stock'][stock_name] #보유주식의 수 만큼 설정
+            
+        elif num == '반매도':
+            num = json_data[GetUserIDArrayNum(ctx=ctx)]['Stock'][stock_name] // 2
+            if num == 0:
+                logger.warning(f'매도하려는 {title}의 주식이 1주밖에 없어 반매도 할 수 없습니다.')
+                return await ctx.reply(f'매도하려는 {title}의 주식이 1주밖에 없어 반매도 할 수 없습니다.')
+            
+        
+        if num <= json_data[GetUserIDArrayNum(ctx=ctx)]['Stock'][stock_name]:
+            json_data[GetUserIDArrayNum(ctx=ctx)]['Stock'][stock_name] -= num
+            json_data[GetUserIDArrayNum(ctx=ctx)]['Deposit'] += (int(price) * num)
+            
+            if json_data[GetUserIDArrayNum(ctx=ctx)]['Stock'][stock_name] == 0:
+                del(json_data[GetUserIDArrayNum(ctx=ctx)]['Stock'][stock_name])
+            
+            SetUserInformation(json_data)
+            
+            logger.info(f'{title}의 주식이 {int(price):,}원에 {num:,}주가 매도되었습니다.')
+            await ctx.reply(f'{title}의 주식이 {int(price):,}원에 {num:,}주가 매도되었습니다.')
+        else:
+            logger.warning(f'매도 하려는 주식개수가 현재 {title}의 주식 보유수량보다 더 높습니다. (현재 보유수량: {json_data[GetUserIDArrayNum(ctx=ctx)]["Stock"][stock_name]}주)')
+            return await ctx.reply(f'매도 하려는 주식개수가 현재 {title}의 주식 보유수량보다 더 높습니다. (현재 보유수량: {json_data[GetUserIDArrayNum(ctx=ctx)]["Stock"][stock_name]}주)')
+    else:
+        logger.warning(f'{title}의 주식이 자산에 없습니다.')
+        return await ctx.reply(f'{title}의 주식이 자산에 없습니다.')
   
 @_StockSelling.error
 async def _StockSelling_error(ctx, error):

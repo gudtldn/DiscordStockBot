@@ -885,7 +885,7 @@ async def _StockPurchase(ctx: commands.context.Context, stock_name: str, num: st
         logger.warning('예수금이 부족합니다.')
         return await ctx.reply('예수금이 부족합니다.')
     
-    if any(stock_name in i for i in list(json_data[GetUserIDArrayNum(ctx=ctx)]["Stock"].keys())): #Stock안에 corporation_num이 있는가?
+    if stock_name in json_data[GetUserIDArrayNum(ctx=ctx)]["Stock"].keys(): #Stock안에 stock_name이 있는가?
         json_data[GetUserIDArrayNum(ctx=ctx)]["Stock"][stock_name] += num
     else:
         json_data[GetUserIDArrayNum(ctx=ctx)]["Stock"][stock_name] = num
@@ -1001,7 +1001,7 @@ async def _StockPurchase(ctx: context.SlashContext, stock_name: str, num: str): 
 
     # print(any(str(stock_name) in i for i in list(json_data[GetUserIDArrayNum(ctx=ctx)]["Stock"].keys())))
 
-    if any(stock_name in i for i in list(json_data[GetUserIDArrayNum(ctx=ctx)]["Stock"].keys())): #Stock안에 corporation_num이 있는가?
+    if stock_name in json_data[GetUserIDArrayNum(ctx=ctx)]["Stock"].keys(): #Stock안에 stock_name이 있는가?
         json_data[GetUserIDArrayNum(ctx=ctx)]["Stock"][stock_name] += num
     else:
         json_data[GetUserIDArrayNum(ctx=ctx)]["Stock"][stock_name] = num
@@ -1074,7 +1074,7 @@ async def _StockSelling(ctx: commands.context.Context, stock_name: str, num: str
     price = soup.select_one('#chart_area > div.rate_info > div > p.no_today').select_one('span.blind').text.replace('\n', '').replace(',', '') #현재 시세
     title = soup.select_one('#middle > div.h_company > div.wrap_company > h2 > a').text #주식회사 이름
 
-    if any(stock_name in i for i in list(json_data[GetUserIDArrayNum(ctx=ctx)]['Stock'].keys())):
+    if stock_name in json_data[GetUserIDArrayNum(ctx=ctx)]['Stock'].keys():
         if num == '풀매도':
             num = json_data[GetUserIDArrayNum(ctx=ctx)]['Stock'][stock_name] #보유주식의 수 만큼 설정
             
@@ -1192,7 +1192,7 @@ async def _StockSelling(ctx: context.SlashContext, stock_name: str, num: str):
     price = soup.select_one('#chart_area > div.rate_info > div > p.no_today').select_one('span.blind').text.replace('\n', '').replace(',', '') #현재 시세
     title = soup.select_one('#middle > div.h_company > div.wrap_company > h2 > a').text #주식회사 이름
 
-    if any(stock_name in i for i in list(json_data[GetUserIDArrayNum(ctx=ctx)]['Stock'].keys())):
+    if stock_name in json_data[GetUserIDArrayNum(ctx=ctx)]['Stock'].keys():
         if num == '풀매도':
             num = json_data[GetUserIDArrayNum(ctx=ctx)]['Stock'][stock_name] #보유주식의 수 만큼 설정
             

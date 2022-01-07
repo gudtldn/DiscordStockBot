@@ -217,11 +217,12 @@ async def get_text_from_url(author_id, num, stock_num):  # 코루틴 정의
     soup = bs(res.text, 'lxml')
     stock_name = soup.select_one('#middle > div.h_company > div.wrap_company > h2 > a').text
     price = soup.select_one('#chart_area > div.rate_info > div > p.no_today').select_one('span.blind').text.replace('\n', '').replace(',', '') #현재 시세
+    stop_trading = soup.select('#chart_area > div.rate_info > table > tr')[1].select_one('td > em > span').text
     balance = json_data[GetUserIDArrayNum(id=author_id)]["Stock"][stock_num] #현재 주식 수량
     
     logger.info(f'{num} Done. {time.time() - timer}seconds')
     
-    stock_num_array[num].append(stock_name) #['주식이름']
+    stock_num_array[num].append(f'{stock_name}({"거래정지" if stop_trading == "0" else ""})') #['주식이름']
     stock_num_array[num].append(balance) #['주식이름', 주식수량]
     stock_num_array[num].append(int(price) * balance) #['주식이름', 주식수량, 현재시세 * 주식 수]
     
@@ -471,7 +472,12 @@ async def _StockPrices(ctx: commands.context.Context, *, stock_name: str):
     price = soup.select_one('#chart_area > div.rate_info > div > p.no_today').select_one('span.blind').text.replace('\n', '') #현재 시세
     lastday = soup.select_one('#chart_area > div.rate_info > div > p.no_exday > em:nth-child(2)').select_one('span.blind').text.replace('\n', '') #어제 대비 시세
     lastday_per = soup.select_one('#chart_area > div.rate_info > div > p.no_exday > em:nth-child(4)').select_one('span.blind').text.replace('\n', '') #어제 대비 시세%
-    stock_time = soup.select_one('#time > em > span').text; stock_time = stock_time[stock_time.find('(')+1:stock_time.find(')')] #장중 & 장 마감
+    stop_trading = soup.select('#chart_area > div.rate_info > table > tr')[1].select_one('td > em > span').text #시가
+    if stop_trading == '0':
+        stock_time = '거래정지'
+    else:
+        stock_time = soup.select_one('#time > em > span').text; stock_time = stock_time[stock_time.find('(')+1:stock_time.find(')')] #장중 & 장 마감
+        
     try:
         UpAndDown_soup = soup.select_one('#chart_area > div.rate_info > div > p.no_exday > em:nth-child(2) > span.ico.up').text #+
     except:
@@ -553,7 +559,12 @@ async def _StockPrices(ctx: context.SlashContext, stock_name: str):
     price = soup.select_one('#chart_area > div.rate_info > div > p.no_today').select_one('span.blind').text.replace('\n', '') #현재 시세
     lastday = soup.select_one('#chart_area > div.rate_info > div > p.no_exday > em:nth-child(2)').select_one('span.blind').text.replace('\n', '') #어제 대비 시세
     lastday_per = soup.select_one('#chart_area > div.rate_info > div > p.no_exday > em:nth-child(4)').select_one('span.blind').text.replace('\n', '') #어제 대비 시세%
-    stock_time = soup.select_one('#time > em > span').text; stock_time = stock_time[stock_time.find('(')+1:stock_time.find(')')] #장중 & 장 마감
+    stop_trading = soup.select('#chart_area > div.rate_info > table > tr')[1].select_one('td > em > span').text #시가
+    if stop_trading == '0':
+        stock_time = '거래정지'
+    else:
+        stock_time = soup.select_one('#time > em > span').text; stock_time = stock_time[stock_time.find('(')+1:stock_time.find(')')] #장중 & 장 마감
+        
     try:
         UpAndDown_soup = soup.select_one('#chart_area > div.rate_info > div > p.no_exday > em:nth-child(2) > span.ico.up').text #+
     except:
@@ -872,6 +883,10 @@ async def _StockPurchase(ctx: commands.context.Context, stock_name: str, num: st
     
     price = soup.select_one('#chart_area > div.rate_info > div > p.no_today').select_one('span.blind').text.replace('\n', '').replace(',', '') #현재 시세
     title = soup.select_one('#middle > div.h_company > div.wrap_company > h2 > a').text #주식회사 이름
+    stop_trading = soup.select('#chart_area > div.rate_info > table > tr')[1].select_one('td > em > span').text #시가
+    if stop_trading == '0':
+        logger.info(f'{title}의 주식이 거래중지 중이라 매수할 수 없습니다.')
+        return await ctx.reply(f'{title}의 주식이 거래중지 중이라 매수할 수 없습니다.')
     
     if num == '풀매수':
         num = json_data[GetUserIDArrayNum(ctx=ctx)]['Deposit'] / int(price)
@@ -986,7 +1001,11 @@ async def _StockPurchase(ctx: context.SlashContext, stock_name: str, num: str): 
 
     price = soup.select_one('#chart_area > div.rate_info > div > p.no_today').select_one('span.blind').text.replace('\n', '').replace(',', '') #현재 시세
     title = soup.select_one('#middle > div.h_company > div.wrap_company > h2 > a').text #주식회사 이름
-    
+    stop_trading = soup.select('#chart_area > div.rate_info > table > tr')[1].select_one('td > em > span').text #시가
+    if stop_trading == '0':
+        logger.info(f'{title}의 주식이 거래중지 중이라 매수할 수 없습니다.')
+        return await ctx.reply(f'{title}의 주식이 거래중지 중이라 매수할 수 없습니다.')
+        
     if num == '풀매수':
         num = json_data[GetUserIDArrayNum(ctx=ctx)]['Deposit'] / int(price)
         if num < 1:
@@ -1073,8 +1092,14 @@ async def _StockSelling(ctx: commands.context.Context, stock_name: str, num: str
 
     price = soup.select_one('#chart_area > div.rate_info > div > p.no_today').select_one('span.blind').text.replace('\n', '').replace(',', '') #현재 시세
     title = soup.select_one('#middle > div.h_company > div.wrap_company > h2 > a').text #주식회사 이름
-
+    stop_trading = soup.select('#chart_area > div.rate_info > table > tr')[1].select_one('td > em > span').text #시가
+        
     if stock_name in json_data[GetUserIDArrayNum(ctx=ctx)]['Stock'].keys():
+        if stop_trading == '0':
+            logger.info(f'{title}의 주식이 거래중지 중이라 매도할 수 없습니다.')
+            return await ctx.reply(f'{title}의 주식이 거래중지 중이라 매도할 수 없습니다.')
+        
+        
         if num == '풀매도':
             num = json_data[GetUserIDArrayNum(ctx=ctx)]['Stock'][stock_name] #보유주식의 수 만큼 설정
             
@@ -1191,8 +1216,14 @@ async def _StockSelling(ctx: context.SlashContext, stock_name: str, num: str):
 
     price = soup.select_one('#chart_area > div.rate_info > div > p.no_today').select_one('span.blind').text.replace('\n', '').replace(',', '') #현재 시세
     title = soup.select_one('#middle > div.h_company > div.wrap_company > h2 > a').text #주식회사 이름
+    stop_trading = soup.select('#chart_area > div.rate_info > table > tr')[1].select_one('td > em > span').text #시가
 
     if stock_name in json_data[GetUserIDArrayNum(ctx=ctx)]['Stock'].keys():
+        if stop_trading == '0':
+            logger.info(f'{title}의 주식이 거래중지 중이라 매도할 수 없습니다.')
+            return await ctx.reply(f'{title}의 주식이 거래중지 중이라 매도할 수 없습니다.')
+        
+        
         if num == '풀매도':
             num = json_data[GetUserIDArrayNum(ctx=ctx)]['Stock'][stock_name] #보유주식의 수 만큼 설정
             

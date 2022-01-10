@@ -56,7 +56,7 @@ from random import randint
 '''
 
 
-DEBUGING = True #디버그 실행
+DEBUGGING = True #디버그 실행
 
 guilds_id=(915543134648287242, 921706352957620285, 925277183147147265)
 permission_setting = {
@@ -80,7 +80,7 @@ def _Logging(): #변수의 혼용을 막기위해 함수로 만듦
 
     global logger
     logger = logging.getLogger()
-    if DEBUGING:
+    if DEBUGGING:
         logger.setLevel(logging.DEBUG)
     else:
         logger.setLevel(logging.INFO)
@@ -117,7 +117,7 @@ operation_time = time.time() #가동된 현재 시간
 
 intents = Intents.all()
 
-if DEBUGING:
+if DEBUGGING:
     game = discord.Game('봇 테스트') # ~하는 중
     bot = commands.Bot(command_prefix=';', help_command=None, status=discord.Status.do_not_disturb, activity=game, intents=intents)
 else:
@@ -243,8 +243,8 @@ async def get_text_(author_id, keywords):
 
 @bot.event
 async def on_ready():
-    logger.info(f'{bot.user.name + " 디버깅으" if DEBUGING else bot.user.name}로 로그인')
-    print(f'{bot.user.name + " 디버깅으" if DEBUGING else bot.user.name}로 로그인')
+    logger.info(f'{bot.user.name + " 디버깅으" if DEBUGGING else bot.user.name}로 로그인')
+    print(f'{bot.user.name + " 디버깅으" if DEBUGGING else bot.user.name}로 로그인')
     
 #################### 테스트중 역할 설정 ####################
 
@@ -253,7 +253,7 @@ async def on_ready():
         role: discord.Role = get(guild.roles, name="봇 테스트 중")
         member: discord.Member
         
-        if DEBUGING:
+        if DEBUGGING:
             for member in guild.members:
                 if not member.bot:
                     await member.add_roles(role)

@@ -222,7 +222,7 @@ async def get_text_from_url(author_id, num, stock_num):  # 코루틴 정의
     
     logger.info(f'{num} Done. {time.time() - timer}seconds')
     
-    stock_num_array[num].append(f'{stock_name}{"(거래정지)" if stop_trading == "0" else ""}') #['주식이름']
+    stock_num_array[num].append(f'{stock_name}{"(거래정지)" if stop_trading == "0" else f" {price:,}원"}') #['주식이름']
     stock_num_array[num].append(balance) #['주식이름', 주식수량]
     stock_num_array[num].append(int(price) * balance) #['주식이름', 주식수량, 현재시세 * 주식 수]
     

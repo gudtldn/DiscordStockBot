@@ -571,7 +571,7 @@ async def _StockPrices(ctx: context.SlashContext, stock_name: str):
 
 
     title = soup.select_one('#middle > div.h_company > div.wrap_company > h2 > a').text #주식회사 이름
-    description = soup.select_one('#middle > div.h_company > div.wrap_company > div > span.code').text #기업코드
+    stock_num = soup.select_one('#middle > div.h_company > div.wrap_company > div > span.code').text #기업코드
     price = soup.select_one('#chart_area > div.rate_info > div > p.no_today').select_one('span.blind').text.replace('\n', '') #현재 시세
     lastday = soup.select_one('#chart_area > div.rate_info > div > p.no_exday > em:nth-child(2)').select_one('span.blind').text.replace('\n', '') #어제 대비 시세
     lastday_per = soup.select_one('#chart_area > div.rate_info > div > p.no_exday > em:nth-child(4)').select_one('span.blind').text.replace('\n', '') #어제 대비 시세%
@@ -597,7 +597,7 @@ async def _StockPrices(ctx: context.SlashContext, stock_name: str):
 
 
     UpAndDown = {'상승':'+', '하락':'-', '보합':'', '+':'+', '-':'-'}
-    embed = discord.Embed(title=f'{title}({stock_time})', description=f'기업번호: {description}', color=RandomEmbedColor())
+    embed = discord.Embed(title=f'{title}({stock_time})', description=f'기업번호: {stock_num}', color=RandomEmbedColor())
     embed.add_field(name=f'{price}원', value=f'전일대비: {UpAndDown[UpAndDown_soup]}{lastday} | {UpAndDown[UpAndDown_soup]}{lastday_per}%', inline=False)
     await ctx.reply(embed=embed)
     logger.info('Done.')
@@ -630,7 +630,7 @@ async def _AssetInformation(ctx: commands.context.Context, *mention): #멘션을
     if len(mention) != 0:
         if mention[0] == '공개여부':
             disclosure_status = {True:'공개', False:'비공개'}
-            logger.warning(f'현재 {ctx.author.name}님의 자산정보 공개여부는 「{disclosure_status[json_data[GetUserIDArrayNum(ctx=ctx)]["InformationDisclosure"]]}」로 설정되어 있습니다.')
+            logger.info(f'현재 {ctx.author.name}님의 자산정보 공개여부는 「{disclosure_status[json_data[GetUserIDArrayNum(ctx=ctx)]["InformationDisclosure"]]}」로 설정되어 있습니다.')
             return await ctx.reply(f'현재 {ctx.author.name}님의 자산정보 공개여부는 「{disclosure_status[json_data[GetUserIDArrayNum(ctx=ctx)]["InformationDisclosure"]]}」로 설정되어 있습니다.')
 
         elif mention[0] in ('공개', 'true', 'True'):
@@ -649,7 +649,7 @@ async def _AssetInformation(ctx: commands.context.Context, *mention): #멘션을
             mention : str = mention[0]
             author_id = int(mention.replace('<@', '').replace('!', '').replace('>', ''))
             user_name = str(await ctx.guild.fetch_member(author_id))
-            user_name = user_name[:user_name.find('#')]
+            user_name = user_name.name
             if user_name == ctx.author.name:
                 mention = None
                 author_id : int = ctx.author.id
@@ -734,7 +734,7 @@ async def _AssetInformation_error(ctx, error):
     options=[
         create_option(
             name='유저',
-            description='유저의 현재 자산정보를 확인합니다.',
+            description='다른유저의 자산정보를 확인합니다.',
             option_type=OptionType.USER,
             required=False
         ),
@@ -761,7 +761,7 @@ async def _AssetInformation_error(ctx, error):
     ],
     connector={'유저': 'mention', '공개정보': 'mention'}
 )
-async def _AssetInformation(ctx: context.SlashContext, mention=None): #멘션을 입력하면 자산정보 내용에 멘션된 사람의 닉네임이 나오게끔 수정
+async def _AssetInformation(ctx: context.SlashContext, mention=None):
     logger.info(f'{ctx.author.name}: {ctx.invoked_with} {mention}')
     
     if not IsVaildUser(ctx):
@@ -777,7 +777,7 @@ async def _AssetInformation(ctx: context.SlashContext, mention=None): #멘션을
         
         if mention == '공개여부':
             disclosure_status = {True:'공개', False:'비공개'}
-            logger.warning(f'현재 {ctx.author.name}님의 자산정보 공개여부는 「{disclosure_status[json_data[GetUserIDArrayNum(ctx=ctx)]["InformationDisclosure"]]}」로 설정되어 있습니다.')
+            logger.info(f'현재 {ctx.author.name}님의 자산정보 공개여부는 「{disclosure_status[json_data[GetUserIDArrayNum(ctx=ctx)]["InformationDisclosure"]]}」로 설정되어 있습니다.')
             return await ctx.reply(f'현재 {ctx.author.name}님의 자산정보 공개여부는 「{disclosure_status[json_data[GetUserIDArrayNum(ctx=ctx)]["InformationDisclosure"]]}」로 설정되어 있습니다.')
 
         elif mention in ('공개', 'true', 'True'):
@@ -837,10 +837,10 @@ async def _AssetInformation(ctx: context.SlashContext, mention=None): #멘션을
     for add_embed in stock_num_array:
         embed.add_field(name=add_embed[0], value=f'잔고수량: {add_embed[1]:,} | {add_embed[2]:,}원', inline=False)
     
-    await ctx.reply(embed=embed)
     # await ctx.send(f'걸린시간: {time.time() - start_time} 초') #디버그
     # print(f'{time.time() - start_time} seconds')
     logger.info(f'All Done. {time.time() - start_time} seconds')
+    await ctx.reply(embed=embed)
     
 @_AssetInformation.error
 async def _AssetInformation_error(ctx, error):

@@ -264,19 +264,19 @@ async def on_ready():
     
 #################### 테스트중 역할 설정 ####################
 
-    for guild in guilds_id:
-        guild: discord.Guild = bot.get_guild(guild)
-        role: discord.Role = get(guild.roles, name="봇 테스트 중")
-        member: discord.Member
+    # for guild in guilds_id:
+    #     guild: discord.Guild = bot.get_guild(guild)
+    #     role: discord.Role = get(guild.roles, name="봇 테스트 중")
+    #     member: discord.Member
         
-        if DEBUGGING:
-            for member in guild.members:
-                if not member.bot:
-                    await member.add_roles(role)
-        else:
-            for member in guild.members:
-                if not member.bot:
-                    await member.remove_roles(role)
+    #     if DEBUGGING:
+    #         for member in guild.members:
+    #             if not member.bot:
+    #                 await member.add_roles(role)
+    #     else:
+    #         for member in guild.members:
+    #             if not member.bot:
+    #                 await member.remove_roles(role)
         
 ################################################################################
 

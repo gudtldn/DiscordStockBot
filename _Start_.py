@@ -264,19 +264,19 @@ async def on_ready():
     
 #################### 테스트중 역할 설정 ####################
 
-    for guild in guilds_id:
-        guild: discord.Guild = bot.get_guild(guild)
-        role: discord.Role = get(guild.roles, name="봇 테스트 중")
-        member: discord.Member
+    # for guild in guilds_id:
+    #     guild: discord.Guild = bot.get_guild(guild)
+    #     role: discord.Role = get(guild.roles, name="봇 테스트 중")
+    #     member: discord.Member
         
-        if DEBUGGING:
-            for member in guild.members:
-                if not member.bot:
-                    await member.add_roles(role)
-        else:
-            for member in guild.members:
-                if not member.bot:
-                    await member.remove_roles(role)
+    #     if DEBUGGING:
+    #         for member in guild.members:
+    #             if not member.bot:
+    #                 await member.add_roles(role)
+    #     else:
+    #         for member in guild.members:
+    #             if not member.bot:
+    #                 await member.remove_roles(role)
         
 ################################################################################
 
@@ -488,7 +488,9 @@ async def _StockPrices(ctx: commands.context.Context, *, stock_name: str):
     price = soup.select_one('#chart_area > div.rate_info > div > p.no_today').select_one('span.blind').text.replace('\n', '') #현재 시세
     lastday = soup.select_one('#chart_area > div.rate_info > div > p.no_exday > em:nth-child(2)').select_one('span.blind').text.replace('\n', '') #어제 대비 시세
     lastday_per = soup.select_one('#chart_area > div.rate_info > div > p.no_exday > em:nth-child(4)').select_one('span.blind').text.replace('\n', '') #어제 대비 시세%
-    stop_trading = soup.select('#chart_area > div.rate_info > table > tr')[1].select_one('td > em > span').text #시가
+    
+    stop_trading_soup = bs(requests.get(f'https://finance.naver.com/item/sise.naver?code={stock_name}', headers={'User-agent' : ua.random}).text, 'lxml')
+    stop_trading = stop_trading_soup.select_one('#content > div.section.inner_sub > div:nth-child(1) > table > tbody > tr:nth-child(4) > td:nth-child(4) > span').text #시가
     if stop_trading == '0':
         stock_time = '거래정지'
     else:
@@ -575,7 +577,9 @@ async def _StockPrices(ctx: context.SlashContext, stock_name: str):
     price = soup.select_one('#chart_area > div.rate_info > div > p.no_today').select_one('span.blind').text.replace('\n', '') #현재 시세
     lastday = soup.select_one('#chart_area > div.rate_info > div > p.no_exday > em:nth-child(2)').select_one('span.blind').text.replace('\n', '') #어제 대비 시세
     lastday_per = soup.select_one('#chart_area > div.rate_info > div > p.no_exday > em:nth-child(4)').select_one('span.blind').text.replace('\n', '') #어제 대비 시세%
-    stop_trading = soup.select('#chart_area > div.rate_info > table > tr')[1].select_one('td > em > span').text #시가
+    
+    stop_trading_soup = bs(requests.get(f'https://finance.naver.com/item/sise.naver?code={stock_name}', headers={'User-agent' : ua.random}).text, 'lxml')
+    stop_trading = stop_trading_soup.select_one('#content > div.section.inner_sub > div:nth-child(1) > table > tbody > tr:nth-child(4) > td:nth-child(4) > span').text #시가
     if stop_trading == '0':
         stock_time = '거래정지'
     else:

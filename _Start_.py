@@ -218,7 +218,6 @@ async def get_text_from_url(author_id, num, stock_num):  # 코루틴 정의
     stock_name = soup.select_one('#middle > div.h_company > div.wrap_company > h2 > a').text
     price = soup.select_one('#chart_area > div.rate_info > div > p.no_today').select_one('span.blind').text.replace('\n', '').replace(',', '') #현재 시세
     lastday_per = soup.select_one('#chart_area > div.rate_info > div > p.no_exday > em:nth-child(4)').select_one('span.blind').text.replace('\n', '') #어제 대비 시세%
-    stop_trading = soup.select('#chart_area > div.rate_info > table > tr')[1].select_one('td > em > span').text
     balance = json_data[GetUserIDArrayNum(id=author_id)]["Stock"][stock_num] #현재 주식 수량
     try:
         UpAndDown_soup = soup.select_one('#chart_area > div.rate_info > div > p.no_exday > em:nth-child(2) > span.ico.up').text #+
@@ -238,7 +237,7 @@ async def get_text_from_url(author_id, num, stock_num):  # 코루틴 정의
     
     logger.info(f'{num} Done. {time.time() - timer}seconds')
     
-    stock_num_array[num].append(f'{stock_name}{"(거래정지)" if stop_trading == "0" else f" | {int(price):,}원 | {UpAndDown[UpAndDown_soup]}{lastday_per}%"}') #['주식이름']
+    stock_num_array[num].append(f'{stock_name} | {int(price):,}원 | {UpAndDown[UpAndDown_soup]}{lastday_per}%') #['주식이름']
     stock_num_array[num].append(balance) #['주식이름', 주식수량]
     stock_num_array[num].append(int(price) * balance) #['주식이름', 주식수량, 현재시세 * 주식 수]
     
@@ -264,19 +263,19 @@ async def on_ready():
     
 #################### 테스트중 역할 설정 ####################
 
-    # for guild in guilds_id:
-    #     guild: discord.Guild = bot.get_guild(guild)
-    #     role: discord.Role = get(guild.roles, name="봇 테스트 중")
-    #     member: discord.Member
+    for guild in guilds_id:
+        guild: discord.Guild = bot.get_guild(guild)
+        role: discord.Role = get(guild.roles, name="봇 테스트 중")
+        member: discord.Member
         
-    #     if DEBUGGING:
-    #         for member in guild.members:
-    #             if not member.bot:
-    #                 await member.add_roles(role)
-    #     else:
-    #         for member in guild.members:
-    #             if not member.bot:
-    #                 await member.remove_roles(role)
+        if DEBUGGING:
+            for member in guild.members:
+                if not member.bot:
+                    await member.add_roles(role)
+        else:
+            for member in guild.members:
+                if not member.bot:
+                    await member.remove_roles(role)
         
 ################################################################################
 

@@ -126,7 +126,8 @@ else:
 
 slash = SlashCommand(bot, sync_commands=True)
 
-Token = open('./etc/Token.txt', 'r', encoding='utf-8').read()
+with open('./etc/Token.txt', 'r', encoding='utf-8') as Token_txt:
+    Token = Token_txt.read()
 
 ################################################################################ 에러 클래스 선언 ################################################################################
 
@@ -140,9 +141,8 @@ def RandomEmbedColor():
     value = f'0x{r():02x}{r():02x}{r():02x}'
     return int(value, 16)
 
-def AddUser_Json(Name:str, ID:int):
+def AddUser_Json(ID:int):
     dictionary = {
-            'UserName' : f'{Name}',
             'UserID': ID,
             'Deposit': 10000000,
             'TotalAssets': 10000000,
@@ -452,7 +452,7 @@ async def _AddUser(ctx):
         logger.warning('이미 등록되어 있는 사용자 입니다.')
         return await ctx.reply('이미 등록되어 있는 사용자 입니다.')
 
-    json_data.append(AddUser_Json(ctx.author.name, ctx.author.id)) #사용자 추가
+    json_data.append(AddUser_Json(ctx.author.id)) #사용자 추가
     SetUserInformation(json_data)
         
     logger.info('등록되었습니다.')
@@ -649,13 +649,13 @@ async def _AssetInformation(ctx: commands.context.Context, *mention): #멘션을
             return await ctx.reply('자산정보 공개여부가 「비공개」로 설정되었습니다.')
         
         else:
-            mention : str = mention[0]
+            mention: str = mention[0]
             author_id = int(mention.replace('<@', '').replace('!', '').replace('>', ''))
-            user_name = str(await ctx.guild.fetch_member(author_id))
+            user_name = await ctx.guild.fetch_member(author_id)
             user_name = user_name.name
             if user_name == ctx.author.name:
                 mention = None
-                author_id : int = ctx.author.id
+                author_id: int = ctx.author.id
                 
             elif not json_data[GetUserIDArrayNum(id=author_id)]['InformationDisclosure']:
                 logger.warning(f'{user_name}님의 정보가 비공개되어 있습니다.')
@@ -797,8 +797,8 @@ async def _AssetInformation(ctx: context.SlashContext, mention=None):
         
         else:
             author_id = int(mention.replace('<@', '').replace('!', '').replace('>', ''))
-            user_name = str(await ctx.guild.fetch_member(author_id))
-            user_name = user_name[:user_name.find('#')]
+            user_name: discord.Member = await ctx.guild.fetch_member(author_id)
+            user_name = user_name.name
             if user_name == ctx.author.name:
                 mention = None
                 author_id : int = ctx.author.id
@@ -872,7 +872,7 @@ async def _StockPurchase(ctx: commands.context.Context, stock_name: str, num: st
         await ctx.reply('먼저 `.사용자등록` 부터 해 주세요.')
         return
     
-    if num != '풀매수':
+    if num not in ('풀매수', '모두'):
         num = int(num)
         
         if num <= 0:
@@ -907,7 +907,7 @@ async def _StockPurchase(ctx: commands.context.Context, stock_name: str, num: st
         logger.info(f'{title}의 주식이 거래중지 중이라 매수할 수 없습니다.')
         return await ctx.reply(f'{title}의 주식이 거래중지 중이라 매수할 수 없습니다.')
     
-    if num == '풀매수':
+    if num in ('풀매수', '모두'):
         num = json_data[GetUserIDArrayNum(ctx=ctx)]['Deposit'] / int(price)
         if num < 1:
             logger.warning('예수금이 부족합니다.')
@@ -988,7 +988,7 @@ async def _StockPurchase(ctx: context.SlashContext, stock_name: str, num: str): 
         await ctx.reply('먼저 `.사용자등록` 부터 해 주세요.')
         return
     
-    if num != '풀매수':
+    if num not in ('풀매수', '모두'):
         num = int(num)
         
         if num <= 0:
@@ -1025,7 +1025,7 @@ async def _StockPurchase(ctx: context.SlashContext, stock_name: str, num: str): 
         logger.info(f'{title}의 주식이 거래중지 중이라 매수할 수 없습니다.')
         return await ctx.reply(f'{title}의 주식이 거래중지 중이라 매수할 수 없습니다.')
         
-    if num == '풀매수':
+    if num in ('풀매수', '모두'):
         num = json_data[GetUserIDArrayNum(ctx=ctx)]['Deposit'] / int(price)
         if num < 1:
             logger.warning('예수금이 부족합니다.')
@@ -1081,7 +1081,7 @@ async def _StockSelling(ctx: commands.context.Context, stock_name: str, num: str
         await ctx.reply('먼저 `.사용자등록` 부터 해 주세요.')
         return
 
-    if num not in ('풀매도', '반매도'):
+    if num not in ('풀매도', '반매도', '모두'):
         num = int(num)
         
         if num <= 0:
@@ -1119,7 +1119,7 @@ async def _StockSelling(ctx: commands.context.Context, stock_name: str, num: str
             return await ctx.reply(f'{title}의 주식이 거래중지 중이라 매도할 수 없습니다.')
         
         
-        if num == '풀매도':
+        if num in ('풀매도', '모두'):
             num = json_data[GetUserIDArrayNum(ctx=ctx)]['Stock'][stock_name] #보유주식의 수 만큼 설정
             
         elif num == '반매도':
@@ -1205,7 +1205,7 @@ async def _StockSelling(ctx: context.SlashContext, stock_name: str, num: str):
         await ctx.reply('먼저 `.사용자등록` 부터 해 주세요.')
         return
 
-    if num not in ('풀매도', '반매도'):
+    if num not in ('풀매도', '반매도', '모두'):
         num = int(num)
         
         if num <= 0:
@@ -1243,7 +1243,7 @@ async def _StockSelling(ctx: context.SlashContext, stock_name: str, num: str):
             return await ctx.reply(f'{title}의 주식이 거래중지 중이라 매도할 수 없습니다.')
         
         
-        if num == '풀매도':
+        if num in ('풀매도', '모두'):
             num = json_data[GetUserIDArrayNum(ctx=ctx)]['Stock'][stock_name] #보유주식의 수 만큼 설정
             
         elif num == '반매도':
@@ -1344,7 +1344,7 @@ async def _Initialization(ctx: commands.context.Context, *, string: str):
     if string == '내 자산 초기화':
         json_data = GetUserInformation()
         del(json_data[GetUserIDArrayNum(ctx=ctx)])
-        json_data.append(AddUser_Json(ctx.author.name, ctx.author.id)) #사용자 추가
+        json_data.append(AddUser_Json(ctx.author.id)) #사용자 추가
         SetUserInformation(json_data)
         logger.info('초기화가 완료되었습니다.')
         await ctx.reply('초기화가 완료되었습니다.')
@@ -1390,7 +1390,7 @@ async def _Initialization(ctx: context.SlashContext, string: str):
     if string == '내 자산 초기화':
         json_data = GetUserInformation()
         del(json_data[GetUserIDArrayNum(ctx=ctx)])
-        json_data.append(AddUser_Json(ctx.author.name, ctx.author.id)) #사용자 추가
+        json_data.append(AddUser_Json(ctx.author.id)) #사용자 추가
         SetUserInformation(json_data)
         logger.info('초기화가 완료되었습니다.')
         await ctx.reply('초기화가 완료되었습니다.')

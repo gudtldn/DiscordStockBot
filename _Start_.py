@@ -973,7 +973,7 @@ async def _StockPurchase_error(ctx, error):
         ),
         create_option(
             name='개수',
-            description='「매수 할 주식 개수」 또는 「풀매수」를 적어주세요.',
+            description='「매수 할 주식 개수」 또는 「풀매수」,「모두」 를 적어주세요.',
             option_type=OptionType.STRING,
             required=True
         )
@@ -1190,7 +1190,7 @@ async def _StockSelling_error(ctx, error):
         ),
         create_option(
             name='개수',
-            description='「매도 할 주식 개수」 또는 「풀매도」 또는 「반매도」를 적어주세요.',
+            description='「매도 할 주식 개수」 또는 「풀매도」,「모두」 또는 「반매도」를 적어주세요.',
             option_type=OptionType.STRING,
             required=True
         )
@@ -1528,7 +1528,7 @@ async def _HelpCommand(ctx: commands.context.Context, command: str=None):
         embed = discord.Embed(title='매수', description='입력한 기업의 주식을 매수합니다.', color=RandomEmbedColor())
         embed.add_field(name='다른이름', value=f'{", ".join(command_list)}', inline=False)
         embed.add_field(name='.매수 [기업이름 | 기업번호] [매수 할 주식 개수]', value='입력한 기업의 주식을, 주식 개수만큼 매수합니다.', inline=False)
-        embed.add_field(name='.매수 [기업이름 | 기업번호] [풀매수]', value='입력한 기업의 주식을 최대까지 매수합니다.', inline=False)
+        embed.add_field(name='.매수 [기업이름 | 기업번호] [풀매수, 모두]', value='입력한 기업의 주식을 최대까지 매수합니다.', inline=False)
         await ctx.reply(embed=embed)
         
     elif command in ('매도', '판매', '주식판매', '주식매도'):
@@ -1539,7 +1539,7 @@ async def _HelpCommand(ctx: commands.context.Context, command: str=None):
         embed.add_field(name='다른이름', value=f'{", ".join(command_list)}', inline=False)
         embed.add_field(name='.매도 [기업이름 | 기업번호] [매도 할 주식 개수]', value='입력한 기업의 주식을, 주식 개수만큼 매도합니다.', inline=False)
         embed.add_field(name='.매도 [기업이름 | 기업번호] [반매도]', value='입력한 기업의 주식의 절반을 매도합니다.', inline=False)
-        embed.add_field(name='.매도 [기업이름 | 기업번호] [풀매도]', value='입력한 기업의 주식을 모두 매도합니다.', inline=False)
+        embed.add_field(name='.매도 [기업이름 | 기업번호] [풀매도, 모두]', value='입력한 기업의 주식을 모두 매도합니다.', inline=False)
         await ctx.reply(embed=embed)
     
     elif command in ('지원금', '돈받기'):

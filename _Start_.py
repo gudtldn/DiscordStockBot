@@ -59,7 +59,7 @@ from typing import Union
 '''
 
 
-DEBUGGING = True #디버그 실행
+DEBUGGING = False #디버그 실행
 
 guilds_id=(915543134648287242, 921706352957620285, 925277183147147265)
 permission_setting = {
@@ -112,7 +112,7 @@ if DEBUGGING:
     bot = commands.Bot(command_prefix=';', help_command=None, status=discord.Status.do_not_disturb, activity=game, intents=intents)
 else:
     game = discord.Game('주식투자') # ~하는 중
-    bot = commands.Bot(command_prefix='.', help_command=None, status=discord.Status.online, activity=game, intents=intents)
+    bot = commands.Bot(command_prefix=';', help_command=None, status=discord.Status.online, activity=game, intents=intents)
 
 slash = SlashCommand(bot, sync_commands=True)
 

@@ -165,7 +165,7 @@ def GetUserIDArrayNum(ctx: Union[Context, SlashContext, int]): #ctx.author.id가
         ctx = ctx.author.id
 
     for num, i in enumerate(json_data):
-        if i["UserID"] == ctx:
+        if i['UserID'] == ctx:
             return num
         
 def IsVaildUser(ctx: Union[Context, SlashContext, int]): #ctx.author.id를 가진 유저가 Information.json에 존재하는지 여부
@@ -174,7 +174,7 @@ def IsVaildUser(ctx: Union[Context, SlashContext, int]): #ctx.author.id를 가�
         ctx = ctx.author.id
         
     for i in json_data:
-        if i["UserID"] == ctx:
+        if i['UserID'] == ctx:
             return True
     return False
 
@@ -202,7 +202,7 @@ async def get_text_from_url(author_id, num, stock_num):  # 코루틴 정의
     stock_name = soup.select_one('#middle > div.h_company > div.wrap_company > h2 > a').text
     price = soup.select_one('#chart_area > div.rate_info > div > p.no_today').select_one('span.blind').text.replace('\n', '').replace(',', '') #현재 시세
     lastday_per = soup.select_one('#chart_area > div.rate_info > div > p.no_exday > em:nth-child(4)').select_one('span.blind').text.replace('\n', '') #어제 대비 시세%
-    balance = json_data[GetUserIDArrayNum(author_id)]["Stock"][stock_num] #현재 주식 수량
+    balance = json_data[GetUserIDArrayNum(author_id)]['Stock'][stock_num] #현재 주식 수량
     try:
         UpAndDown_soup = soup.select_one('#chart_area > div.rate_info > div > p.no_exday > em:nth-child(2) > span.ico.up').text #+
     except:
@@ -249,7 +249,7 @@ async def on_ready():
 
     for guild in guilds_id:
         guild: discord.Guild = bot.get_guild(guild)
-        role: discord.Role = get(guild.roles, name="봇 테스트 중")
+        role: discord.Role = get(guild.roles, name='봇 테스트 중')
         member: discord.Member
         
         if DEBUGGING:
@@ -593,7 +593,7 @@ async def _StockPrices(ctx: SlashContext, stock_name: str):
     logger.info('Done.')
         
 @_StockPrices.error
-async def _StockPrices_error(ctx,error):    
+async def _StockPrices_error(ctx,error):
     if ErrorCheck(error, "'NoneType' object has no attribute 'text'"):
         logger.error('주식을 찾지 못하였습니다.')
         await ctx.reply('주식을 찾지 못하였습니다.')
@@ -851,7 +851,7 @@ async def _AssetInformation(ctx: SlashContext, option: Union[discord.User, str]=
                 return
     
     
-    hidden = not json_data[GetUserIDArrayNum(author_id)]["InformationDisclosure"]
+    hidden = not json_data[GetUserIDArrayNum(author_id)]['InformationDisclosure']
     await ctx.defer(hidden=hidden) #인터렉션 타임아웃때문에 기다리기
     
     global stock_num_array
@@ -866,9 +866,9 @@ async def _AssetInformation(ctx: SlashContext, option: Union[discord.User, str]=
         get_text_(author_id, json_data[GetUserIDArrayNum(author_id)]['Stock'])
     )
     
-    TotalAssets += json_data[GetUserIDArrayNum(author_id)]["Deposit"] #예수금
+    TotalAssets += json_data[GetUserIDArrayNum(author_id)]['Deposit'] #예수금
     
-    json_data[GetUserIDArrayNum(author_id)]["TotalAssets"] = TotalAssets #다 합친걸 총 자산에 저장
+    json_data[GetUserIDArrayNum(author_id)]['TotalAssets'] = TotalAssets #다 합친걸 총 자산에 저장
     
     SetUserInformation(json_data)
     
@@ -902,7 +902,7 @@ async def _AssetInformation_error(ctx, error):
 ################################################################################ .매수
 
 @bot.command(name='매수', aliases=['구매', '주식구매', '주식매수'])
-async def _StockPurchase(ctx: Context, stock_name: str, num: str): #명령어, 주식이름, 개수
+async def _StockPurchase(ctx: Context, stock_name: str, num: Union[int, str]): #명령어, 주식이름, 개수
     logger.info(f'{ctx.author.name}: {ctx.invoked_with} {stock_name} {num}')
     
     if not IsVaildUser(ctx):
@@ -910,23 +910,18 @@ async def _StockPurchase(ctx: Context, stock_name: str, num: str): #명령어, �
         await ctx.reply('먼저 `.사용자등록` 부터 해 주세요.')
         return
     
-    if num not in ('풀매수', '모두'):
-        num = int(num)
-        
+    if isinstance(num, int):
         if num <= 0:
-            logger.warning('매수 할 개수는 음수이거나 0일 수 없습니다.')
-            await ctx.reply('매수 할 개수는 음수이거나 0일 수 없습니다.')
+            logger.warning('매도 할 개수는 음수이거나 0일 수 없습니다.')
+            await ctx.reply('매도 할 개수는 음수이거나 0일 수 없습니다.')
             return
     
     json_data = GetUserInformation()
-    
+    stock_name = stock_name.lower()
     ua = UserAgent()
     
-    stock_name = stock_name.lower()
-    
-    try:
-        int(stock_name) #입력받은 문자가 숫자일 경우
-    except:
+    try: int(stock_name) #입력받은 stock_name이 int인지 검사
+    except: #int가 아닌경우
         if stock_name in GetStockDictionary().keys():
             stock_name = GetStockDictionary()[stock_name]
         else:
@@ -939,38 +934,42 @@ async def _StockPurchase(ctx: Context, stock_name: str, num: str): #명령어, �
     soup = bs(requests.get(url, headers={'User-agent' : ua.random}).text, 'lxml')
     
     price = soup.select_one('#chart_area > div.rate_info > div > p.no_today').select_one('span.blind').text.replace('\n', '').replace(',', '') #현재 시세
-    title = soup.select_one('#middle > div.h_company > div.wrap_company > h2 > a').text #주식회사 이름
+    name = soup.select_one('#middle > div.h_company > div.wrap_company > h2 > a').text #주식회사 이름
     stop_trading_soup = bs(requests.get(f'https://finance.naver.com/item/sise.naver?code={stock_name}', headers={'User-agent' : ua.random}).text, 'lxml')
     stop_trading = stop_trading_soup.select_one('#content > div.section.inner_sub > div:nth-child(1) > table > tbody > tr:nth-child(4) > td:nth-child(4) > span').text #시가
     if stop_trading == '0':
-        logger.info(f'{title}의 주식이 거래중지 중이라 매수할 수 없습니다.')
-        await ctx.reply(f'{title}의 주식이 거래중지 중이라 매수할 수 없습니다.')
+        logger.info(f'{name}의 주식이 거래중지 중이라 매수할 수 없습니다.')
+        await ctx.reply(f'{name}의 주식이 거래중지 중이라 매수할 수 없습니다.')
         return
     
-    if num in ('풀매수', '모두'):
-        num = json_data[GetUserIDArrayNum(ctx)]['Deposit'] / int(price)
-        if num < 1:
+    if isinstance(num, str):
+        if num in ('풀매수', '모두'):
+            num = json_data[GetUserIDArrayNum(ctx)]['Deposit'] // int(price)
+            if num < 1:
+                logger.warning('예수금이 부족합니다.')
+                await ctx.reply('예수금이 부족합니다.')
+                return
+        
+        else:
+            await ctx.reply(f'「.{ctx.invoked_with} {ctx.args[1]} __{ctx.args[2]}__」밑줄 친 부분에는「풀매수」,「모두」또는 숫자만 입력해 주세요.')
+            return
+        
+    else:
+        if json_data[GetUserIDArrayNum(ctx)]['Deposit'] - (int(price) * num) < 0:
             logger.warning('예수금이 부족합니다.')
             await ctx.reply('예수금이 부족합니다.')
             return
-        else:
-            num = int(num)
-    
-    elif json_data[GetUserIDArrayNum(ctx)]['Deposit'] - (int(price) * num) < 0:
-        logger.warning('예수금이 부족합니다.')
-        await ctx.reply('예수금이 부족합니다.')
-        return
-    
-    if stock_name in json_data[GetUserIDArrayNum(ctx)]["Stock"].keys(): #Stock안에 stock_name이 있는가?
-        json_data[GetUserIDArrayNum(ctx)]["Stock"][stock_name] += num
+        
+    if stock_name in json_data[GetUserIDArrayNum(ctx)]['Stock'].keys(): #Stock안에 stock_name이 있는가?
+        json_data[GetUserIDArrayNum(ctx)]['Stock'][stock_name] += num
     else:
-        json_data[GetUserIDArrayNum(ctx)]["Stock"][stock_name] = num
+        json_data[GetUserIDArrayNum(ctx)]['Stock'][stock_name] = num
     
     json_data[GetUserIDArrayNum(ctx)]['Deposit'] -= (int(price) * num) #예수금 저장
     SetUserInformation(json_data)
     
-    logger.info(f'{title}의 주식이 {int(price):,}원에 {num:,}주가 매수되었습니다.')
-    await ctx.reply(f'{title}의 주식이 {int(price):,}원에 {num:,}주가 매수되었습니다.')
+    logger.info(f'{name}의 주식이 {int(price):,}원에 {num:,}주가 매수되었습니다.')
+    await ctx.reply(f'{name}의 주식이 {int(price):,}원에 {num:,}주가 매수되었습니다.')
     
 @_StockPurchase.error
 async def _StockPurchase_error(ctx, error):
@@ -981,10 +980,6 @@ async def _StockPurchase_error(ctx, error):
     elif ErrorCheck(error, "num is a required argument that is missing."):
         logger.error('매수 할 주식의 수를 입력해 주세요.')
         await ctx.reply('매수 할 주식의 수를 입력해 주세요.')
-        
-    elif ErrorCheck(error, f"Command raised an exception: ValueError: invalid literal for int() with base 10: '{ctx.args[2]}'"):
-        logger.error(f'「{ctx.invoked_with} {ctx.args[1]} __{ctx.args[2]}__」 밑줄 친 부분에는 숫자만 입력해 주세요.')
-        await ctx.reply(f'「{ctx.invoked_with} {ctx.args[1]} __{ctx.args[2]}__」밑줄 친 부분에는 숫자만 입력해 주세요.')
         
     elif ErrorCheck(error, "Command raised an exception: AttributeError: 'NoneType' object has no attribute 'text'"):
         logger.error('매수하려는 주식을 찾지 못하였습니다.')
@@ -1020,7 +1015,9 @@ async def _StockPurchase_error(ctx, error):
     ],
     connector={'기업이름': 'stock_name', '개수': 'num'}
 )
-async def _StockPurchase(ctx: SlashContext, stock_name: str, num: str): #명령어, 주식이름, 개수
+async def _StockPurchase(ctx: SlashContext, stock_name: str, num: Union[int, str]): #명령어, 주식이름, 개수
+    logger.info(f'{ctx.author.name}: {ctx.invoked_with} {stock_name} {num}')
+    
     logger.info(f'{ctx.author.name}: {ctx.invoked_with} {stock_name} {num}')
     
     if not IsVaildUser(ctx):
@@ -1028,25 +1025,20 @@ async def _StockPurchase(ctx: SlashContext, stock_name: str, num: str): #명령�
         await ctx.reply('먼저 `.사용자등록` 부터 해 주세요.')
         return
     
-    if num not in ('풀매수', '모두'):
-        num = int(num)
-        
+    if isinstance(num, int):
         if num <= 0:
-            logger.warning('매수 할 개수는 음수이거나 0일 수 없습니다.')
-            await ctx.reply('매수 할 개수는 음수이거나 0일 수 없습니다.')
+            logger.warning('매도 할 개수는 음수이거나 0일 수 없습니다.')
+            await ctx.reply('매도 할 개수는 음수이거나 0일 수 없습니다.')
             return
     
     json_data = GetUserInformation()
-    
+    stock_name = stock_name.lower()
     ua = UserAgent()
     
-    stock_name = stock_name.lower()
+    await ctx.defer()
     
-    await ctx.defer() #인터렉션 타임아웃때문에 기다리기
-    
-    try:
-        int(stock_name) #입력받은 문자가 숫자일 경우
-    except:
+    try: int(stock_name) #입력받은 stock_name이 int인지 검사
+    except: #int가 아닌경우
         if stock_name in GetStockDictionary().keys():
             stock_name = GetStockDictionary()[stock_name]
         else:
@@ -1057,50 +1049,48 @@ async def _StockPurchase(ctx: SlashContext, stock_name: str, num: str): #명령�
         
     url = f'https://finance.naver.com/item/main.naver?code={stock_name}'
     soup = bs(requests.get(url, headers={'User-agent' : ua.random}).text, 'lxml')
-
+    
     price = soup.select_one('#chart_area > div.rate_info > div > p.no_today').select_one('span.blind').text.replace('\n', '').replace(',', '') #현재 시세
-    title = soup.select_one('#middle > div.h_company > div.wrap_company > h2 > a').text #주식회사 이름
+    name = soup.select_one('#middle > div.h_company > div.wrap_company > h2 > a').text #주식회사 이름
     stop_trading_soup = bs(requests.get(f'https://finance.naver.com/item/sise.naver?code={stock_name}', headers={'User-agent' : ua.random}).text, 'lxml')
     stop_trading = stop_trading_soup.select_one('#content > div.section.inner_sub > div:nth-child(1) > table > tbody > tr:nth-child(4) > td:nth-child(4) > span').text #시가
     if stop_trading == '0':
-        logger.info(f'{title}의 주식이 거래중지 중이라 매수할 수 없습니다.')
-        await ctx.reply(f'{title}의 주식이 거래중지 중이라 매수할 수 없습니다.')
+        logger.info(f'{name}의 주식이 거래중지 중이라 매수할 수 없습니다.')
+        await ctx.reply(f'{name}의 주식이 거래중지 중이라 매수할 수 없습니다.')
         return
+    
+    if isinstance(num, str):
+        if num in ('풀매수', '모두'):
+            num = json_data[GetUserIDArrayNum(ctx)]['Deposit'] // int(price)
+            if num < 1:
+                logger.warning('예수금이 부족합니다.')
+                await ctx.reply('예수금이 부족합니다.')
+                return
         
-    if num in ('풀매수', '모두'):
-        num = json_data[GetUserIDArrayNum(ctx)]['Deposit'] / int(price)
-        if num < 1:
+        else:
+            await ctx.reply(f'「.{ctx.invoked_with} {ctx.args[1]} __{ctx.args[2]}__」밑줄 친 부분에는「풀매수」,「모두」또는 숫자만 입력해 주세요.')
+            return
+        
+    else:
+        if json_data[GetUserIDArrayNum(ctx)]['Deposit'] - (int(price) * num) < 0:
             logger.warning('예수금이 부족합니다.')
             await ctx.reply('예수금이 부족합니다.')
             return
-        else:
-            num = int(num)
-    
-    elif json_data[GetUserIDArrayNum(ctx)]['Deposit'] - (int(price) * num) < 0:
-        logger.warning('예수금이 부족합니다.')
-        await ctx.reply('예수금이 부족합니다.')
-        return
-
-    # print(any(str(stock_name) in i for i in list(json_data[GetUserIDArrayNum(ctx)]["Stock"].keys())))
-
-    if stock_name in json_data[GetUserIDArrayNum(ctx)]["Stock"].keys(): #Stock안에 stock_name이 있는가?
-        json_data[GetUserIDArrayNum(ctx)]["Stock"][stock_name] += num
+        
+    if stock_name in json_data[GetUserIDArrayNum(ctx)]['Stock'].keys(): #Stock안에 stock_name이 있는가?
+        json_data[GetUserIDArrayNum(ctx)]['Stock'][stock_name] += num
     else:
-        json_data[GetUserIDArrayNum(ctx)]["Stock"][stock_name] = num
+        json_data[GetUserIDArrayNum(ctx)]['Stock'][stock_name] = num
     
     json_data[GetUserIDArrayNum(ctx)]['Deposit'] -= (int(price) * num) #예수금 저장
     SetUserInformation(json_data)
     
-    logger.info(f'{title}의 주식이 {int(price):,}원에 {num:,}주가 매수되었습니다.')
-    await ctx.reply(f'{title}의 주식이 {int(price):,}원에 {num:,}주가 매수되었습니다.')
+    logger.info(f'{name}의 주식이 {int(price):,}원에 {num:,}주가 매수되었습니다.')
+    await ctx.reply(f'{name}의 주식이 {int(price):,}원에 {num:,}주가 매수되었습니다.')
     
 @_StockPurchase.error
 async def _StockPurchase_error(ctx, error):    
-    if ErrorCheck(error, f"invalid literal for int() with base 10: '{ctx.args[1]}'"):
-        logger.error('`매수 할 주식개수(숫자만)` 또는 `풀매수`만 입력해 주세요.')
-        await ctx.reply('`매수 할 주식개수(숫자만)` 또는 `풀매수`만 입력해 주세요.')
-        
-    elif ErrorCheck(error, "'NoneType' object has no attribute 'text'"):
+    if ErrorCheck(error, "'NoneType' object has no attribute 'text'"):
         logger.error('매수하려는 주식을 찾지 못하였습니다.')
         await ctx.reply('매수하려는 주식을 찾지 못하였습니다.')
         
@@ -1115,7 +1105,7 @@ async def _StockPurchase_error(ctx, error):
 ################################################################################ .매도
 
 @bot.command(name='매도', aliases=['판매', '주식판매', '주식매도'])
-async def _StockSelling(ctx: Context, stock_name: str, num: str):
+async def _StockSelling(ctx: Context, stock_name: str, num: Union[int, str]):
     logger.info(f'{ctx.author.name}: {ctx.invoked_with} {stock_name} {num}')
     
     if not IsVaildUser(ctx):
@@ -1123,22 +1113,17 @@ async def _StockSelling(ctx: Context, stock_name: str, num: str):
         await ctx.reply('먼저 `.사용자등록` 부터 해 주세요.')
         return
 
-    if num not in ('풀매도', '반매도', '모두'):
-        num = int(num)
-        
+    if isinstance(num, int):
         if num <= 0:
             logger.warning('매도 할 개수는 음수이거나 0일 수 없습니다.')
             await ctx.reply('매도 할 개수는 음수이거나 0일 수 없습니다.')
             return
     
     json_data = GetUserInformation()
-    
     ua = UserAgent()
-    
     stock_name = stock_name.lower()
     
-    try:
-        int(stock_name) #입력받은 문자가 숫자일 경우
+    try: int(stock_name) #입력받은 문자가 숫자일 경우
     except:
         if stock_name in GetStockDictionary().keys():
             stock_name = GetStockDictionary()[stock_name]
@@ -1152,26 +1137,30 @@ async def _StockSelling(ctx: Context, stock_name: str, num: str):
     soup = bs(requests.get(url, headers={'User-agent' : ua.random}).text, 'lxml')
 
     price = soup.select_one('#chart_area > div.rate_info > div > p.no_today').select_one('span.blind').text.replace('\n', '').replace(',', '') #현재 시세
-    title = soup.select_one('#middle > div.h_company > div.wrap_company > h2 > a').text #주식회사 이름
+    name = soup.select_one('#middle > div.h_company > div.wrap_company > h2 > a').text #주식회사 이름
     stop_trading_soup = bs(requests.get(f'https://finance.naver.com/item/sise.naver?code={stock_name}', headers={'User-agent' : ua.random}).text, 'lxml')
     stop_trading = stop_trading_soup.select_one('#content > div.section.inner_sub > div:nth-child(1) > table > tbody > tr:nth-child(4) > td:nth-child(4) > span').text #시가
+
     if stock_name in json_data[GetUserIDArrayNum(ctx)]['Stock'].keys():
         if stop_trading == '0':
-            logger.info(f'{title}의 주식이 거래중지 중이라 매도할 수 없습니다.')
-            await ctx.reply(f'{title}의 주식이 거래중지 중이라 매도할 수 없습니다.')
+            logger.info(f'{name}의 주식이 거래중지 중이라 매도할 수 없습니다.')
+            await ctx.reply(f'{name}의 주식이 거래중지 중이라 매도할 수 없습니다.')
             return
         
-        
-        if num in ('풀매도', '모두'):
-            num = json_data[GetUserIDArrayNum(ctx)]['Stock'][stock_name] #보유주식의 수 만큼 설정
-            
-        elif num == '반매도':
-            num = json_data[GetUserIDArrayNum(ctx)]['Stock'][stock_name] // 2
-            if num == 0:
-                logger.warning(f'매도하려는 {title}의 주식이 1주밖에 없어 반매도 할 수 없습니다.')
-                await ctx.reply(f'매도하려는 {title}의 주식이 1주밖에 없어 반매도 할 수 없습니다.')
+        if isinstance(num, str):
+            if num in ('풀매도', '모두'):
+                num: int = json_data[GetUserIDArrayNum(ctx)]['Stock'][stock_name] #보유주식의 수 만큼 설정
+                
+            elif num == '반매도':
+                num: int = json_data[GetUserIDArrayNum(ctx)]['Stock'][stock_name] // 2
+                if num == 0:
+                    logger.warning(f'매도하려는 {name}의 주식이 1주밖에 없어 반매도 할 수 없습니다.')
+                    await ctx.reply(f'매도하려는 {name}의 주식이 1주밖에 없어 반매도 할 수 없습니다.')
+                    return
+                
+            else:
+                await ctx.reply(f'「.{ctx.invoked_with} {ctx.args[1]} __{ctx.args[2]}__」밑줄 친 부분에는「풀매도」,「모두」또는「반매도」또는 숫자만 입력해 주세요.')
                 return
-            
         
         if num <= json_data[GetUserIDArrayNum(ctx)]['Stock'][stock_name]:
             json_data[GetUserIDArrayNum(ctx)]['Stock'][stock_name] -= num
@@ -1182,15 +1171,15 @@ async def _StockSelling(ctx: Context, stock_name: str, num: str):
             
             SetUserInformation(json_data)
             
-            logger.info(f'{title}의 주식이 {int(price):,}원에 {num:,}주가 매도되었습니다.')
-            await ctx.reply(f'{title}의 주식이 {int(price):,}원에 {num:,}주가 매도되었습니다.')
+            logger.info(f'{name}의 주식이 {int(price):,}원에 {num:,}주가 매도되었습니다.')
+            await ctx.reply(f'{name}의 주식이 {int(price):,}원에 {num:,}주가 매도되었습니다.')
         else:
-            logger.warning(f'매도 하려는 주식개수가 현재 {title}의 주식 보유수량보다 더 높습니다. (현재 보유수량: {json_data[GetUserIDArrayNum(ctx)]["Stock"][stock_name]}주)')
-            await ctx.reply(f'매도 하려는 주식개수가 현재 {title}의 주식 보유수량보다 더 높습니다. (현재 보유수량: {json_data[GetUserIDArrayNum(ctx)]["Stock"][stock_name]}주)')
+            logger.warning(f'매도 하려는 주식개수가 현재 {name}의 주식 보유수량보다 더 높습니다. (현재 보유수량: {json_data[GetUserIDArrayNum(ctx)]["Stock"][stock_name]}주)')
+            await ctx.reply(f'매도 하려는 주식개수가 현재 {name}의 주식 보유수량보다 더 높습니다. (현재 보유수량: {json_data[GetUserIDArrayNum(ctx)]["Stock"][stock_name]}주)')
             return
     else:
-        logger.warning(f'{title}의 주식이 자산에 없습니다.')
-        await ctx.reply(f'{title}의 주식이 자산에 없습니다.')
+        logger.warning(f'{name}의 주식이 자산에 없습니다.')
+        await ctx.reply(f'{name}의 주식이 자산에 없습니다.')
         return
   
 @_StockSelling.error
@@ -1202,10 +1191,6 @@ async def _StockSelling_error(ctx, error):
     elif ErrorCheck(error, "num is a required argument that is missing."):
         logger.error('매도 할 주식의 수를 입력해 주세요.')
         await ctx.reply('매도 할 주식의 수를 입력해 주세요.')
-    
-    elif ErrorCheck(error, f"Command raised an exception: ValueError: invalid literal for int() with base 10: '{ctx.args[2]}'"):
-        logger.error(f'「{ctx.invoked_with} {ctx.args[1]} __{ctx.args[2]}__」 밑줄 친 부분에는 숫자만 입력해 주세요.')
-        await ctx.reply(f'「{ctx.invoked_with} {ctx.args[1]} __{ctx.args[2]}__」 밑줄 친 부분에는 숫자만 입력해 주세요.')
         
     elif ErrorCheck(error, f"Command raised an exception: AttributeError: 'NoneType' object has no attribute 'text'"):
         logger.error('매도하려는 주식을 찾지 못하였습니다.')
@@ -1241,7 +1226,7 @@ async def _StockSelling_error(ctx, error):
     ],
     connector={'기업이름': 'stock_name', '개수': 'num'}
 )
-async def _StockSelling(ctx: SlashContext, stock_name: str, num: str):
+async def _StockSelling(ctx: SlashContext, stock_name: str, num: Union[int, str]):
     logger.info(f'{ctx.author.name}: {ctx.invoked_with} {stock_name} {num}')
     
     if not IsVaildUser(ctx):
@@ -1249,22 +1234,19 @@ async def _StockSelling(ctx: SlashContext, stock_name: str, num: str):
         await ctx.reply('먼저 `.사용자등록` 부터 해 주세요.')
         return
 
-    if num not in ('풀매도', '반매도', '모두'):
-        num = int(num)
-        
+    if isinstance(num, int):
         if num <= 0:
             logger.warning('매도 할 개수는 음수이거나 0일 수 없습니다.')
             await ctx.reply('매도 할 개수는 음수이거나 0일 수 없습니다.')
             return
     
     json_data = GetUserInformation()
-    
     ua = UserAgent()
-    
     stock_name = stock_name.lower()
     
-    try:
-        int(stock_name) #입력받은 문자가 숫자일 경우
+    await ctx.defer()
+    
+    try: int(stock_name) #입력받은 문자가 숫자일 경우
     except:
         if stock_name in GetStockDictionary().keys():
             stock_name = GetStockDictionary()[stock_name]
@@ -1278,26 +1260,30 @@ async def _StockSelling(ctx: SlashContext, stock_name: str, num: str):
     soup = bs(requests.get(url, headers={'User-agent' : ua.random}).text, 'lxml')
 
     price = soup.select_one('#chart_area > div.rate_info > div > p.no_today').select_one('span.blind').text.replace('\n', '').replace(',', '') #현재 시세
-    title = soup.select_one('#middle > div.h_company > div.wrap_company > h2 > a').text #주식회사 이름
+    name = soup.select_one('#middle > div.h_company > div.wrap_company > h2 > a').text #주식회사 이름
     stop_trading_soup = bs(requests.get(f'https://finance.naver.com/item/sise.naver?code={stock_name}', headers={'User-agent' : ua.random}).text, 'lxml')
     stop_trading = stop_trading_soup.select_one('#content > div.section.inner_sub > div:nth-child(1) > table > tbody > tr:nth-child(4) > td:nth-child(4) > span').text #시가
+
     if stock_name in json_data[GetUserIDArrayNum(ctx)]['Stock'].keys():
         if stop_trading == '0':
-            logger.info(f'{title}의 주식이 거래중지 중이라 매도할 수 없습니다.')
-            await ctx.reply(f'{title}의 주식이 거래중지 중이라 매도할 수 없습니다.')
+            logger.info(f'{name}의 주식이 거래중지 중이라 매도할 수 없습니다.')
+            await ctx.reply(f'{name}의 주식이 거래중지 중이라 매도할 수 없습니다.')
             return
         
-        
-        if num in ('풀매도', '모두'):
-            num = json_data[GetUserIDArrayNum(ctx)]['Stock'][stock_name] #보유주식의 수 만큼 설정
-            
-        elif num == '반매도':
-            num = json_data[GetUserIDArrayNum(ctx)]['Stock'][stock_name] // 2
-            if num == 0:
-                logger.warning(f'매도하려는 {title}의 주식이 1주밖에 없어 반매도 할 수 없습니다.')
-                await ctx.reply(f'매도하려는 {title}의 주식이 1주밖에 없어 반매도 할 수 없습니다.')
+        if isinstance(num, str):
+            if num in ('풀매도', '모두'):
+                num: int = json_data[GetUserIDArrayNum(ctx)]['Stock'][stock_name] #보유주식의 수 만큼 설정
+                
+            elif num == '반매도':
+                num: int = json_data[GetUserIDArrayNum(ctx)]['Stock'][stock_name] // 2
+                if num == 0:
+                    logger.warning(f'매도하려는 {name}의 주식이 1주밖에 없어 반매도 할 수 없습니다.')
+                    await ctx.reply(f'매도하려는 {name}의 주식이 1주밖에 없어 반매도 할 수 없습니다.')
+                    return
+                
+            else:
+                await ctx.reply(f'「.{ctx.invoked_with} {ctx.args[1]} __{ctx.args[2]}__」밑줄 친 부분에는「풀매도」,「모두」또는「반매도」또는 숫자만 입력해 주세요.')
                 return
-            
         
         if num <= json_data[GetUserIDArrayNum(ctx)]['Stock'][stock_name]:
             json_data[GetUserIDArrayNum(ctx)]['Stock'][stock_name] -= num
@@ -1308,24 +1294,20 @@ async def _StockSelling(ctx: SlashContext, stock_name: str, num: str):
             
             SetUserInformation(json_data)
             
-            logger.info(f'{title}의 주식이 {int(price):,}원에 {num:,}주가 매도되었습니다.')
-            await ctx.reply(f'{title}의 주식이 {int(price):,}원에 {num:,}주가 매도되었습니다.')
+            logger.info(f'{name}의 주식이 {int(price):,}원에 {num:,}주가 매도되었습니다.')
+            await ctx.reply(f'{name}의 주식이 {int(price):,}원에 {num:,}주가 매도되었습니다.')
         else:
-            logger.warning(f'매도 하려는 주식개수가 현재 {title}의 주식 보유수량보다 더 높습니다. (현재 보유수량: {json_data[GetUserIDArrayNum(ctx)]["Stock"][stock_name]}주)')
-            await ctx.reply(f'매도 하려는 주식개수가 현재 {title}의 주식 보유수량보다 더 높습니다. (현재 보유수량: {json_data[GetUserIDArrayNum(ctx)]["Stock"][stock_name]}주)')
+            logger.warning(f'매도 하려는 주식개수가 현재 {name}의 주식 보유수량보다 더 높습니다. (현재 보유수량: {json_data[GetUserIDArrayNum(ctx)]["Stock"][stock_name]}주)')
+            await ctx.reply(f'매도 하려는 주식개수가 현재 {name}의 주식 보유수량보다 더 높습니다. (현재 보유수량: {json_data[GetUserIDArrayNum(ctx)]["Stock"][stock_name]}주)')
             return
     else:
-        logger.warning(f'{title}의 주식이 자산에 없습니다.')
-        await ctx.reply(f'{title}의 주식이 자산에 없습니다.')
+        logger.warning(f'{name}의 주식이 자산에 없습니다.')
+        await ctx.reply(f'{name}의 주식이 자산에 없습니다.')
         return
   
 @_StockSelling.error
 async def _StockSelling_error(ctx, error):
-    if ErrorCheck(error, f"invalid literal for int() with base 10: '{ctx.args[1]}'"):
-        logger.error('`매도 할 주식개수(숫자만)` 또는 `풀매도`, `반매도`만 입력해 주세요.')
-        await ctx.reply('`매도 할 주식개수(숫자만)` 또는 `풀매도`, `반매도`만 입력해 주세요.')
-        
-    elif ErrorCheck(error, "'NoneType' object has no attribute 'text'"):
+    if ErrorCheck(error, "'NoneType' object has no attribute 'text'"):
         logger.error('매도하려는 주식을 찾지 못하였습니다.')
         await ctx.reply('매도하려는 주식을 찾지 못하였습니다.')
         
@@ -1402,7 +1384,7 @@ async def _Initialization(ctx: Context, *, string: str):
 @_Initialization.error
 async def _Initialization_error(ctx, error):
     if isinstance(error, MissingRequiredArgument):
-        logger.warning('.초기화 __[문구]__에 「초기화확인」를 입력해야 초기화 할 수 있습니다.')
+        logger.error('.초기화 __[문구]__에 「초기화확인」를 입력해야 초기화 할 수 있습니다.')
         await ctx.reply('.초기화 __[문구]__에 「초기화확인」를 입력해야 초기화 할 수 있습니다.')
     
     else:
@@ -1470,7 +1452,7 @@ async def _Withdrawal(ctx: Context, *, string: str):
 @_Withdrawal.error
 async def _Withdrawal_error(ctx, error):
     if isinstance(error, MissingRequiredArgument):
-        logger.warning(f'.{ctx.invoked_with} __[문구]__에 「탈퇴확인」를 입력해야 회원탈퇴 할 수 있습니다.')
+        logger.error(f'.{ctx.invoked_with} __[문구]__에 「탈퇴확인」를 입력해야 회원탈퇴 할 수 있습니다.')
         await ctx.reply(f'.{ctx.invoked_with} __[문구]__에 「탈퇴확인」를 입력해야 회원탈퇴 할 수 있습니다.')
     
     else:
@@ -1535,7 +1517,7 @@ async def _HelpCommand(ctx: Context, command: str=None):
         await ctx.reply(embed=embed)
 
     elif command in ('도움말', '명령어', '?'):
-        command_list = ["도움말", "명령어", "?"]
+        command_list = ['도움말', '명령어', '?']
         command_list.remove(command)
         
         embed = discord.Embed(title='도움말', description='등록되어있는 명령어들을 출력합니다.', color=RandomEmbedColor())
@@ -1547,7 +1529,7 @@ async def _HelpCommand(ctx: Context, command: str=None):
         await ctx.reply(embed=embed)
     
     elif command in ('자산정보', '자산조회'):
-        command_list = ["자산정보", "자산조회"]
+        command_list = ['자산정보', '자산조회']
         command_list.remove(command)
         
         embed = discord.Embed(title='자산정보', description='자신의 자산정보를 확인합니다.', color=RandomEmbedColor())
@@ -1558,9 +1540,9 @@ async def _HelpCommand(ctx: Context, command: str=None):
         embed.add_field(name='.자산정보 <비공개>', value='자신의 자산공개여부를 비공개로 설정합니다.', inline=False)
         embed.add_field(name='.자산정보 <랭킹, 순위>', value='이 서버의 자산랭킹을 나열합니다.', inline=False)
         await ctx.reply(embed=embed)
-        
+    
     elif command in ('주가', '시세'):
-        command_list = ["주가", "시세"]
+        command_list = ['주가', '시세']
         command_list.remove(command)
         
         embed = discord.Embed(title='주가', description='검색한 기업의 현재 주가를 확인합니다.', color=RandomEmbedColor())
@@ -1569,7 +1551,7 @@ async def _HelpCommand(ctx: Context, command: str=None):
         await ctx.reply(embed=embed)
 
     elif command in ('매수', '구매', '주식구매', '주식매수'):
-        command_list = ["매수", "구매", "주식구매", "주식매수"]
+        command_list = ['매수', '구매', '주식구매', '주식매수']
         command_list.remove(command)
         
         embed = discord.Embed(title='매수', description='입력한 기업의 주식을 매수합니다.', color=RandomEmbedColor())
@@ -1577,9 +1559,9 @@ async def _HelpCommand(ctx: Context, command: str=None):
         embed.add_field(name='.매수 [기업이름 | 기업번호] [매수 할 주식 개수]', value='입력한 기업의 주식을, 주식 개수만큼 매수합니다.', inline=False)
         embed.add_field(name='.매수 [기업이름 | 기업번호] [풀매수, 모두]', value='입력한 기업의 주식을 최대까지 매수합니다.', inline=False)
         await ctx.reply(embed=embed)
-        
+    
     elif command in ('매도', '판매', '주식판매', '주식매도'):
-        command_list = ["매도", "판매", "주식판매", "주식매도"]
+        command_list = ['매도', '판매', '주식판매', '주식매도']
         command_list.remove(command)
         
         embed = discord.Embed(title='매도', description='입력한 기업의 주식을 매도합니다.', color=RandomEmbedColor())
@@ -1590,7 +1572,7 @@ async def _HelpCommand(ctx: Context, command: str=None):
         await ctx.reply(embed=embed)
     
     elif command in ('지원금', '돈받기'):
-        command_list = ["지원금", "돈받기"]
+        command_list = ['지원금', '돈받기']
         command_list.remove(command)
         
         embed = discord.Embed(title='지원금', description='1만원 ~ 10만원 사이에서 랜덤으로 지급합니다. (쿨타임: 4시간)', color=RandomEmbedColor())
@@ -1603,7 +1585,7 @@ async def _HelpCommand(ctx: Context, command: str=None):
         await ctx.reply(embed=embed)
         
     elif command in ('탈퇴', '회원탈퇴'):
-        command_list = ["탈퇴", "회원탈퇴"]
+        command_list = ['탈퇴', '회원탈퇴']
         command_list.remove(command)
         
         embed = discord.Embed(title='탈퇴', description='「탈퇴확인」를 입력해 저장되어있는 자신의 정보를 삭제합니다.', color=RandomEmbedColor())

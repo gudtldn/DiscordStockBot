@@ -3,7 +3,6 @@ import nest_asyncio; nest_asyncio.apply()
 from functools import partial
 
 import discord
-from discord import Intents
 from discord.utils import get
 from discord.ext import commands
 from discord.ext.commands import Context
@@ -11,7 +10,7 @@ from discord_slash import SlashCommand, SlashContext
 from discord_slash.model import SlashCommandOptionType as OptionType
 from discord_slash.model import SlashCommandPermissionType as PermissionType
 from discord_slash.utils.manage_commands import create_option, create_choice, create_permission
-from discord.ext.commands.errors import MissingRequiredArgument
+from discord.ext.commands.errors import MissingRequiredArgument, CommandNotFound
 
 import json
 
@@ -88,7 +87,7 @@ def _Logging(): #변수의 혼용을 막기위해 함수로 만듦
     else:
         logger.setLevel(logging.INFO)
 
-    formatter = logging.Formatter(u'%(asctime)s %(levelname)s: %(funcName)s, Line: %(lineno)d: %(message)s')
+    formatter = logging.Formatter(u'[%(asctime)s][%(levelname)s]: <%(module)s> [%(funcName)s | %(lineno)d] >> %(message)s')
 
     file_handler = logging.FileHandler(f'./logs/{now}.log', encoding='utf-8')
     # file_handler.setLevel(logging.INFO)
@@ -100,29 +99,44 @@ _Logging()
 
 ################################################################################ 기본값 설정 ################################################################################
 
-operation_time = time.time() #가동된 현재 시간
+def _InitialVarSetting():
+    global operation_time, bot, slash, Token
+    
+    operation_time = time.time() #가동된 현재 시간
 
-# intents = Intents.default()
-# intents.members = True
+    # intents = Intents.default()
+    # intents.members = True
 
-intents = Intents.all()
+    intents = discord.Intents.all()
 
-if DEBUGGING:
-    game = discord.Game('봇 테스트') # ~하는 중
-    bot = commands.Bot(command_prefix=';', help_command=None, status=discord.Status.do_not_disturb, activity=game, intents=intents)
-else:
-    game = discord.Game('주식투자') # ~하는 중
-    bot = commands.Bot(command_prefix='.', help_command=None, status=discord.Status.online, activity=game, intents=intents)
+    if DEBUGGING:
+        game = discord.Game('봇 테스트') # ~하는 중
+        bot = commands.Bot(command_prefix=';', help_command=None, status=discord.Status.do_not_disturb, activity=game, intents=intents)
+    else:
+        game = discord.Game('주식투자') # ~하는 중
+        bot = commands.Bot(command_prefix='.', help_command=None, status=discord.Status.online, activity=game, intents=intents)
 
-slash = SlashCommand(bot, sync_commands=True)
+    slash = SlashCommand(bot, sync_commands=True)
 
-with open('./etc/Token.txt', 'r', encoding='utf-8') as Token_txt:
-    Token = Token_txt.read()
+    with open('./etc/Token.txt', 'r', encoding='utf-8') as Token_txt:
+        Token = Token_txt.read()
 
-################################################################################ 에러 클래스 선언 ################################################################################
+_InitialVarSetting()
 
-class CustomError(Exception):
-    pass
+################################################################################ 클래스 선언 ################################################################################
+
+class ConvertSecToTimeStruct():
+    '''
+    (day, hour, min, sec)
+    '''
+    def __init__(self, seconds: int):
+        _delta = timedelta(seconds=seconds)
+        self.day = _delta.days
+        
+        _delta = str(timedelta(seconds=_delta.seconds)).split(':')
+        self.hour = int(_delta[0])
+        self.min = int(_delta[1])
+        self.sec = int(_delta[2])
 
 ################################################################################ 함수 선언 ################################################################################
 
@@ -151,11 +165,11 @@ def GetStockDictionary() -> dict:
     with open('./json/StockDictionary.json', 'r', encoding='utf-8') as Inf:
         return json.load(Inf)
 
-def GetUserInformation() -> list: #Information.json에 있는 값 불러오기
+def GetUserInformation() -> list[dict]: #Information.json에 있는 값 불러오기
     with open('./json/UserInformation.json', 'r', encoding='utf-8') as Inf:
         return json.load(Inf)
 
-def SetUserInformation(json_data: dict):
+def SetUserInformation(json_data: list[dict]):
     with open('./json/UserInformation.json', 'w', encoding='utf-8') as Inf:
         json.dump(json_data, Inf, indent='\t', ensure_ascii=False)
 
@@ -179,7 +193,7 @@ def IsVaildUser(ctx: Union[Context, SlashContext, int]): #ctx.author.id를 가�
     return False
 
 def ErrorCheck(error, error_context): #찾으려는 에러가 error.args에 있는지 여부
-    # logger.error(error)
+    # logger.warning(error)
     return any(error_context in i for i in error.args)
 
 ################################################################################ 자산정보 코루틴 선언 ################################################################################
@@ -256,17 +270,19 @@ async def on_ready():
             for member in guild.members:
                 if not member.bot:
                     await member.add_roles(role)
+            logger.info('added')
         else:
             for member in guild.members:
                 if not member.bot:
                     await member.remove_roles(role)
+            logger.info('removed')
         
 ################################################################################
 
 @bot.event
 async def on_command_error(ctx, error):
-    if isinstance(error, commands.CommandNotFound):
-        logger.error(error)
+    if isinstance(error, CommandNotFound):
+        logger.warning(f'{ctx.author.name}: {error}')
 
 ################################################################################ 관리자 전용 명령어 ################################################################################
 
@@ -283,19 +299,19 @@ async def on_command_error(ctx, error):
 async def _Information(ctx: SlashContext):
     logger.info(f'{ctx.author.name}: {ctx.invoked_with}')
 
-    now_operation_time = int(time.time() - operation_time)
-    now_timedelta = timedelta(seconds=now_operation_time)
+    now_time = ConvertSecToTimeStruct(int(time.time() - operation_time))
     
-    logger.info(f'현재 플렛폼: {platform()}, 가동시간: {now_timedelta.days}일 {str(now_timedelta)[-8:-6]}시 {str(now_timedelta)[-5:-3]}분 {str(now_timedelta)[-2:]}초, 지연시간: {bot.latency}ms')
-    await ctx.reply(f'현재 플렛폼: {platform()}\n가동시간: {now_timedelta.days}일 {str(now_timedelta)[-8:-6]}시 {str(now_timedelta)[-5:-3]}분 {str(now_timedelta)[-2:]}초\n지연시간: {bot.latency}ms', hidden=True)
+    logger.info(f'현재 플렛폼: {platform()}, 가동시간: {now_time.day}일 {now_time.hour}시 {now_time.min}분 {now_time.sec}초, 지연시간: {bot.latency}ms')
+    await ctx.reply(f'현재 플렛폼: {platform()}\n가동시간: {now_time.day}일 {now_time.hour}시 {now_time.min}분 {now_time.sec}초\n지연시간: {bot.latency}ms', hidden=True)
     
 # @_Information.error
 # async def _Information_error(ctx, error):
 #     if isinstance(error, commands.MissingPermissions):
-#         logger.error('권한이 없습니다.')
+#         logger.warning('권한이 없습니다.')
 #         await ctx.reply('권한이 없습니다.', hidden=True)
 #     else:
-#        PrintLogger(error)
+#        logger.warning(error)
+#        await ctx.reply(error, hidden=True)
         
 ################################################################################ /설정
 
@@ -364,7 +380,7 @@ async def _BotSetting(ctx: SlashContext, setting_name: str, add_stock_name: str 
         
     elif setting_name == '추가':
         if add_stock_num is None:
-            logger.warning('**기업번호**는 필수 입력 항목 입니다.')
+            logger.info('**기업번호**는 필수 입력 항목 입니다.')
             await ctx.reply('**기업번호**는 필수 입력 항목 입니다.', hidden=True)
             return
             
@@ -378,7 +394,7 @@ async def _BotSetting(ctx: SlashContext, setting_name: str, add_stock_name: str 
             
         for i in stock_json:
             if i == add_stock_name:
-                logger.warning('이미 추가되있는 기업입니다.')
+                logger.info('이미 추가되있는 기업입니다.')
                 await ctx.reply('이미 추가되있는 기업입니다.', hidden=True)
                 return
             
@@ -390,7 +406,7 @@ async def _BotSetting(ctx: SlashContext, setting_name: str, add_stock_name: str 
         
     elif setting_name == '제거':
         if not add_stock_name:
-            logger.warning('**기업이름**는 필수 입력 항목 입니다.')
+            logger.info('**기업이름**는 필수 입력 항목 입니다.')
             await ctx.reply('**기업이름**는 필수 입력 항목 입니다.', hidden=True)
             return
         
@@ -402,23 +418,23 @@ async def _BotSetting(ctx: SlashContext, setting_name: str, add_stock_name: str 
                 SetStockDictionary(stock_json)
                 return
             
-        logger.warning(f'{add_stock_name}이/가 json에 존재하지 않습니다.')
+        logger.info(f'{add_stock_name}이/가 json에 존재하지 않습니다.')
         await ctx.reply(f'{add_stock_name}이/가 json에 존재하지 않습니다.', hidden=True)
         return
 
 @_BotSetting.error
 async def _BotSetting_error(ctx: SlashContext, error):
     if isinstance(error, commands.MissingPermissions):
-        logger.error('권한이 없습니다.')
+        logger.warning('권한이 없습니다.')
         await ctx.reply('권한이 없습니다.', hidden=True)
         
     elif isinstance(error, AttributeError):
-        logger.error('존재하지 않는 기업번호입니다.')
+        logger.warning('존재하지 않는 기업번호입니다.')
         await ctx.reply('존재하지 않는 기업번호입니다.', hidden=True)
         
     else:
-        logger.error(f'{type(error)}: {error}')
-        await ctx.send(f'{type(error)}: {error}', hidden=True)
+        logger.warning(f'{error}')
+        await ctx.send(f'{error}', hidden=True)
 
 ################################################################################ 명령어 ################################################################################
 
@@ -437,7 +453,7 @@ async def _AddUser(ctx: Union[Context, SlashContext]):
     json_data = GetUserInformation()
 
     if IsVaildUser(ctx):
-        logger.warning('이미 등록되어 있는 사용자 입니다.')
+        logger.info('이미 등록되어 있는 사용자 입니다.')
         await ctx.reply('이미 등록되어 있는 사용자 입니다.')
         return
 
@@ -508,15 +524,15 @@ async def _StockPrices(ctx: Context, *, stock_name: str):
 @_StockPrices.error
 async def _StockPrices_error(ctx,error):
     if ErrorCheck(error, "Command raised an exception: AttributeError: 'NoneType' object has no attribute 'text'"):
-        logger.error('주식을 찾지 못하였습니다.')
+        logger.warning('주식을 찾지 못하였습니다.')
         await ctx.reply('주식을 찾지 못하였습니다.')
 
     elif isinstance(error, MissingRequiredArgument):
-        logger.error('검색할 주식을 입력해 주세요.')
+        logger.warning('검색할 주식을 입력해 주세요.')
         await ctx.reply('검색할 주식을 입력해 주세요.')
 
     else:
-        logger.error(error)
+        logger.warning(error)
         await ctx.send(f'{error}')
 
 ################################################################################ /주가
@@ -595,11 +611,11 @@ async def _StockPrices(ctx: SlashContext, stock_name: str):
 @_StockPrices.error
 async def _StockPrices_error(ctx,error):
     if ErrorCheck(error, "'NoneType' object has no attribute 'text'"):
-        logger.error('주식을 찾지 못하였습니다.')
+        logger.warning('주식을 찾지 못하였습니다.')
         await ctx.reply('주식을 찾지 못하였습니다.')
     
     else:
-        logger.error(error)
+        logger.warning(error)
         await ctx.send(f'{error}')
 
 ################################################################################ .자산정보
@@ -609,7 +625,7 @@ async def _AssetInformation(ctx: Context, option: Union[discord.Member, str]=Non
     logger.info(f'{ctx.author.name}: {ctx.invoked_with} {option}')
     
     if not IsVaildUser(ctx):
-        logger.warning('먼저 `.사용자등록` 부터 해 주세요.')
+        logger.info('먼저 `.사용자등록` 부터 해 주세요.')
         await ctx.reply('먼저 `.사용자등록` 부터 해 주세요.')
         return
     
@@ -667,7 +683,7 @@ async def _AssetInformation(ctx: Context, option: Union[discord.Member, str]=Non
                 author_id: int = ctx.author.id
             
             elif not json_data[GetUserIDArrayNum(author_id)]['InformationDisclosure']:
-                logger.warning(f'{user_name}님의 정보가 비공개되어 있습니다.')
+                logger.info(f'{user_name}님의 정보가 비공개되어 있습니다.')
                 await ctx.reply(f'{user_name}님의 정보가 비공개되어 있습니다.')
                 return
     
@@ -705,35 +721,33 @@ async def _AssetInformation(ctx: Context, option: Union[discord.Member, str]=Non
     
 @_AssetInformation.error
 async def _AssetInformation_error(ctx, error):
-    # PrintLogger(error)
-
     if ErrorCheck(error, "Command raised an exception: AttributeError: 'NoneType' object has no attribute 'text'"):
-        logger.error('검색하던중 알 수 없는 에러가 발생하였습니다. 다시 입력해 주세요.')
+        logger.warning('검색하던중 알 수 없는 에러가 발생하였습니다. 다시 입력해 주세요.')
         await ctx.reply('검색하던중 알 수 없는 에러가 발생하였습니다. 다시 입력해 주세요.')
         
     elif ErrorCheck(error, "Command raised an exception: NotFound: 404 Not Found (error code: 10013): Unknown User"):
-        logger.error('존재하지 않는 유저 입니다.')
+        logger.warning('존재하지 않는 유저 입니다.')
         await ctx.reply('존재하지 않는 유저 입니다.')
         
     elif ErrorCheck(error, "Command raised an exception: NotFound: 404 Not Found (error code: 10007): Unknown Member"):
-        logger.error('이 서버에 없는 유저 입니다.')
+        logger.warning('이 서버에 없는 유저 입니다.')
         await ctx.reply('이 서버에 없는 유저 입니다.')
         
     elif ErrorCheck(error, "Command raised an exception: TypeError: list indices must be integers or slices, not NoneType"):
-        logger.error('등록되어 있지 않은 유저입니다.')
+        logger.warning('등록되어 있지 않은 유저입니다.')
         await ctx.reply('등록되어 있지 않은 유저입니다.')
         
     elif ErrorCheck(error, f"Command raised an exception: ValueError: invalid literal for int() with base 10: '{ctx.args[1].replace('<@', '').replace('>', '')}'")or \
         ErrorCheck(error, "Command raised an exception: ValueError: invalid literal for int() with base 10: '{0}'".format(ctx.args[1].replace('@', '@\u200b'))):
-        logger.error('다시 입력해 주세요.')
+        logger.warning('다시 입력해 주세요.')
         await ctx.reply('다시 입력해 주세요.')
         
     elif ErrorCheck(error, "Command raised an exception: AttributeError: 'str' object has no attribute 'id'"):
-        logger.error('다시 입력해 주세요.')
+        logger.warning('다시 입력해 주세요.')
         await ctx.reply('다시 입력해 주세요.')
         
     else:
-        logger.error(error)
+        logger.warning(error)
         await ctx.send(f'{error}')
 
 ################################################################################ /자산정보
@@ -788,7 +802,7 @@ async def _AssetInformation(ctx: SlashContext, option: Union[discord.User, str]=
     logger.info(f'{ctx.author.name}: {ctx.invoked_with} {option}')
     
     if not IsVaildUser(ctx):
-        logger.warning('먼저 `.사용자등록` 부터 해 주세요.')
+        logger.info('먼저 `.사용자등록` 부터 해 주세요.')
         await ctx.reply('먼저 `.사용자등록` 부터 해 주세요.')
         return
     
@@ -846,7 +860,7 @@ async def _AssetInformation(ctx: SlashContext, option: Union[discord.User, str]=
                 author_id: int = ctx.author.id
             
             elif not json_data[GetUserIDArrayNum(author_id)]['InformationDisclosure']:
-                logger.warning(f'{user_name}님의 정보가 비공개되어 있습니다.')
+                logger.info(f'{user_name}님의 정보가 비공개되어 있습니다.')
                 await ctx.reply(f'{user_name}님의 정보가 비공개되어 있습니다.')
                 return
     
@@ -888,15 +902,15 @@ async def _AssetInformation(ctx: SlashContext, option: Union[discord.User, str]=
 @_AssetInformation.error
 async def _AssetInformation_error(ctx, error):
     if ErrorCheck(error, "'NoneType' object has no attribute 'text'"):
-        logger.error('검색하던중 알 수 없는 에러가 발생하였습니다. 다시 입력해 주세요.')
+        logger.warning('검색하던중 알 수 없는 에러가 발생하였습니다. 다시 입력해 주세요.')
         await ctx.reply('검색하던중 알 수 없는 에러가 발생하였습니다. 다시 입력해 주세요.')
         
     elif ErrorCheck(error, "list indices must be integers or slices, not NoneType"):
-        logger.error('등록되어 있지 않은 유저입니다.')
+        logger.warning('등록되어 있지 않은 유저입니다.')
         await ctx.reply('등록되어 있지 않은 유저입니다.')
         
     else:
-        logger.error(error)
+        logger.warning(error)
         await ctx.send(f'{error}')
 
 ################################################################################ .매수
@@ -906,14 +920,14 @@ async def _StockPurchase(ctx: Context, stock_name: str, num: Union[int, str]): #
     logger.info(f'{ctx.author.name}: {ctx.invoked_with} {stock_name} {num}')
     
     if not IsVaildUser(ctx):
-        logger.warning('먼저 `.사용자등록` 부터 해 주세요.')
+        logger.info('먼저 `.사용자등록` 부터 해 주세요.')
         await ctx.reply('먼저 `.사용자등록` 부터 해 주세요.')
         return
     
     if isinstance(num, int):
         if num <= 0:
-            logger.warning('매도 할 개수는 음수이거나 0일 수 없습니다.')
-            await ctx.reply('매도 할 개수는 음수이거나 0일 수 없습니다.')
+            logger.info('매수 할 개수는 음수이거나 0일 수 없습니다.')
+            await ctx.reply('매수 할 개수는 음수이거나 0일 수 없습니다.')
             return
     
     json_data = GetUserInformation()
@@ -946,7 +960,7 @@ async def _StockPurchase(ctx: Context, stock_name: str, num: Union[int, str]): #
         if num in ('풀매수', '모두'):
             num = json_data[GetUserIDArrayNum(ctx)]['Deposit'] // int(price)
             if num < 1:
-                logger.warning('예수금이 부족합니다.')
+                logger.info('예수금이 부족합니다.')
                 await ctx.reply('예수금이 부족합니다.')
                 return
         
@@ -956,7 +970,7 @@ async def _StockPurchase(ctx: Context, stock_name: str, num: Union[int, str]): #
         
     else:
         if json_data[GetUserIDArrayNum(ctx)]['Deposit'] - (int(price) * num) < 0:
-            logger.warning('예수금이 부족합니다.')
+            logger.info('예수금이 부족합니다.')
             await ctx.reply('예수금이 부족합니다.')
             return
         
@@ -974,23 +988,23 @@ async def _StockPurchase(ctx: Context, stock_name: str, num: Union[int, str]): #
 @_StockPurchase.error
 async def _StockPurchase_error(ctx, error):
     if ErrorCheck(error, "stock_name is a required argument that is missing."):
-        logger.error('매수 할 주식을 입력해 주세요.')
+        logger.warning('매수 할 주식을 입력해 주세요.')
         await ctx.reply('매수 할 주식을 입력해 주세요.')
         
     elif ErrorCheck(error, "num is a required argument that is missing."):
-        logger.error('매수 할 주식의 수를 입력해 주세요.')
+        logger.warning('매수 할 주식의 수를 입력해 주세요.')
         await ctx.reply('매수 할 주식의 수를 입력해 주세요.')
         
     elif ErrorCheck(error, "Command raised an exception: AttributeError: 'NoneType' object has no attribute 'text'"):
-        logger.error('매수하려는 주식을 찾지 못하였습니다.')
+        logger.warning('매수하려는 주식을 찾지 못하였습니다.')
         await ctx.reply('매수하려는 주식을 찾지 못하였습니다.')
         
     elif ErrorCheck(error, "Command raised an exception: AttributeError: 'NoneType' object has no attribute 'select_one'"):
-        logger.error('매수하려는 주식을 찾지 못하였습니다.')
+        logger.warning('매수하려는 주식을 찾지 못하였습니다.')
         await ctx.reply('매수하려는 주식을 찾지 못하였습니다.')
         
     else:
-        logger.error(error)
+        logger.warning(error)
         await ctx.send(f'{error}')
 
 ################################################################################ /매수
@@ -1021,14 +1035,14 @@ async def _StockPurchase(ctx: SlashContext, stock_name: str, num: Union[int, str
     logger.info(f'{ctx.author.name}: {ctx.invoked_with} {stock_name} {num}')
     
     if not IsVaildUser(ctx):
-        logger.warning('먼저 `.사용자등록` 부터 해 주세요.')
+        logger.info('먼저 `.사용자등록` 부터 해 주세요.')
         await ctx.reply('먼저 `.사용자등록` 부터 해 주세요.')
         return
     
     if isinstance(num, int):
         if num <= 0:
-            logger.warning('매도 할 개수는 음수이거나 0일 수 없습니다.')
-            await ctx.reply('매도 할 개수는 음수이거나 0일 수 없습니다.')
+            logger.info('매수 할 개수는 음수이거나 0일 수 없습니다.')
+            await ctx.reply('매수 할 개수는 음수이거나 0일 수 없습니다.')
             return
     
     json_data = GetUserInformation()
@@ -1063,17 +1077,17 @@ async def _StockPurchase(ctx: SlashContext, stock_name: str, num: Union[int, str
         if num in ('풀매수', '모두'):
             num = json_data[GetUserIDArrayNum(ctx)]['Deposit'] // int(price)
             if num < 1:
-                logger.warning('예수금이 부족합니다.')
+                logger.info('예수금이 부족합니다.')
                 await ctx.reply('예수금이 부족합니다.')
                 return
         
         else:
-            await ctx.reply(f'「.{ctx.invoked_with} {ctx.args[1]} __{ctx.args[2]}__」밑줄 친 부분에는「풀매수」,「모두」또는 숫자만 입력해 주세요.')
+            await ctx.reply(f'「.{ctx.invoked_with} {ctx.args[0]} __{ctx.args[1]}__」밑줄 친 부분에는「풀매수」,「모두」또는 숫자만 입력해 주세요.')
             return
         
     else:
         if json_data[GetUserIDArrayNum(ctx)]['Deposit'] - (int(price) * num) < 0:
-            logger.warning('예수금이 부족합니다.')
+            logger.info('예수금이 부족합니다.')
             await ctx.reply('예수금이 부족합니다.')
             return
         
@@ -1091,15 +1105,15 @@ async def _StockPurchase(ctx: SlashContext, stock_name: str, num: Union[int, str
 @_StockPurchase.error
 async def _StockPurchase_error(ctx, error):    
     if ErrorCheck(error, "'NoneType' object has no attribute 'text'"):
-        logger.error('매수하려는 주식을 찾지 못하였습니다.')
+        logger.warning('매수하려는 주식을 찾지 못하였습니다.')
         await ctx.reply('매수하려는 주식을 찾지 못하였습니다.')
         
     elif ErrorCheck(error, "'NoneType' object has no attribute 'select_one'"):
-        logger.error('매수하려는 주식을 찾지 못하였습니다.')
+        logger.warning('매수하려는 주식을 찾지 못하였습니다.')
         await ctx.reply('매수하려는 주식을 찾지 못하였습니다.')
         
     else:
-        logger.error(error)
+        logger.warning(error)
         await ctx.send(f'{error}')
 
 ################################################################################ .매도
@@ -1109,13 +1123,13 @@ async def _StockSelling(ctx: Context, stock_name: str, num: Union[int, str]):
     logger.info(f'{ctx.author.name}: {ctx.invoked_with} {stock_name} {num}')
     
     if not IsVaildUser(ctx):
-        logger.warning('먼저 `.사용자등록` 부터 해 주세요.')
+        logger.info('먼저 `.사용자등록` 부터 해 주세요.')
         await ctx.reply('먼저 `.사용자등록` 부터 해 주세요.')
         return
 
     if isinstance(num, int):
         if num <= 0:
-            logger.warning('매도 할 개수는 음수이거나 0일 수 없습니다.')
+            logger.info('매도 할 개수는 음수이거나 0일 수 없습니다.')
             await ctx.reply('매도 할 개수는 음수이거나 0일 수 없습니다.')
             return
     
@@ -1154,7 +1168,7 @@ async def _StockSelling(ctx: Context, stock_name: str, num: Union[int, str]):
             elif num == '반매도':
                 num: int = json_data[GetUserIDArrayNum(ctx)]['Stock'][stock_name] // 2
                 if num == 0:
-                    logger.warning(f'매도하려는 {name}의 주식이 1주밖에 없어 반매도 할 수 없습니다.')
+                    logger.info(f'매도하려는 {name}의 주식이 1주밖에 없어 반매도 할 수 없습니다.')
                     await ctx.reply(f'매도하려는 {name}의 주식이 1주밖에 없어 반매도 할 수 없습니다.')
                     return
                 
@@ -1174,34 +1188,34 @@ async def _StockSelling(ctx: Context, stock_name: str, num: Union[int, str]):
             logger.info(f'{name}의 주식이 {int(price):,}원에 {num:,}주가 매도되었습니다.')
             await ctx.reply(f'{name}의 주식이 {int(price):,}원에 {num:,}주가 매도되었습니다.')
         else:
-            logger.warning(f'매도 하려는 주식개수가 현재 {name}의 주식 보유수량보다 더 높습니다. (현재 보유수량: {json_data[GetUserIDArrayNum(ctx)]["Stock"][stock_name]}주)')
+            logger.info(f'매도 하려는 주식개수가 현재 {name}의 주식 보유수량보다 더 높습니다. (현재 보유수량: {json_data[GetUserIDArrayNum(ctx)]["Stock"][stock_name]}주)')
             await ctx.reply(f'매도 하려는 주식개수가 현재 {name}의 주식 보유수량보다 더 높습니다. (현재 보유수량: {json_data[GetUserIDArrayNum(ctx)]["Stock"][stock_name]}주)')
             return
     else:
-        logger.warning(f'{name}의 주식이 자산에 없습니다.')
+        logger.info(f'{name}의 주식이 자산에 없습니다.')
         await ctx.reply(f'{name}의 주식이 자산에 없습니다.')
         return
   
 @_StockSelling.error
 async def _StockSelling_error(ctx, error):
     if ErrorCheck(error, "stock_name is a required argument that is missing."):
-        logger.error('매도 할 주식을 입력해 주세요.')
+        logger.warning('매도 할 주식을 입력해 주세요.')
         await ctx.reply('매도 할 주식을 입력해 주세요.')
     
     elif ErrorCheck(error, "num is a required argument that is missing."):
-        logger.error('매도 할 주식의 수를 입력해 주세요.')
+        logger.warning('매도 할 주식의 수를 입력해 주세요.')
         await ctx.reply('매도 할 주식의 수를 입력해 주세요.')
         
     elif ErrorCheck(error, f"Command raised an exception: AttributeError: 'NoneType' object has no attribute 'text'"):
-        logger.error('매도하려는 주식을 찾지 못하였습니다.')
+        logger.warning('매도하려는 주식을 찾지 못하였습니다.')
         await ctx.reply('매도하려는 주식을 찾지 못하였습니다.')
         
     elif ErrorCheck(error, f"Command raised an exception: AttributeError: 'NoneType' object has no attribute 'select_one'"):
-        logger.error('매도하려는 주식을 찾지 못하였습니다.')
+        logger.warning('매도하려는 주식을 찾지 못하였습니다.')
         await ctx.reply('매도하려는 주식을 찾지 못하였습니다.')
         
     else:
-        logger.error(error)
+        logger.warning(error)
         await ctx.send(f'{error}')
         
 ################################################################################ /매도
@@ -1230,13 +1244,13 @@ async def _StockSelling(ctx: SlashContext, stock_name: str, num: Union[int, str]
     logger.info(f'{ctx.author.name}: {ctx.invoked_with} {stock_name} {num}')
     
     if not IsVaildUser(ctx):
-        logger.warning('먼저 `.사용자등록` 부터 해 주세요.')
+        logger.info('먼저 `.사용자등록` 부터 해 주세요.')
         await ctx.reply('먼저 `.사용자등록` 부터 해 주세요.')
         return
 
     if isinstance(num, int):
         if num <= 0:
-            logger.warning('매도 할 개수는 음수이거나 0일 수 없습니다.')
+            logger.info('매도 할 개수는 음수이거나 0일 수 없습니다.')
             await ctx.reply('매도 할 개수는 음수이거나 0일 수 없습니다.')
             return
     
@@ -1277,12 +1291,12 @@ async def _StockSelling(ctx: SlashContext, stock_name: str, num: Union[int, str]
             elif num == '반매도':
                 num: int = json_data[GetUserIDArrayNum(ctx)]['Stock'][stock_name] // 2
                 if num == 0:
-                    logger.warning(f'매도하려는 {name}의 주식이 1주밖에 없어 반매도 할 수 없습니다.')
+                    logger.info(f'매도하려는 {name}의 주식이 1주밖에 없어 반매도 할 수 없습니다.')
                     await ctx.reply(f'매도하려는 {name}의 주식이 1주밖에 없어 반매도 할 수 없습니다.')
                     return
                 
             else:
-                await ctx.reply(f'「.{ctx.invoked_with} {ctx.args[1]} __{ctx.args[2]}__」밑줄 친 부분에는「풀매도」,「모두」또는「반매도」또는 숫자만 입력해 주세요.')
+                await ctx.reply(f'「.{ctx.invoked_with} {ctx.args[0]} __{ctx.args[1]}__」밑줄 친 부분에는「풀매도」,「모두」또는「반매도」또는 숫자만 입력해 주세요.')
                 return
         
         if num <= json_data[GetUserIDArrayNum(ctx)]['Stock'][stock_name]:
@@ -1297,26 +1311,26 @@ async def _StockSelling(ctx: SlashContext, stock_name: str, num: Union[int, str]
             logger.info(f'{name}의 주식이 {int(price):,}원에 {num:,}주가 매도되었습니다.')
             await ctx.reply(f'{name}의 주식이 {int(price):,}원에 {num:,}주가 매도되었습니다.')
         else:
-            logger.warning(f'매도 하려는 주식개수가 현재 {name}의 주식 보유수량보다 더 높습니다. (현재 보유수량: {json_data[GetUserIDArrayNum(ctx)]["Stock"][stock_name]}주)')
+            logger.info(f'매도 하려는 주식개수가 현재 {name}의 주식 보유수량보다 더 높습니다. (현재 보유수량: {json_data[GetUserIDArrayNum(ctx)]["Stock"][stock_name]}주)')
             await ctx.reply(f'매도 하려는 주식개수가 현재 {name}의 주식 보유수량보다 더 높습니다. (현재 보유수량: {json_data[GetUserIDArrayNum(ctx)]["Stock"][stock_name]}주)')
             return
     else:
-        logger.warning(f'{name}의 주식이 자산에 없습니다.')
+        logger.info(f'{name}의 주식이 자산에 없습니다.')
         await ctx.reply(f'{name}의 주식이 자산에 없습니다.')
         return
   
 @_StockSelling.error
 async def _StockSelling_error(ctx, error):
     if ErrorCheck(error, "'NoneType' object has no attribute 'text'"):
-        logger.error('매도하려는 주식을 찾지 못하였습니다.')
+        logger.warning('매도하려는 주식을 찾지 못하였습니다.')
         await ctx.reply('매도하려는 주식을 찾지 못하였습니다.')
         
     elif ErrorCheck(error, "'NoneType' object has no attribute 'select_one'"):
-        logger.error('매도하려는 주식을 찾지 못하였습니다.')
+        logger.warning('매도하려는 주식을 찾지 못하였습니다.')
         await ctx.reply('매도하려는 주식을 찾지 못하였습니다.')
         
     else:
-        logger.error(error)
+        logger.warning(error)
         await ctx.send(f'{error}')
 
 ################################################################################ *지원금
@@ -1332,7 +1346,7 @@ async def _SupportFund(ctx: Union[Context, SlashContext]):
     logger.info(f'{ctx.author.name}: {ctx.invoked_with}')
     
     if not IsVaildUser(ctx):
-        logger.warning('먼저 `.사용자등록` 부터 해 주세요.')
+        logger.info('먼저 `.사용자등록` 부터 해 주세요.')
         await ctx.reply('먼저 `.사용자등록` 부터 해 주세요.')
         return
     
@@ -1354,9 +1368,9 @@ async def _SupportFund(ctx: Union[Context, SlashContext]):
         await ctx.reply(f'{random_added_deposit:,}원이 지급되었습니다.')
         
     else:
-        now_timedelta = timedelta(seconds=json_data[GetUserIDArrayNum(ctx)]['SupportFundTime'] - int(time.time()) + cool_down)
-        logger.warning(f'지원금을 받으려면 {str(now_timedelta)[-8:-6]}시간 {str(now_timedelta)[-5:-3]}분 {str(now_timedelta)[-2:]}초를 더 기다려야 합니다.')
-        await ctx.reply(f'지원금을 받으려면 {str(now_timedelta)[-8:-6]}시간 {str(now_timedelta)[-5:-3]}분 {str(now_timedelta)[-2:]}초를 더 기다려야 합니다.')
+        now_time = ConvertSecToTimeStruct(json_data[GetUserIDArrayNum(ctx)]['SupportFundTime'] - int(time.time()) + cool_down)
+        logger.info(f'지원금을 받으려면 {now_time.hour}시간 {now_time.min}분 {now_time.sec}초를 더 기다려야 합니다.')
+        await ctx.reply(f'지원금을 받으려면 {now_time.hour}시간 {now_time.min}분 {now_time.sec}초를 더 기다려야 합니다.')
     
 ################################################################################ .초기화
 
@@ -1365,7 +1379,7 @@ async def _Initialization(ctx: Context, *, string: str):
     logger.info(f'{ctx.author.name}: {ctx.invoked_with} {string}')
     
     if not IsVaildUser(ctx):
-        logger.warning('먼저 `.사용자등록` 부터 해 주세요.')
+        logger.info('먼저 `.사용자등록` 부터 해 주세요.')
         await ctx.reply('먼저 `.사용자등록` 부터 해 주세요.')
         return
     
@@ -1378,17 +1392,17 @@ async def _Initialization(ctx: Context, *, string: str):
         await ctx.reply('초기화가 완료되었습니다.')
     
     else:
-        logger.warning('.초기화 __[문구]__에 「초기화확인」를 입력해야 초기화 할 수 있습니다.')
-        await ctx.reply('.초기화 __[문구]__에 「초기화확인」를 입력해야 초기화 할 수 있습니다.')
+        logger.info('「.초기화 초기화확인」을 입력해야 초기화 할 수 있습니다.')
+        await ctx.reply('「.초기화 초기화확인」을 입력해야 초기화 할 수 있습니다.')
         
 @_Initialization.error
-async def _Initialization_error(ctx, error):
+async def _Initialization_error(ctx: Context, error):
     if isinstance(error, MissingRequiredArgument):
-        logger.error('.초기화 __[문구]__에 「초기화확인」를 입력해야 초기화 할 수 있습니다.')
-        await ctx.reply('.초기화 __[문구]__에 「초기화확인」를 입력해야 초기화 할 수 있습니다.')
+        logger.warning('「.초기화 초기화확인」을 입력해야 초기화 할 수 있습니다.')
+        await ctx.reply('「.초기화 초기화확인」을 입력해야 초기화 할 수 있습니다.')
     
     else:
-        logger.error(error)
+        logger.warning(error)
         await ctx.reply(error)
 
 ################################################################################ /초기화
@@ -1399,19 +1413,19 @@ async def _Initialization_error(ctx, error):
     guild_ids=guilds_id,
     options=[
         create_option(
-            name='초기화확인',
-            description='「초기화확인」 를 입력해 주세요.',
+            name='확인문구',
+            description='「초기화확인」를 입력해 주세요.',
             option_type=OptionType.STRING,
             required=True
         )
     ],
-    connector={'초기화문구': 'string'}
+    connector={'확인문구': 'string'}
 )
 async def _Initialization(ctx: SlashContext, string: str):
     logger.info(f'{ctx.author.name}: {ctx.invoked_with} {string}')
     
     if not IsVaildUser(ctx):
-        logger.warning('먼저 `.사용자등록` 부터 해 주세요.')
+        logger.info('먼저 `.사용자등록` 부터 해 주세요.')
         await ctx.reply('먼저 `.사용자등록` 부터 해 주세요.')
         return
     
@@ -1424,8 +1438,8 @@ async def _Initialization(ctx: SlashContext, string: str):
         await ctx.reply('초기화가 완료되었습니다.')
     
     else:
-        logger.warning('「초기화확인」를 입력해야 초기화 할 수 있습니다.')
-        await ctx.reply('「초기화확인」를 입력해야 초기화 할 수 있습니다.')
+        logger.info('「.초기화 초기화확인」을 입력해야 초기화 할 수 있습니다.')
+        await ctx.reply('「.초기화 초기화확인」을 입력해야 초기화 할 수 있습니다.')
         
 ################################################################################ .회원탈퇴
 
@@ -1434,7 +1448,7 @@ async def _Withdrawal(ctx: Context, *, string: str):
     logger.info(f'{ctx.author.name}: {ctx.invoked_with} {string}')
     
     if not IsVaildUser(ctx):
-        logger.warning('먼저 `.사용자등록` 부터 해 주세요.')
+        logger.info('먼저 `.사용자등록` 부터 해 주세요.')
         await ctx.reply('먼저 `.사용자등록` 부터 해 주세요.')
         return
     
@@ -1446,17 +1460,17 @@ async def _Withdrawal(ctx: Context, *, string: str):
         await ctx.reply('회원탈퇴가 완료되었습니다.')
     
     else:
-        logger.warning(f'.{ctx.invoked_with} __[문구]__에 「탈퇴확인」를 입력해야 회원탈퇴 할 수 있습니다.')
-        await ctx.reply(f'.{ctx.invoked_with} __[문구]__에 「탈퇴확인」를 입력해야 회원탈퇴 할 수 있습니다.')
+        logger.info(f'「.{ctx.invoked_with} 탈퇴확인」을 입력해야 탈퇴할 수 있습니다.')
+        await ctx.reply(f'「.{ctx.invoked_with} 탈퇴확인」을 입력해야 탈퇴할 수 있습니다.')
 
 @_Withdrawal.error
 async def _Withdrawal_error(ctx, error):
     if isinstance(error, MissingRequiredArgument):
-        logger.error(f'.{ctx.invoked_with} __[문구]__에 「탈퇴확인」를 입력해야 회원탈퇴 할 수 있습니다.')
-        await ctx.reply(f'.{ctx.invoked_with} __[문구]__에 「탈퇴확인」를 입력해야 회원탈퇴 할 수 있습니다.')
+        logger.warning(f'「.{ctx.invoked_with} 탈퇴확인」을 입력해야 탈퇴할 수 있습니다.')
+        await ctx.reply(f'「.{ctx.invoked_with} 탈퇴확인」을 입력해야 탈퇴할 수 있습니다.')
     
     else:
-        logger.error(error)
+        logger.warning(error)
         await ctx.reply(error)
 
 ################################################################################ /회원탈퇴
@@ -1467,19 +1481,19 @@ async def _Withdrawal_error(ctx, error):
     guild_ids=guilds_id,
     options=[
         create_option(
-            name='탈퇴확인',
-            description='「탈퇴확인」 이라고 적어주세요.',
+            name='확인문구',
+            description='「탈퇴확인」이라고 적어주세요.',
             option_type=OptionType.STRING,
             required=True
         )
     ],
-    connector={'탈퇴확인': 'string'}
+    connector={'확인문구': 'string'}
 )
 async def _Withdrawal(ctx: SlashContext, string: str):
     logger.info(f'{ctx.author.name}: {ctx.invoked_with} {string}')
     
     if not IsVaildUser(ctx):
-        logger.warning('먼저 `.사용자등록` 부터 해 주세요.')
+        logger.info('먼저 `.사용자등록` 부터 해 주세요.')
         await ctx.reply('먼저 `.사용자등록` 부터 해 주세요.')
         return
     
@@ -1491,8 +1505,8 @@ async def _Withdrawal(ctx: SlashContext, string: str):
         await ctx.reply('회원탈퇴가 완료되었습니다.')
     
     else:
-        logger.warning('「탈퇴확인」를 입력해야 회원탈퇴 할 수 있습니다.')
-        await ctx.reply('「탈퇴확인」를 입력해야 회원탈퇴 할 수 있습니다.')
+        logger.info('「탈퇴확인」를 입력해야 탈퇴할 수 있습니다.')
+        await ctx.reply('「탈퇴확인」를 입력해야 탈퇴할 수 있습니다.')
 
 ################################################################################ .도움말
 
@@ -1538,7 +1552,7 @@ async def _HelpCommand(ctx: Context, command: str=None):
         embed.add_field(name='.자산정보 <공개여부>', value='자신의 자산공개여부를 확인합니다.', inline=False)
         embed.add_field(name='.자산정보 <공개>', value='자신의 자산공개여부를 공개로 설정합니다.', inline=False)
         embed.add_field(name='.자산정보 <비공개>', value='자신의 자산공개여부를 비공개로 설정합니다.', inline=False)
-        embed.add_field(name='.자산정보 <랭킹, 순위>', value='이 서버의 자산랭킹을 나열합니다.', inline=False)
+        embed.add_field(name='.자산정보 <랭킹 | 순위>', value='이 서버에 있는 유저의 자산랭킹을 나열합니다.', inline=False)
         await ctx.reply(embed=embed)
     
     elif command in ('주가', '시세'):
@@ -1557,7 +1571,7 @@ async def _HelpCommand(ctx: Context, command: str=None):
         embed = discord.Embed(title='매수', description='입력한 기업의 주식을 매수합니다.', color=RandomEmbedColor())
         embed.add_field(name='다른이름', value=f'{", ".join(command_list)}', inline=False)
         embed.add_field(name='.매수 [기업이름 | 기업번호] [매수 할 주식 개수]', value='입력한 기업의 주식을, 주식 개수만큼 매수합니다.', inline=False)
-        embed.add_field(name='.매수 [기업이름 | 기업번호] [풀매수, 모두]', value='입력한 기업의 주식을 최대까지 매수합니다.', inline=False)
+        embed.add_field(name='.매수 [기업이름 | 기업번호] [풀매수 | 모두]', value='입력한 기업의 주식을 최대까지 매수합니다.', inline=False)
         await ctx.reply(embed=embed)
     
     elif command in ('매도', '판매', '주식판매', '주식매도'):
@@ -1568,7 +1582,7 @@ async def _HelpCommand(ctx: Context, command: str=None):
         embed.add_field(name='다른이름', value=f'{", ".join(command_list)}', inline=False)
         embed.add_field(name='.매도 [기업이름 | 기업번호] [매도 할 주식 개수]', value='입력한 기업의 주식을, 주식 개수만큼 매도합니다.', inline=False)
         embed.add_field(name='.매도 [기업이름 | 기업번호] [반매도]', value='입력한 기업의 주식의 절반을 매도합니다.', inline=False)
-        embed.add_field(name='.매도 [기업이름 | 기업번호] [풀매도, 모두]', value='입력한 기업의 주식을 모두 매도합니다.', inline=False)
+        embed.add_field(name='.매도 [기업이름 | 기업번호] [풀매도 | 모두]', value='입력한 기업의 주식을 모두 매도합니다.', inline=False)
         await ctx.reply(embed=embed)
     
     elif command in ('지원금', '돈받기'):

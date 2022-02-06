@@ -47,8 +47,9 @@ from typing import Union
     
 슬래시 커맨드:
     /정보
-    /설정
+    /업로드
     
+    /단축어설정
     /자산정보
     /주가
     /매수
@@ -104,9 +105,6 @@ def _InitialVarSetting():
     
     operation_time = time.time() #가동된 현재 시간
 
-    # intents = Intents.default()
-    # intents.members = True
-
     intents = discord.Intents.all()
 
     if DEBUGGING:
@@ -152,13 +150,12 @@ def AddUser(ID: int):
             'TotalAssets': 10000000,
             'SupportFund': 0,
             'SupportFundTime': 0,
-            # 'Settings': {
-            #     'InformationDisclosure': True
-            # },
-            # 'StockDict': {},
-            'InformationDisclosure': True,
+            'Settings': {
+                'InformationDisclosure': True
+            },
+            'StockDict': {},
             'Stock': {}
-           }
+            }
     return dictionary
 
 def GetStockDictionary() -> dict:
@@ -270,12 +267,12 @@ async def on_ready():
             for member in guild.members:
                 if not member.bot:
                     await member.add_roles(role)
-            logger.info('added')
+            logger.info(f'{guild}: added')
         else:
             for member in guild.members:
                 if not member.bot:
                     await member.remove_roles(role)
-            logger.info('removed')
+            logger.info(f'{guild}: removed')
         
 ################################################################################
 
@@ -312,13 +309,71 @@ async def _Information(ctx: SlashContext):
 #     else:
 #        logger.warning(error)
 #        await ctx.reply(error, hidden=True)
-        
-################################################################################ /설정
 
-@commands.has_permissions(administrator=True)
+################################################################################ /업로드
+
 @slash.slash(
-    name='설정',
-    description='봇의 환경설정을 수정합니다.',
+    name='업로드',
+    description='파일을 업로드합니다.',
+    guild_ids=[714012054721396786],
+    options=[
+        create_option(
+            name='파일',
+            description='업로드할 파일을 골라주세요.',
+            option_type=OptionType.STRING,
+            required=True,
+            choices=[
+                create_choice(
+                    name='로그',
+                    value='logs'
+                ),
+                create_choice(
+                    name='유저정보',
+                    value='userinfo'
+                )
+            ]
+        )
+    ],
+    default_permission=False,
+    permissions={
+        714012054721396786: [
+            create_permission(
+                id=642288666156466176,
+                id_type=PermissionType.USER,
+                permission=True
+            )
+        ]
+    },
+    connector={'파일': 'file_type'}
+)
+async def _UploadFile(ctx: Union[Context, SlashContext], file_type: str):    
+    if file_type == 'logs':
+        from os import chdir, listdir, getcwd, remove
+        from zipfile import ZipFile
+        
+        chdir('./logs')
+        zipfile = ZipFile(f'logs.zip', 'w')
+
+        logs_dir = [i for i in listdir(getcwd()) if i.endswith('.log')]
+        for n, file in enumerate(logs_dir):
+            if file.endswith('.log'):
+                zipfile.write(file)
+                if len(logs_dir)-1 != n:
+                    remove(file)
+
+        zipfile.close()
+        chdir('../')
+        
+        await ctx.send(f'{len(logs_dir)}개의 파일이 압축되어 업로드되었습니다.', file=discord.File('./logs/logs.zip'))
+        
+    elif file_type == 'userinfo':
+        await ctx.send('성공적으로 업로드되었습니다.', file=discord.File('./json/UserInformation.json'))
+        
+################################################################################ /단축어설정
+
+@slash.slash(
+    name='단축어설정',
+    description='단축어목록을 확인하거나, 추가 또는 제거합니다.',
     guild_ids=guilds_id,
     options=[
         create_option(
@@ -328,8 +383,8 @@ async def _Information(ctx: SlashContext):
             required=True,
             choices=[
                 create_choice(
-                    name='정보',
-                    value='정보'
+                    name='목록',
+                    value='목록'
                 ),
                 create_choice(
                     name='추가',
@@ -354,8 +409,6 @@ async def _Information(ctx: SlashContext):
             required=False
         )
     ],
-    default_permission=False,
-    permissions=permission_setting,
     connector={
         '설정이름': 'setting_name',
         '기업이름': 'add_stock_name',
@@ -365,17 +418,14 @@ async def _Information(ctx: SlashContext):
 async def _BotSetting(ctx: SlashContext, setting_name: str, add_stock_name: str = None, add_stock_num: str = None):
     logger.info(f'{ctx.author.name}: {setting_name} {add_stock_name} {add_stock_num}')
     
-    def SetStockDictionary(json_data: dict):
-        with open('./json/StockDictionary.json', 'w', encoding='utf-8') as Inf:
-            json.dump(json_data, Inf, indent='\t', ensure_ascii=False)
+    json_data = GetUserInformation()
     
-    stock_json = GetStockDictionary()
-    if setting_name == '정보':
-        value: str = ''
+    if setting_name == '목록':
+        value: str = '단축어 목록:\n'
         
-        for stock_name in stock_json:
-            value += f'{stock_name}: {stock_json[stock_name]}\n'
-                
+        for stock_name in json_data[GetUserIDArrayNum(ctx)]['StockDict']:
+            value += f'{stock_name}: {json_data[GetUserIDArrayNum(ctx)]["StockDict"][stock_name]}\n'
+        
         await ctx.reply(value, hidden=True)
         
     elif setting_name == '추가':
@@ -392,14 +442,14 @@ async def _BotSetting(ctx: SlashContext, setting_name: str, add_stock_name: str 
             add_stock_name = soup.select_one('#middle > div.h_company > div.wrap_company > h2 > a').text.lower() #주식회사 이름
             add_stock_num = soup.select_one('#middle > div.h_company > div.wrap_company > div > span.code').text #기업코드
             
-        for i in stock_json:
+        for i in json_data[GetUserIDArrayNum(ctx)]['StockDict']:
             if i == add_stock_name:
                 logger.info('이미 추가되있는 기업입니다.')
                 await ctx.reply('이미 추가되있는 기업입니다.', hidden=True)
                 return
             
-        stock_json[add_stock_name] = add_stock_num
-        SetStockDictionary(stock_json)
+        json_data[GetUserIDArrayNum(ctx)]['StockDict'][add_stock_name] = add_stock_num
+        SetUserInformation(json_data)
         
         logger.info(f'`{add_stock_name}: {add_stock_num}`이/가 추가되었습니다.')
         await ctx.reply(f'`{add_stock_name}: {add_stock_num}`이/가 추가되었습니다.', hidden=True)
@@ -410,25 +460,21 @@ async def _BotSetting(ctx: SlashContext, setting_name: str, add_stock_name: str 
             await ctx.reply('**기업이름**는 필수 입력 항목 입니다.', hidden=True)
             return
         
-        for i in stock_json:
+        for i in json_data[GetUserIDArrayNum(ctx)]['StockDict']:
             if i == add_stock_name:
-                logger.info(f'`{i}: {stock_json[i]}`이/가 제거되었습니다.')
-                await ctx.reply(f'`{i}: {stock_json[i]}`이/가 제거되었습니다.', hidden=True)
-                del(stock_json[i])
-                SetStockDictionary(stock_json)
+                logger.info(f'`{i}: {json_data[GetUserIDArrayNum(ctx)]["StockDict"][i]}`이/가 제거되었습니다.')
+                await ctx.reply(f'`{i}: {json_data[GetUserIDArrayNum(ctx)]["StockDict"][i]}`이/가 제거되었습니다.', hidden=True)
+                del(json_data[GetUserIDArrayNum(ctx)]['StockDict'][i])
+                SetUserInformation(json_data)
                 return
             
-        logger.info(f'{add_stock_name}이/가 json에 존재하지 않습니다.')
-        await ctx.reply(f'{add_stock_name}이/가 json에 존재하지 않습니다.', hidden=True)
+        logger.info(f'{add_stock_name}이/가 목록에 존재하지 않습니다.')
+        await ctx.reply(f'{add_stock_name}이/가 목록에 존재하지 않습니다.', hidden=True)
         return
 
 @_BotSetting.error
-async def _BotSetting_error(ctx: SlashContext, error):
-    if isinstance(error, commands.MissingPermissions):
-        logger.warning('권한이 없습니다.')
-        await ctx.reply('권한이 없습니다.', hidden=True)
-        
-    elif isinstance(error, AttributeError):
+async def _BotSetting_error(ctx: SlashContext, error):      
+    if isinstance(error, AttributeError):
         logger.warning('존재하지 않는 기업번호입니다.')
         await ctx.reply('존재하지 않는 기업번호입니다.', hidden=True)
         
@@ -471,12 +517,16 @@ async def _StockPrices(ctx: Context, *, stock_name: str):
         
     ua = UserAgent()
     stock_name = stock_name.lower()
+    json_data = GetUserInformation()
 
-    try:
-        int(stock_name) #입력받은 문자가 숫자일 경우
+    try: int(stock_name) #입력받은 문자가 숫자일 경우
     except:
-        if stock_name in GetStockDictionary().keys():
+        if stock_name in json_data[GetUserIDArrayNum(ctx)]['StockDict'].keys():
+            stock_name = json_data[GetUserIDArrayNum(ctx)]['StockDict'][stock_name]
+            
+        elif stock_name in GetStockDictionary().keys():
             stock_name = GetStockDictionary()[stock_name]
+
         else:
             url = f'https://www.google.com/search?q={quote_plus(stock_name)}+주가'
             soup = bs(requests.get(url, headers={'User-agent' : ua.random}).text, 'lxml')
@@ -558,12 +608,16 @@ async def _StockPrices(ctx: SlashContext, stock_name: str):
     
     ua = UserAgent()
     stock_name = stock_name.lower()
+    json_data = GetUserInformation()
     
-    try:
-        int(stock_name) #입력받은 문자가 숫자일 경우
+    try: int(stock_name) #입력받은 문자가 숫자일 경우
     except:
-        if stock_name in GetStockDictionary().keys():
+        if stock_name in json_data[GetUserIDArrayNum(ctx)]['StockDict'].keys():
+            stock_name = json_data[GetUserIDArrayNum(ctx)]['StockDict'][stock_name]
+            
+        elif stock_name in GetStockDictionary().keys():
             stock_name = GetStockDictionary()[stock_name]
+
         else:
             url = f'https://www.google.com/search?q={quote_plus(stock_name)}+주가'
             soup = bs(requests.get(url, headers={'User-agent' : ua.random}).text, 'lxml')
@@ -635,19 +689,19 @@ async def _AssetInformation(ctx: Context, option: Union[discord.Member, str]=Non
     if option is not None: #부가 옵션이 전달되어 있을 때
         if option == '공개여부':
             disclosure_status = {True:'공개', False:'비공개'}
-            logger.info(f'현재 {ctx.author.name}님의 자산정보 공개여부는 「{disclosure_status[json_data[GetUserIDArrayNum(ctx)]["InformationDisclosure"]]}」로 설정되어 있습니다.')
-            await ctx.reply(f'현재 {ctx.author.name}님의 자산정보 공개여부는 「{disclosure_status[json_data[GetUserIDArrayNum(ctx)]["InformationDisclosure"]]}」로 설정되어 있습니다.')
+            logger.info(f'현재 {ctx.author.name}님의 자산정보 공개여부는 「{disclosure_status[json_data[GetUserIDArrayNum(ctx)]["Settings"]["InformationDisclosure"]]}」로 설정되어 있습니다.')
+            await ctx.reply(f'현재 {ctx.author.name}님의 자산정보 공개여부는 「{disclosure_status[json_data[GetUserIDArrayNum(ctx)]["Settings"]["InformationDisclosure"]]}」로 설정되어 있습니다.')
             return
 
         elif option in ('공개', 'true', 'True'):
-            json_data[GetUserIDArrayNum(ctx)]['InformationDisclosure'] = True
+            json_data[GetUserIDArrayNum(ctx)]['Settings']['InformationDisclosure'] = True
             SetUserInformation(json_data)
             logger.info('자산정보 공개여부가 「공개」로 설정되었습니다.')
             await ctx.reply('자산정보 공개여부가 「공개」로 설정되었습니다.')
             return
         
         elif option in ('비공개', 'false', 'False'):
-            json_data[GetUserIDArrayNum(ctx)]['InformationDisclosure'] = False
+            json_data[GetUserIDArrayNum(ctx)]['Settings']['InformationDisclosure'] = False
             SetUserInformation(json_data)
             logger.info('자산정보 공개여부가 「비공개」로 설정되었습니다.')
             await ctx.reply('자산정보 공개여부가 「비공개」로 설정되었습니다.')
@@ -659,7 +713,7 @@ async def _AssetInformation(ctx: Context, option: Union[discord.Member, str]=Non
             
             for member in members:
                 if IsVaildUser(member.id):
-                    if json_data[GetUserIDArrayNum(member.id)]['InformationDisclosure']:
+                    if json_data[GetUserIDArrayNum(member.id)]['Settings']['InformationDisclosure']:
                         member_assets.append((member.name, json_data[GetUserIDArrayNum(member.id)]['TotalAssets']))
                     
             member_assets.sort(key=lambda total: total[1], reverse=True) #총 자산을 기준으로 리스트 정렬
@@ -682,7 +736,7 @@ async def _AssetInformation(ctx: Context, option: Union[discord.Member, str]=Non
                 option = None
                 author_id: int = ctx.author.id
             
-            elif not json_data[GetUserIDArrayNum(author_id)]['InformationDisclosure']:
+            elif not json_data[GetUserIDArrayNum(author_id)]['Settings']['InformationDisclosure']:
                 logger.info(f'{user_name}님의 정보가 비공개되어 있습니다.')
                 await ctx.reply(f'{user_name}님의 정보가 비공개되어 있습니다.')
                 return
@@ -812,19 +866,19 @@ async def _AssetInformation(ctx: SlashContext, option: Union[discord.User, str]=
     if option is not None: #부가 옵션이 전달되어 있을 때
         if option == '공개여부':
             disclosure_status = {True:'공개', False:'비공개'}
-            logger.info(f'현재 {ctx.author.name}님의 자산정보 공개여부는 「{disclosure_status[json_data[GetUserIDArrayNum(ctx)]["InformationDisclosure"]]}」로 설정되어 있습니다.')
-            await ctx.reply(f'현재 {ctx.author.name}님의 자산정보 공개여부는 「{disclosure_status[json_data[GetUserIDArrayNum(ctx)]["InformationDisclosure"]]}」로 설정되어 있습니다.')
+            logger.info(f'현재 {ctx.author.name}님의 자산정보 공개여부는 「{disclosure_status[json_data[GetUserIDArrayNum(ctx)]["Settings"]["InformationDisclosure"]]}」로 설정되어 있습니다.')
+            await ctx.reply(f'현재 {ctx.author.name}님의 자산정보 공개여부는 「{disclosure_status[json_data[GetUserIDArrayNum(ctx)]["Settings"]["InformationDisclosure"]]}」로 설정되어 있습니다.')
             return
 
         elif option in ('공개', 'true', 'True'):
-            json_data[GetUserIDArrayNum(ctx)]['InformationDisclosure'] = True
+            json_data[GetUserIDArrayNum(ctx)]['Settings']['InformationDisclosure'] = True
             SetUserInformation(json_data)
             logger.info('자산정보 공개여부가 「공개」로 설정되었습니다.')
             await ctx.reply('자산정보 공개여부가 「공개」로 설정되었습니다.')
             return
         
         elif option in ('비공개', 'false', 'False'):
-            json_data[GetUserIDArrayNum(ctx)]['InformationDisclosure'] = False
+            json_data[GetUserIDArrayNum(ctx)]['Settings']['InformationDisclosure'] = False
             SetUserInformation(json_data)
             logger.info('자산정보 공개여부가 「비공개」로 설정되었습니다.')
             await ctx.reply('자산정보 공개여부가 「비공개」로 설정되었습니다.')
@@ -836,7 +890,7 @@ async def _AssetInformation(ctx: SlashContext, option: Union[discord.User, str]=
             
             for member in members:
                 if IsVaildUser(member.id):
-                    if json_data[GetUserIDArrayNum(member.id)]['InformationDisclosure']:
+                    if json_data[GetUserIDArrayNum(member.id)]['Settings']['InformationDisclosure']:
                         member_assets.append((member.name, json_data[GetUserIDArrayNum(member.id)]['TotalAssets']))
                     
             member_assets.sort(key=lambda total: total[1], reverse=True) #총 자산을 기준으로 리스트 정렬
@@ -859,13 +913,12 @@ async def _AssetInformation(ctx: SlashContext, option: Union[discord.User, str]=
                 option = None
                 author_id: int = ctx.author.id
             
-            elif not json_data[GetUserIDArrayNum(author_id)]['InformationDisclosure']:
+            elif not json_data[GetUserIDArrayNum(author_id)]['Settings']['InformationDisclosure']:
                 logger.info(f'{user_name}님의 정보가 비공개되어 있습니다.')
                 await ctx.reply(f'{user_name}님의 정보가 비공개되어 있습니다.')
                 return
     
-    
-    hidden = not json_data[GetUserIDArrayNum(author_id)]['InformationDisclosure']
+    hidden = not json_data[GetUserIDArrayNum(author_id)]['Settings']['InformationDisclosure']
     await ctx.defer(hidden=hidden) #인터렉션 타임아웃때문에 기다리기
     
     global stock_num_array
@@ -936,8 +989,12 @@ async def _StockPurchase(ctx: Context, stock_name: str, num: Union[int, str]): #
     
     try: int(stock_name) #입력받은 stock_name이 int인지 검사
     except: #int가 아닌경우
-        if stock_name in GetStockDictionary().keys():
+        if stock_name in json_data[GetUserIDArrayNum(ctx)]['StockDict'].keys():
+            stock_name = json_data[GetUserIDArrayNum(ctx)]['StockDict'][stock_name]
+            
+        elif stock_name in GetStockDictionary().keys():
             stock_name = GetStockDictionary()[stock_name]
+
         else:
             url = f'https://www.google.com/search?q={quote_plus(stock_name)}+주가'
             soup = bs(requests.get(url, headers={'User-agent' : ua.random}).text, 'lxml')
@@ -1053,8 +1110,12 @@ async def _StockPurchase(ctx: SlashContext, stock_name: str, num: Union[int, str
     
     try: int(stock_name) #입력받은 stock_name이 int인지 검사
     except: #int가 아닌경우
-        if stock_name in GetStockDictionary().keys():
+        if stock_name in json_data[GetUserIDArrayNum(ctx)]['StockDict'].keys():
+            stock_name = json_data[GetUserIDArrayNum(ctx)]['StockDict'][stock_name]
+            
+        elif stock_name in GetStockDictionary().keys():
             stock_name = GetStockDictionary()[stock_name]
+
         else:
             url = f'https://www.google.com/search?q={quote_plus(stock_name)}+주가'
             soup = bs(requests.get(url, headers={'User-agent' : ua.random}).text, 'lxml')
@@ -1139,8 +1200,12 @@ async def _StockSelling(ctx: Context, stock_name: str, num: Union[int, str]):
     
     try: int(stock_name) #입력받은 문자가 숫자일 경우
     except:
-        if stock_name in GetStockDictionary().keys():
+        if stock_name in json_data[GetUserIDArrayNum(ctx)]['StockDict'].keys():
+            stock_name = json_data[GetUserIDArrayNum(ctx)]['StockDict'][stock_name]
+            
+        elif stock_name in GetStockDictionary().keys():
             stock_name = GetStockDictionary()[stock_name]
+
         else:
             url = f'https://www.google.com/search?q={quote_plus(stock_name)}+주가'
             soup = bs(requests.get(url, headers={'User-agent' : ua.random}).text, 'lxml')
@@ -1262,8 +1327,12 @@ async def _StockSelling(ctx: SlashContext, stock_name: str, num: Union[int, str]
     
     try: int(stock_name) #입력받은 문자가 숫자일 경우
     except:
-        if stock_name in GetStockDictionary().keys():
+        if stock_name in json_data[GetUserIDArrayNum(ctx)]['StockDict'].keys():
+            stock_name = json_data[GetUserIDArrayNum(ctx)]['StockDict'][stock_name]
+            
+        elif stock_name in GetStockDictionary().keys():
             stock_name = GetStockDictionary()[stock_name]
+
         else:
             url = f'https://www.google.com/search?q={quote_plus(stock_name)}+주가'
             soup = bs(requests.get(url, headers={'User-agent' : ua.random}).text, 'lxml')

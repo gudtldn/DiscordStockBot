@@ -38,6 +38,7 @@ from typing import Union
 
 일반 커맨드:
     .도움말
+    .개인설정
     .주가
     .자산정보
     .매수
@@ -48,7 +49,9 @@ from typing import Union
 슬래시 커맨드:
     /정보
     /업로드
+    /다운로드
     
+    /개인설정
     /단축어설정
     /자산정보
     /주가
@@ -61,7 +64,7 @@ from typing import Union
 
 DEBUGGING = True #디버그 실행
 
-guilds_id=(915543134648287242, 921706352957620285, 925277183147147265)
+guilds_id = (915543134648287242, 921706352957620285, 925277183147147265)
 permission_setting = {
     id: [
         create_permission(
@@ -145,17 +148,18 @@ def RandomEmbedColor():
 
 def AddUser(ID: int):
     dictionary = {
-            'UserID': ID,
-            'Deposit': 10000000,
-            'TotalAssets': 10000000,
-            'SupportFund': 0,
-            'SupportFundTime': 0,
-            'Settings': {
-                'InformationDisclosure': True
-            },
-            'StockDict': {},
-            'Stock': {}
-            }
+        'UserID': ID,
+        'Deposit': 10000000,
+        'TotalAssets': 10000000,
+        'SupportFund': 0,
+        'SupportFundTime': 0,
+        'Settings': {
+            'InformationDisclosure': True,
+            'ShowSupportFund': True
+        },
+        'StockDict': {},
+        'Stock': {}
+    }
     return dictionary
 
 def GetStockDictionary() -> dict:
@@ -170,7 +174,7 @@ def SetUserInformation(json_data: list[dict]):
     with open('./json/UserInformation.json', 'w', encoding='utf-8') as Inf:
         json.dump(json_data, Inf, indent='\t', ensure_ascii=False)
 
-def GetUserIDArrayNum(ctx: Union[Context, SlashContext, int]): #ctx.author.id가 들어있는 배열의 번호를 반환
+def GetArrayNum(ctx: Union[Context, SlashContext, int]): #ctx.author.id가 들어있는 배열의 번호를 반환
     json_data = GetUserInformation()
     if isinstance(ctx, (Context, SlashContext)):
         ctx = ctx.author.id
@@ -213,7 +217,7 @@ async def get_text_from_url(author_id, num, stock_num):  # 코루틴 정의
     stock_name = soup.select_one('#middle > div.h_company > div.wrap_company > h2 > a').text
     price = soup.select_one('#chart_area > div.rate_info > div > p.no_today').select_one('span.blind').text.replace('\n', '').replace(',', '') #현재 시세
     lastday_per = soup.select_one('#chart_area > div.rate_info > div > p.no_exday > em:nth-child(4)').select_one('span.blind').text.replace('\n', '') #어제 대비 시세%
-    balance = json_data[GetUserIDArrayNum(author_id)]['Stock'][stock_num] #현재 주식 수량
+    balance = json_data[GetArrayNum(author_id)]['Stock'][stock_num] #현재 주식 수량
     try:
         UpAndDown_soup = soup.select_one('#chart_area > div.rate_info > div > p.no_exday > em:nth-child(2) > span.ico.up').text #+
     except:
@@ -301,14 +305,14 @@ async def _Information(ctx: SlashContext):
     logger.info(f'현재 플렛폼: {platform()}, 가동시간: {now_time.day}일 {now_time.hour}시 {now_time.min}분 {now_time.sec}초, 지연시간: {bot.latency}ms')
     await ctx.reply(f'현재 플렛폼: {platform()}\n가동시간: {now_time.day}일 {now_time.hour}시 {now_time.min}분 {now_time.sec}초\n지연시간: {bot.latency}ms', hidden=True)
     
-# @_Information.error
-# async def _Information_error(ctx, error):
-#     if isinstance(error, commands.MissingPermissions):
-#         logger.warning('권한이 없습니다.')
-#         await ctx.reply('권한이 없습니다.', hidden=True)
-#     else:
-#        logger.warning(error)
-#        await ctx.reply(error, hidden=True)
+@_Information.error
+async def _Information_error(ctx, error):
+    if isinstance(error, commands.MissingPermissions):
+        logger.warning('권한이 없습니다.')
+        await ctx.reply('권한이 없습니다.', hidden=True)
+    else:
+       logger.warning(error)
+       await ctx.reply(error, hidden=True)
 
 ################################################################################ /업로드
 
@@ -318,8 +322,8 @@ async def _Information(ctx: SlashContext):
     guild_ids=[714012054721396786],
     options=[
         create_option(
-            name='파일',
-            description='업로드할 파일을 골라주세요.',
+            name='파일타입',
+            description='업로드할 파일 타입을 선택해주세요.',
             option_type=OptionType.STRING,
             required=True,
             choices=[
@@ -330,8 +334,18 @@ async def _Information(ctx: SlashContext):
                 create_choice(
                     name='유저정보',
                     value='userinfo'
+                ),
+                create_choice(
+                    name='그 외',
+                    value='other'
                 )
             ]
+        ),
+        create_option(
+            name='경로',
+            description='업로드할 경로를 입력해 주세요.',
+            option_type=OptionType.STRING,
+            required=False
         )
     ],
     default_permission=False,
@@ -344,22 +358,21 @@ async def _Information(ctx: SlashContext):
             )
         ]
     },
-    connector={'파일': 'file_type'}
+    connector={'파일타입': 'file_type', '경로': 'path'}
 )
-async def _UploadFile(ctx: Union[Context, SlashContext], file_type: str):    
+async def _UploadFile(ctx: SlashContext, file_type: str, path: str = None):    
     if file_type == 'logs':
-        from os import chdir, listdir, getcwd, remove
+        from os import chdir, listdir, remove
         from zipfile import ZipFile
         
-        chdir('./logs')
+        chdir('./logs') #실행폴더 변경
         zipfile = ZipFile(f'logs.zip', 'w')
 
-        logs_dir = [i for i in listdir(getcwd()) if i.endswith('.log')]
+        logs_dir = [i for i in listdir('./') if i.endswith('.log')]
         for n, file in enumerate(logs_dir):
-            if file.endswith('.log'):
-                zipfile.write(file)
-                if len(logs_dir)-1 != n:
-                    remove(file)
+            zipfile.write(file)
+            if len(logs_dir)-1 != n:
+                remove(file)
 
         zipfile.close()
         chdir('../')
@@ -369,6 +382,147 @@ async def _UploadFile(ctx: Union[Context, SlashContext], file_type: str):
     elif file_type == 'userinfo':
         await ctx.send('성공적으로 업로드되었습니다.', file=discord.File('./json/UserInformation.json'))
         
+    elif file_type == 'other':
+        if path is None:
+            await ctx.send('경로를 입력해 주세요.')
+            return
+        
+        await ctx.send('성공적으로 업로드되었습니다.', file=discord.File(path))
+        
+@_UploadFile.error
+async def _UploadFile_error(ctx: SlashContext, error):
+    await ctx.send(error)
+
+################################################################################ /다운로드
+
+@slash.slash(
+    name='다운로드',
+    description='파일을 다운로드 합니다.',
+    guild_ids=[714012054721396786],
+    options=[
+        create_option(
+            name='파일타입',
+            description='다운로드할 파일 타입을 선택해주세요.',
+            option_type=OptionType.STRING,
+            required=True,
+            choices=[
+                create_choice(
+                    name='_Start_.py',
+                    value='python'
+                ),
+                create_choice(
+                    name='UserInformation.json',
+                    value='userinfo'
+                ),
+                create_choice(
+                    name='StockDictionary.json',
+                    value='stockdict'
+                ),
+                create_choice(
+                    name='그 외',
+                    value='other'
+                )
+            ]
+        ),
+        create_option(
+            name='링크',
+            description='다운로드 할 링크를 입력해 주세요.',
+            option_type=OptionType.STRING,
+            required=True
+        ),
+        create_option(
+            name='경로',
+            description='다운로드 할 경로를 입력해 주세요.',
+            option_type=OptionType.STRING,
+            required=False
+        )
+    ],
+    default_permission=False,
+    permissions={
+        714012054721396786: [
+            create_permission(
+                id=642288666156466176,
+                id_type=PermissionType.USER,
+                permission=True
+            )
+        ]
+    },
+    connector={'파일타입': 'file_type', '링크': 'link', '경로': 'path'}
+)
+async def _DownloadFile(ctx: SlashContext, file_type: str, link: str, path: str=None):
+    import requests as r
+    
+    if file_type == 'python':
+        if link.find('Start_.py') == -1:
+            await ctx.send('올바르지 않은 링크입니다. 다시 확인해 주세요.')
+            return
+        
+        with open('./a_Start_.py', 'wb') as f:
+            f.write(r.get(link, allow_redirects=True).content)
+        
+        await ctx.send('성공적으로 다운로드가 완료되었습니다.')
+    
+    elif file_type == 'userinfo':
+        if link.find('UserInformation.json') == -1:
+            await ctx.send('올바르지 않은 링크입니다. 다시 확인해 주세요.')
+            return
+        
+        with open('./json/UserInformation.json', 'wb') as f:
+            f.write(r.get(link, allow_redirects=True).content)
+        
+        await ctx.send('성공적으로 다운로드가 완료되었습니다.')
+
+    elif file_type == 'stockdict':
+        if link.find('StockDictionary.json') == -1:
+            await ctx.send('올바르지 않은 링크입니다. 다시 확인해 주세요.')
+            return
+        
+        with open('./json/StockDictionary.json', 'wb') as f:
+            f.write(r.get(link, allow_redirects=True).content)
+        
+        await ctx.send('성공적으로 다운로드가 완료되었습니다.')
+    
+    elif file_type == 'other':
+        if path is None:
+            await ctx.send('경로를 입력해 주세요.')
+            return
+        
+        with open(path, 'wb') as f:
+            f.write(r.get(link, allow_redirects=True).content)
+        
+        await ctx.send('성공적으로 다운로드가 완료되었습니다.')
+
+@_DownloadFile.error
+async def _DownloadFile_error(ctx: SlashContext, error):
+    await ctx.send(error)
+
+################################################################################ 명령어 ################################################################################
+
+################################################################################ *사용자등록
+
+@slash.slash(
+    name='사용자등록',
+    description='데이터 베이스에 사용자를 등록합니다.',
+    guild_ids=guilds_id,
+    options=[]
+)
+@bot.command(name='사용자등록', aliases=[])
+async def _AddUser(ctx: Union[Context, SlashContext]):
+    logger.info(f'{ctx.author.name}: {ctx.invoked_with}')
+    
+    json_data = GetUserInformation()
+
+    if IsVaildUser(ctx):
+        logger.info('이미 등록되어 있는 사용자 입니다.')
+        await ctx.reply('이미 등록되어 있는 사용자 입니다.')
+        return
+
+    json_data.append(AddUser(ctx.author.id)) #사용자 추가
+    SetUserInformation(json_data)
+        
+    logger.info('등록되었습니다.')
+    await ctx.reply('등록되었습니다.')
+    
 ################################################################################ /단축어설정
 
 @slash.slash(
@@ -423,8 +577,8 @@ async def _BotSetting(ctx: SlashContext, setting_name: str, add_stock_name: str 
     if setting_name == '목록':
         value: str = '단축어 목록:\n'
         
-        for stock_name in json_data[GetUserIDArrayNum(ctx)]['StockDict']:
-            value += f'{stock_name}: {json_data[GetUserIDArrayNum(ctx)]["StockDict"][stock_name]}\n'
+        for stock_name in json_data[GetArrayNum(ctx)]['StockDict']:
+            value += f'{stock_name}: {json_data[GetArrayNum(ctx)]["StockDict"][stock_name]}\n'
         
         await ctx.reply(value, hidden=True)
         
@@ -442,13 +596,13 @@ async def _BotSetting(ctx: SlashContext, setting_name: str, add_stock_name: str 
             add_stock_name = soup.select_one('#middle > div.h_company > div.wrap_company > h2 > a').text.lower() #주식회사 이름
             add_stock_num = soup.select_one('#middle > div.h_company > div.wrap_company > div > span.code').text #기업코드
             
-        for i in json_data[GetUserIDArrayNum(ctx)]['StockDict']:
+        for i in json_data[GetArrayNum(ctx)]['StockDict']:
             if i == add_stock_name:
                 logger.info('이미 추가되있는 기업입니다.')
                 await ctx.reply('이미 추가되있는 기업입니다.', hidden=True)
                 return
             
-        json_data[GetUserIDArrayNum(ctx)]['StockDict'][add_stock_name] = add_stock_num
+        json_data[GetArrayNum(ctx)]['StockDict'][add_stock_name] = add_stock_num
         SetUserInformation(json_data)
         
         logger.info(f'`{add_stock_name}: {add_stock_num}`이/가 추가되었습니다.')
@@ -460,11 +614,11 @@ async def _BotSetting(ctx: SlashContext, setting_name: str, add_stock_name: str 
             await ctx.reply('**기업이름**는 필수 입력 항목 입니다.', hidden=True)
             return
         
-        for i in json_data[GetUserIDArrayNum(ctx)]['StockDict']:
+        for i in json_data[GetArrayNum(ctx)]['StockDict']:
             if i == add_stock_name:
-                logger.info(f'`{i}: {json_data[GetUserIDArrayNum(ctx)]["StockDict"][i]}`이/가 제거되었습니다.')
-                await ctx.reply(f'`{i}: {json_data[GetUserIDArrayNum(ctx)]["StockDict"][i]}`이/가 제거되었습니다.', hidden=True)
-                del(json_data[GetUserIDArrayNum(ctx)]['StockDict'][i])
+                logger.info(f'`{i}: {json_data[GetArrayNum(ctx)]["StockDict"][i]}`이/가 제거되었습니다.')
+                await ctx.reply(f'`{i}: {json_data[GetArrayNum(ctx)]["StockDict"][i]}`이/가 제거되었습니다.', hidden=True)
+                del(json_data[GetArrayNum(ctx)]['StockDict'][i])
                 SetUserInformation(json_data)
                 return
             
@@ -482,33 +636,160 @@ async def _BotSetting_error(ctx: SlashContext, error):
         logger.warning(f'{error}')
         await ctx.send(f'{error}', hidden=True)
 
-################################################################################ 명령어 ################################################################################
+################################################################################ .개인설정
 
-################################################################################ *사용자등록
-
-@slash.slash(
-    name='사용자등록',
-    description='데이터 베이스에 사용자를 등록합니다.',
-    guild_ids=guilds_id,
-    options=[]
-)
-@bot.command(name='사용자등록', aliases=[])
-async def _AddUser(ctx: Union[Context, SlashContext]):
-    logger.info(f'{ctx.author.name}: {ctx.invoked_with}')
+@bot.command(name='개인설정', aliases=['설정'])
+async def _PerSettings(ctx: Union[Context, SlashContext], setting: str, boolean: Union[bool, str]=None):
+    logger.info(f'{ctx.author.name}: {ctx.invoked_with} {setting} {boolean}')
+    
+    async def reply(msg: str, embed: discord.Embed=None):
+        if isinstance(ctx, Context):
+            await ctx.reply(msg, embed=embed)
+        else:
+            await ctx.reply(msg, embed=embed, hidden=True)
+            
+    if isinstance(boolean, str):
+        d = {
+            '참': True, '공개': True, 'true': True,
+            '거짓': False, '비공개': False, 'false': False
+        }
+        boolean = d[boolean]
     
     json_data = GetUserInformation()
-
-    if IsVaildUser(ctx):
-        logger.info('이미 등록되어 있는 사용자 입니다.')
-        await ctx.reply('이미 등록되어 있는 사용자 입니다.')
-        return
-
-    json_data.append(AddUser(ctx.author.id)) #사용자 추가
-    SetUserInformation(json_data)
-        
-    logger.info('등록되었습니다.')
-    await ctx.reply('등록되었습니다.')
     
+    if setting == '설정정보':
+        string = ''
+        d = {
+            'InformationDisclosure': '자산정보 공개여부',
+            'ShowSupportFund': '지원금으로 얻은 돈 표시'
+        }
+        
+        for _key, _value in json_data[GetArrayNum(ctx)]['Settings'].items():
+            string += f'{d[_key]} = {_value}\n'
+
+        await reply(string)
+        
+    elif setting in ('InformationDisclosure', '자산정보'):
+        if boolean is None:
+            await reply('boolean을 입력해 주세요')
+            return
+        
+        json_data[GetArrayNum(ctx)]['Settings']['InformationDisclosure'] = boolean
+        SetUserInformation(json_data)
+        await reply(f'자산정보 공개여부가 {boolean}로 설정되었습니다.')
+        
+    elif setting in ('ShowSupportFund', '지원금표시'):
+        if boolean is None:
+            await reply('boolean을 입력해 주세요')
+            return
+        
+        json_data[GetArrayNum(ctx)]['Settings']['ShowSupportFund'] = boolean
+        SetUserInformation(json_data)
+        await reply(f'지원금으로 얻은 돈 표시가 {boolean}로 설정되었습니다.')
+        
+    else:
+        await reply('다시 입력해 주세요.')
+        
+@_PerSettings.error
+async def _PerSettings_error(ctx: Context, error):
+    if isinstance(error, MissingRequiredArgument):
+        logger.warning('「설정타입」을 입력해 주세요.')
+        await ctx.reply('「설정타입」을 입력해 주세요.')
+    
+    elif ErrorCheck(error, f"Command raised an exception: KeyError: '{ctx.args[2]}'"):
+        logger.warning('「true」또는「false」만 입력해 주세요.')
+        await ctx.reply('「true」또는「false」만 입력해 주세요.')
+    
+    else:
+        logger.warning(error)
+        await ctx.send(error)
+
+################################################################################ /개인설정
+    
+@slash.slash(
+    name='개인설정',
+    description='개인설정을 확인 또는 수정 합니다.',
+    guild_ids=guilds_id,
+    options=[
+        create_option(
+            name='설정리스트',
+            description='설정할 수 있는 리스트을 확인합니다.',
+            option_type=OptionType.STRING,
+            required=True,
+            choices=[
+                create_choice(
+                    name='설정정보',
+                    value='설정정보'
+                ),
+                create_choice(
+                    name='자산정보 공개하기',
+                    value='InformationDisclosure'
+                ),
+                create_choice(
+                    name='지원금으로 얻은 돈 표시',
+                    value='ShowSupportFund'
+                )
+            ]
+        ),
+        create_option(
+            name='boolean',
+            description='참(True), 거짓(False)를 설정합니다.',
+            option_type=OptionType.BOOLEAN,
+            required=False
+        )
+    ],
+    connector={'설정리스트': 'setting', 'boolean': 'boolean'}
+)
+async def _PerSettings(ctx: SlashContext, setting: str, boolean: Union[bool, str]=None):
+    logger.info(f'{ctx.author.name}: {ctx.invoked_with} {setting} {boolean}')
+    
+    if isinstance(boolean, str):
+        d = {
+            '참': True, '공개': True, 'true': True,
+            '거짓': False, '비공개': False, 'false': False
+        }
+        boolean = d[boolean]
+    
+    json_data = GetUserInformation()
+    
+    if setting == '설정정보':
+        string = ''
+        d = {
+            'InformationDisclosure': '자산정보 공개여부',
+            'ShowSupportFund': '지원금으로 얻은 돈 표시'
+        }
+        
+        for _key, _value in json_data[GetArrayNum(ctx)]['Settings'].items():
+            string += f'{d[_key]} = {_value}\n'
+
+        await ctx.reply(string, hidden=True)
+        
+    elif setting in ('InformationDisclosure', '자산정보'):
+        if boolean is None:
+            await ctx.reply('boolean을 입력해 주세요', hidden=True)
+            return
+        
+        json_data[GetArrayNum(ctx)]['Settings']['InformationDisclosure'] = boolean
+        SetUserInformation(json_data)
+        await ctx.reply(f'자산정보 공개여부가 {boolean}로 설정되었습니다.', hidden=True)
+        
+    elif setting in ('ShowSupportFund', '지원금표시'):
+        if boolean is None:
+            await ctx.reply('boolean을 입력해 주세요', hidden=True)
+            return
+        
+        json_data[GetArrayNum(ctx)]['Settings']['ShowSupportFund'] = boolean
+        SetUserInformation(json_data)
+        await ctx.reply(f'지원금으로 얻은 돈 표시가 {boolean}로 설정되었습니다.', hidden=True)
+        
+    else:
+        await ctx.reply('다시 입력해 주세요.', hidden=True)
+        
+@_PerSettings.error
+async def _PerSettings_error(ctx: SlashContext, error):
+        logger.waring(error)
+        await ctx.send(error)
+
 ################################################################################ .주가
 
 @bot.command(name='주가', aliases=['시세'])
@@ -521,8 +802,8 @@ async def _StockPrices(ctx: Context, *, stock_name: str):
 
     try: int(stock_name) #입력받은 문자가 숫자일 경우
     except:
-        if stock_name in json_data[GetUserIDArrayNum(ctx)]['StockDict'].keys():
-            stock_name = json_data[GetUserIDArrayNum(ctx)]['StockDict'][stock_name]
+        if stock_name in json_data[GetArrayNum(ctx)]['StockDict'].keys():
+            stock_name = json_data[GetArrayNum(ctx)]['StockDict'][stock_name]
             
         elif stock_name in GetStockDictionary().keys():
             stock_name = GetStockDictionary()[stock_name]
@@ -572,7 +853,7 @@ async def _StockPrices(ctx: Context, *, stock_name: str):
     await ctx.reply(embed=embed)
         
 @_StockPrices.error
-async def _StockPrices_error(ctx,error):
+async def _StockPrices_error(ctx, error):
     if ErrorCheck(error, "Command raised an exception: AttributeError: 'NoneType' object has no attribute 'text'"):
         logger.warning('주식을 찾지 못하였습니다.')
         await ctx.reply('주식을 찾지 못하였습니다.')
@@ -612,8 +893,8 @@ async def _StockPrices(ctx: SlashContext, stock_name: str):
     
     try: int(stock_name) #입력받은 문자가 숫자일 경우
     except:
-        if stock_name in json_data[GetUserIDArrayNum(ctx)]['StockDict'].keys():
-            stock_name = json_data[GetUserIDArrayNum(ctx)]['StockDict'][stock_name]
+        if stock_name in json_data[GetArrayNum(ctx)]['StockDict'].keys():
+            stock_name = json_data[GetArrayNum(ctx)]['StockDict'][stock_name]
             
         elif stock_name in GetStockDictionary().keys():
             stock_name = GetStockDictionary()[stock_name]
@@ -687,34 +968,14 @@ async def _AssetInformation(ctx: Context, option: Union[discord.Member, str]=Non
     author_id = ctx.author.id
     
     if option is not None: #부가 옵션이 전달되어 있을 때
-        if option == '공개여부':
-            disclosure_status = {True:'공개', False:'비공개'}
-            logger.info(f'현재 {ctx.author.name}님의 자산정보 공개여부는 「{disclosure_status[json_data[GetUserIDArrayNum(ctx)]["Settings"]["InformationDisclosure"]]}」로 설정되어 있습니다.')
-            await ctx.reply(f'현재 {ctx.author.name}님의 자산정보 공개여부는 「{disclosure_status[json_data[GetUserIDArrayNum(ctx)]["Settings"]["InformationDisclosure"]]}」로 설정되어 있습니다.')
-            return
-
-        elif option in ('공개', 'true', 'True'):
-            json_data[GetUserIDArrayNum(ctx)]['Settings']['InformationDisclosure'] = True
-            SetUserInformation(json_data)
-            logger.info('자산정보 공개여부가 「공개」로 설정되었습니다.')
-            await ctx.reply('자산정보 공개여부가 「공개」로 설정되었습니다.')
-            return
-        
-        elif option in ('비공개', 'false', 'False'):
-            json_data[GetUserIDArrayNum(ctx)]['Settings']['InformationDisclosure'] = False
-            SetUserInformation(json_data)
-            logger.info('자산정보 공개여부가 「비공개」로 설정되었습니다.')
-            await ctx.reply('자산정보 공개여부가 「비공개」로 설정되었습니다.')
-            return
-        
-        elif option in ('랭킹', '순위'):
+        if option in ('랭킹', '순위'):
             members: list[discord.Member] = ctx.guild.members
             member_assets = []
             
             for member in members:
                 if IsVaildUser(member.id):
-                    if json_data[GetUserIDArrayNum(member.id)]['Settings']['InformationDisclosure']:
-                        member_assets.append((member.name, json_data[GetUserIDArrayNum(member.id)]['TotalAssets']))
+                    if json_data[GetArrayNum(member.id)]['Settings']['InformationDisclosure']:
+                        member_assets.append((member.name, json_data[GetArrayNum(member.id)]['TotalAssets']))
                     
             member_assets.sort(key=lambda total: total[1], reverse=True) #총 자산을 기준으로 리스트 정렬
             
@@ -736,7 +997,7 @@ async def _AssetInformation(ctx: Context, option: Union[discord.Member, str]=Non
                 option = None
                 author_id: int = ctx.author.id
             
-            elif not json_data[GetUserIDArrayNum(author_id)]['Settings']['InformationDisclosure']:
+            elif not json_data[GetArrayNum(author_id)]['Settings']['InformationDisclosure']:
                 logger.info(f'{user_name}님의 정보가 비공개되어 있습니다.')
                 await ctx.reply(f'{user_name}님의 정보가 비공개되어 있습니다.')
                 return
@@ -745,26 +1006,27 @@ async def _AssetInformation(ctx: Context, option: Union[discord.Member, str]=Non
         global stock_num_array
         global TotalAssets
         
-        stock_num_array = [[] for i in range(len(json_data[GetUserIDArrayNum(author_id)]['Stock']))] #현재 주식 종류의 개수만큼 배열을 만듦
+        stock_num_array = [[] for i in range(len(json_data[GetArrayNum(author_id)]['Stock']))] #현재 주식 종류의 개수만큼 배열을 만듦
         TotalAssets = 0 #총 자산
         
         start_time = time.time() #크롤링 시간
         
         asyncio.get_event_loop().run_until_complete(
-            get_text_(author_id, json_data[GetUserIDArrayNum(author_id)]['Stock'])
+            get_text_(author_id, json_data[GetArrayNum(author_id)]['Stock'])
         )
         
-        TotalAssets += json_data[GetUserIDArrayNum(author_id)]['Deposit'] #예수금
+        TotalAssets += json_data[GetArrayNum(author_id)]['Deposit'] #예수금
         
-        json_data[GetUserIDArrayNum(author_id)]['TotalAssets'] = TotalAssets #다 합친걸 총 자산에 저장
+        json_data[GetArrayNum(author_id)]['TotalAssets'] = TotalAssets #다 합친걸 총 자산에 저장
         
         SetUserInformation(json_data)
         
         embed = discord.Embed(title=f'{ctx.author.name if option is None else user_name}님의 자산정보', color=RandomEmbedColor())
-        embed.add_field(name='예수금', value=f'{json_data[GetUserIDArrayNum(author_id)]["Deposit"]:,}원')
-        embed.add_field(name='총 자산', value=f'{json_data[GetUserIDArrayNum(author_id)]["TotalAssets"]:,}원')
-        embed.add_field(name='지원금으로 얻은 돈', value=f'{json_data[GetUserIDArrayNum(author_id)]["SupportFund"]:,}원', inline=False)
-        if len(json_data[GetUserIDArrayNum(author_id)]['Stock']) != 0:
+        embed.add_field(name='예수금', value=f'{json_data[GetArrayNum(author_id)]["Deposit"]:,}원')
+        embed.add_field(name='총 자산', value=f'{json_data[GetArrayNum(author_id)]["TotalAssets"]:,}원')
+        if json_data[GetArrayNum(author_id)]['Settings']['ShowSupportFund']:
+            embed.add_field(name='지원금으로 얻은 돈', value=f'{json_data[GetArrayNum(author_id)]["SupportFund"]:,}원', inline=False)
+        if len(json_data[GetArrayNum(author_id)]['Stock']) != 0:
             embed.add_field(name='='*25, value='_ _', inline=False)
         
         for add_embed in stock_num_array:
@@ -818,26 +1080,6 @@ async def _AssetInformation_error(ctx, error):
             required=False
         ),
         create_option(
-            name='공개정보',
-            description='현재 자산정보의 공개여부를 확인 또는 설정합니다.',
-            option_type=OptionType.STRING,
-            required=False,
-            choices=[
-                create_choice(
-                    name='공개여부',
-                    value='공개여부'
-                ),
-                create_choice(
-                    name='공개',
-                    value='공개'
-                ),
-                create_choice(
-                    name='비공개',
-                    value='비공개'
-                )
-            ]
-        ),
-        create_option(
             name='랭킹',
             description='이 서버의 자산랭킹을 나열합니다.',
             option_type=OptionType.STRING,
@@ -864,34 +1106,14 @@ async def _AssetInformation(ctx: SlashContext, option: Union[discord.User, str]=
     author_id = ctx.author.id
     
     if option is not None: #부가 옵션이 전달되어 있을 때
-        if option == '공개여부':
-            disclosure_status = {True:'공개', False:'비공개'}
-            logger.info(f'현재 {ctx.author.name}님의 자산정보 공개여부는 「{disclosure_status[json_data[GetUserIDArrayNum(ctx)]["Settings"]["InformationDisclosure"]]}」로 설정되어 있습니다.')
-            await ctx.reply(f'현재 {ctx.author.name}님의 자산정보 공개여부는 「{disclosure_status[json_data[GetUserIDArrayNum(ctx)]["Settings"]["InformationDisclosure"]]}」로 설정되어 있습니다.')
-            return
-
-        elif option in ('공개', 'true', 'True'):
-            json_data[GetUserIDArrayNum(ctx)]['Settings']['InformationDisclosure'] = True
-            SetUserInformation(json_data)
-            logger.info('자산정보 공개여부가 「공개」로 설정되었습니다.')
-            await ctx.reply('자산정보 공개여부가 「공개」로 설정되었습니다.')
-            return
-        
-        elif option in ('비공개', 'false', 'False'):
-            json_data[GetUserIDArrayNum(ctx)]['Settings']['InformationDisclosure'] = False
-            SetUserInformation(json_data)
-            logger.info('자산정보 공개여부가 「비공개」로 설정되었습니다.')
-            await ctx.reply('자산정보 공개여부가 「비공개」로 설정되었습니다.')
-            return
-        
-        elif option in ('랭킹', '순위'):
+        if option in ('랭킹', '순위'):
             members: list[discord.Member] = ctx.guild.members
             member_assets = []
             
             for member in members:
                 if IsVaildUser(member.id):
-                    if json_data[GetUserIDArrayNum(member.id)]['Settings']['InformationDisclosure']:
-                        member_assets.append((member.name, json_data[GetUserIDArrayNum(member.id)]['TotalAssets']))
+                    if json_data[GetArrayNum(member.id)]['Settings']['InformationDisclosure']:
+                        member_assets.append((member.name, json_data[GetArrayNum(member.id)]['TotalAssets']))
                     
             member_assets.sort(key=lambda total: total[1], reverse=True) #총 자산을 기준으로 리스트 정렬
             
@@ -913,37 +1135,38 @@ async def _AssetInformation(ctx: SlashContext, option: Union[discord.User, str]=
                 option = None
                 author_id: int = ctx.author.id
             
-            elif not json_data[GetUserIDArrayNum(author_id)]['Settings']['InformationDisclosure']:
+            elif not json_data[GetArrayNum(author_id)]['Settings']['InformationDisclosure']:
                 logger.info(f'{user_name}님의 정보가 비공개되어 있습니다.')
                 await ctx.reply(f'{user_name}님의 정보가 비공개되어 있습니다.')
                 return
     
-    hidden = not json_data[GetUserIDArrayNum(author_id)]['Settings']['InformationDisclosure']
+    hidden = not json_data[GetArrayNum(author_id)]['Settings']['InformationDisclosure']
     await ctx.defer(hidden=hidden) #인터렉션 타임아웃때문에 기다리기
     
     global stock_num_array
     global TotalAssets
     
-    stock_num_array = [[] for i in range(len(json_data[GetUserIDArrayNum(author_id)]['Stock']))] #현재 주식 종류의 개수만큼 배열을 만듦
+    stock_num_array = [[] for i in range(len(json_data[GetArrayNum(author_id)]['Stock']))] #현재 주식 종류의 개수만큼 배열을 만듦
     TotalAssets = 0 #총 자산
     
     start_time = time.time() #크롤링 시간
     
     asyncio.get_event_loop().run_until_complete(
-        get_text_(author_id, json_data[GetUserIDArrayNum(author_id)]['Stock'])
+        get_text_(author_id, json_data[GetArrayNum(author_id)]['Stock'])
     )
     
-    TotalAssets += json_data[GetUserIDArrayNum(author_id)]['Deposit'] #예수금
+    TotalAssets += json_data[GetArrayNum(author_id)]['Deposit'] #예수금
     
-    json_data[GetUserIDArrayNum(author_id)]['TotalAssets'] = TotalAssets #다 합친걸 총 자산에 저장
+    json_data[GetArrayNum(author_id)]['TotalAssets'] = TotalAssets #다 합친걸 총 자산에 저장
     
     SetUserInformation(json_data)
     
     embed = discord.Embed(title=f'{ctx.author.name if option is None else user_name}님의 자산정보', color=RandomEmbedColor())
-    embed.add_field(name='예수금', value=f'{json_data[GetUserIDArrayNum(author_id)]["Deposit"]:,}원')
-    embed.add_field(name='총 자산', value=f'{json_data[GetUserIDArrayNum(author_id)]["TotalAssets"]:,}원')
-    embed.add_field(name='지원금으로 얻은 돈', value=f'{json_data[GetUserIDArrayNum(author_id)]["SupportFund"]:,}원', inline=False)
-    if len(json_data[GetUserIDArrayNum(author_id)]['Stock']) != 0:
+    embed.add_field(name='예수금', value=f'{json_data[GetArrayNum(author_id)]["Deposit"]:,}원')
+    embed.add_field(name='총 자산', value=f'{json_data[GetArrayNum(author_id)]["TotalAssets"]:,}원')
+    if json_data[GetArrayNum(author_id)]['Settings']['ShowSupportFund']:
+        embed.add_field(name='지원금으로 얻은 돈', value=f'{json_data[GetArrayNum(author_id)]["SupportFund"]:,}원', inline=False)
+    if len(json_data[GetArrayNum(author_id)]['Stock']) != 0:
         embed.add_field(name='='*25, value='_ _', inline=False)
     
     for add_embed in stock_num_array:
@@ -989,8 +1212,8 @@ async def _StockPurchase(ctx: Context, stock_name: str, num: Union[int, str]): #
     
     try: int(stock_name) #입력받은 stock_name이 int인지 검사
     except: #int가 아닌경우
-        if stock_name in json_data[GetUserIDArrayNum(ctx)]['StockDict'].keys():
-            stock_name = json_data[GetUserIDArrayNum(ctx)]['StockDict'][stock_name]
+        if stock_name in json_data[GetArrayNum(ctx)]['StockDict'].keys():
+            stock_name = json_data[GetArrayNum(ctx)]['StockDict'][stock_name]
             
         elif stock_name in GetStockDictionary().keys():
             stock_name = GetStockDictionary()[stock_name]
@@ -1015,7 +1238,7 @@ async def _StockPurchase(ctx: Context, stock_name: str, num: Union[int, str]): #
     
     if isinstance(num, str):
         if num in ('풀매수', '모두'):
-            num = json_data[GetUserIDArrayNum(ctx)]['Deposit'] // int(price)
+            num = json_data[GetArrayNum(ctx)]['Deposit'] // int(price)
             if num < 1:
                 logger.info('예수금이 부족합니다.')
                 await ctx.reply('예수금이 부족합니다.')
@@ -1026,17 +1249,17 @@ async def _StockPurchase(ctx: Context, stock_name: str, num: Union[int, str]): #
             return
         
     else:
-        if json_data[GetUserIDArrayNum(ctx)]['Deposit'] - (int(price) * num) < 0:
+        if json_data[GetArrayNum(ctx)]['Deposit'] - (int(price) * num) < 0:
             logger.info('예수금이 부족합니다.')
             await ctx.reply('예수금이 부족합니다.')
             return
         
-    if stock_name in json_data[GetUserIDArrayNum(ctx)]['Stock'].keys(): #Stock안에 stock_name이 있는가?
-        json_data[GetUserIDArrayNum(ctx)]['Stock'][stock_name] += num
+    if stock_name in json_data[GetArrayNum(ctx)]['Stock'].keys(): #Stock안에 stock_name이 있는가?
+        json_data[GetArrayNum(ctx)]['Stock'][stock_name] += num
     else:
-        json_data[GetUserIDArrayNum(ctx)]['Stock'][stock_name] = num
+        json_data[GetArrayNum(ctx)]['Stock'][stock_name] = num
     
-    json_data[GetUserIDArrayNum(ctx)]['Deposit'] -= (int(price) * num) #예수금 저장
+    json_data[GetArrayNum(ctx)]['Deposit'] -= (int(price) * num) #예수금 저장
     SetUserInformation(json_data)
     
     logger.info(f'{name}의 주식이 {int(price):,}원에 {num:,}주가 매수되었습니다.')
@@ -1110,8 +1333,8 @@ async def _StockPurchase(ctx: SlashContext, stock_name: str, num: Union[int, str
     
     try: int(stock_name) #입력받은 stock_name이 int인지 검사
     except: #int가 아닌경우
-        if stock_name in json_data[GetUserIDArrayNum(ctx)]['StockDict'].keys():
-            stock_name = json_data[GetUserIDArrayNum(ctx)]['StockDict'][stock_name]
+        if stock_name in json_data[GetArrayNum(ctx)]['StockDict'].keys():
+            stock_name = json_data[GetArrayNum(ctx)]['StockDict'][stock_name]
             
         elif stock_name in GetStockDictionary().keys():
             stock_name = GetStockDictionary()[stock_name]
@@ -1136,7 +1359,7 @@ async def _StockPurchase(ctx: SlashContext, stock_name: str, num: Union[int, str
     
     if isinstance(num, str):
         if num in ('풀매수', '모두'):
-            num = json_data[GetUserIDArrayNum(ctx)]['Deposit'] // int(price)
+            num = json_data[GetArrayNum(ctx)]['Deposit'] // int(price)
             if num < 1:
                 logger.info('예수금이 부족합니다.')
                 await ctx.reply('예수금이 부족합니다.')
@@ -1147,17 +1370,17 @@ async def _StockPurchase(ctx: SlashContext, stock_name: str, num: Union[int, str
             return
         
     else:
-        if json_data[GetUserIDArrayNum(ctx)]['Deposit'] - (int(price) * num) < 0:
+        if json_data[GetArrayNum(ctx)]['Deposit'] - (int(price) * num) < 0:
             logger.info('예수금이 부족합니다.')
             await ctx.reply('예수금이 부족합니다.')
             return
         
-    if stock_name in json_data[GetUserIDArrayNum(ctx)]['Stock'].keys(): #Stock안에 stock_name이 있는가?
-        json_data[GetUserIDArrayNum(ctx)]['Stock'][stock_name] += num
+    if stock_name in json_data[GetArrayNum(ctx)]['Stock'].keys(): #Stock안에 stock_name이 있는가?
+        json_data[GetArrayNum(ctx)]['Stock'][stock_name] += num
     else:
-        json_data[GetUserIDArrayNum(ctx)]['Stock'][stock_name] = num
+        json_data[GetArrayNum(ctx)]['Stock'][stock_name] = num
     
-    json_data[GetUserIDArrayNum(ctx)]['Deposit'] -= (int(price) * num) #예수금 저장
+    json_data[GetArrayNum(ctx)]['Deposit'] -= (int(price) * num) #예수금 저장
     SetUserInformation(json_data)
     
     logger.info(f'{name}의 주식이 {int(price):,}원에 {num:,}주가 매수되었습니다.')
@@ -1200,8 +1423,8 @@ async def _StockSelling(ctx: Context, stock_name: str, num: Union[int, str]):
     
     try: int(stock_name) #입력받은 문자가 숫자일 경우
     except:
-        if stock_name in json_data[GetUserIDArrayNum(ctx)]['StockDict'].keys():
-            stock_name = json_data[GetUserIDArrayNum(ctx)]['StockDict'][stock_name]
+        if stock_name in json_data[GetArrayNum(ctx)]['StockDict'].keys():
+            stock_name = json_data[GetArrayNum(ctx)]['StockDict'][stock_name]
             
         elif stock_name in GetStockDictionary().keys():
             stock_name = GetStockDictionary()[stock_name]
@@ -1220,7 +1443,7 @@ async def _StockSelling(ctx: Context, stock_name: str, num: Union[int, str]):
     stop_trading_soup = bs(requests.get(f'https://finance.naver.com/item/sise.naver?code={stock_name}', headers={'User-agent' : ua.random}).text, 'lxml')
     stop_trading = stop_trading_soup.select_one('#content > div.section.inner_sub > div:nth-child(1) > table > tbody > tr:nth-child(4) > td:nth-child(4) > span').text #시가
 
-    if stock_name in json_data[GetUserIDArrayNum(ctx)]['Stock'].keys():
+    if stock_name in json_data[GetArrayNum(ctx)]['Stock'].keys():
         if stop_trading == '0':
             logger.info(f'{name}의 주식이 거래중지 중이라 매도할 수 없습니다.')
             await ctx.reply(f'{name}의 주식이 거래중지 중이라 매도할 수 없습니다.')
@@ -1228,10 +1451,10 @@ async def _StockSelling(ctx: Context, stock_name: str, num: Union[int, str]):
         
         if isinstance(num, str):
             if num in ('풀매도', '모두'):
-                num: int = json_data[GetUserIDArrayNum(ctx)]['Stock'][stock_name] #보유주식의 수 만큼 설정
+                num: int = json_data[GetArrayNum(ctx)]['Stock'][stock_name] #보유주식의 수 만큼 설정
                 
             elif num == '반매도':
-                num: int = json_data[GetUserIDArrayNum(ctx)]['Stock'][stock_name] // 2
+                num: int = json_data[GetArrayNum(ctx)]['Stock'][stock_name] // 2
                 if num == 0:
                     logger.info(f'매도하려는 {name}의 주식이 1주밖에 없어 반매도 할 수 없습니다.')
                     await ctx.reply(f'매도하려는 {name}의 주식이 1주밖에 없어 반매도 할 수 없습니다.')
@@ -1241,20 +1464,20 @@ async def _StockSelling(ctx: Context, stock_name: str, num: Union[int, str]):
                 await ctx.reply(f'「.{ctx.invoked_with} {ctx.args[1]} __{ctx.args[2]}__」밑줄 친 부분에는「풀매도」,「모두」또는「반매도」또는 숫자만 입력해 주세요.')
                 return
         
-        if num <= json_data[GetUserIDArrayNum(ctx)]['Stock'][stock_name]:
-            json_data[GetUserIDArrayNum(ctx)]['Stock'][stock_name] -= num
-            json_data[GetUserIDArrayNum(ctx)]['Deposit'] += (int(price) * num)
+        if num <= json_data[GetArrayNum(ctx)]['Stock'][stock_name]:
+            json_data[GetArrayNum(ctx)]['Stock'][stock_name] -= num
+            json_data[GetArrayNum(ctx)]['Deposit'] += (int(price) * num)
             
-            if json_data[GetUserIDArrayNum(ctx)]['Stock'][stock_name] == 0:
-                del(json_data[GetUserIDArrayNum(ctx)]['Stock'][stock_name])
+            if json_data[GetArrayNum(ctx)]['Stock'][stock_name] == 0:
+                del(json_data[GetArrayNum(ctx)]['Stock'][stock_name])
             
             SetUserInformation(json_data)
             
             logger.info(f'{name}의 주식이 {int(price):,}원에 {num:,}주가 매도되었습니다.')
             await ctx.reply(f'{name}의 주식이 {int(price):,}원에 {num:,}주가 매도되었습니다.')
         else:
-            logger.info(f'매도 하려는 주식개수가 현재 {name}의 주식 보유수량보다 더 높습니다. (현재 보유수량: {json_data[GetUserIDArrayNum(ctx)]["Stock"][stock_name]}주)')
-            await ctx.reply(f'매도 하려는 주식개수가 현재 {name}의 주식 보유수량보다 더 높습니다. (현재 보유수량: {json_data[GetUserIDArrayNum(ctx)]["Stock"][stock_name]}주)')
+            logger.info(f'매도 하려는 주식개수가 현재 {name}의 주식 보유수량보다 더 높습니다. (현재 보유수량: {json_data[GetArrayNum(ctx)]["Stock"][stock_name]}주)')
+            await ctx.reply(f'매도 하려는 주식개수가 현재 {name}의 주식 보유수량보다 더 높습니다. (현재 보유수량: {json_data[GetArrayNum(ctx)]["Stock"][stock_name]}주)')
             return
     else:
         logger.info(f'{name}의 주식이 자산에 없습니다.')
@@ -1327,8 +1550,8 @@ async def _StockSelling(ctx: SlashContext, stock_name: str, num: Union[int, str]
     
     try: int(stock_name) #입력받은 문자가 숫자일 경우
     except:
-        if stock_name in json_data[GetUserIDArrayNum(ctx)]['StockDict'].keys():
-            stock_name = json_data[GetUserIDArrayNum(ctx)]['StockDict'][stock_name]
+        if stock_name in json_data[GetArrayNum(ctx)]['StockDict'].keys():
+            stock_name = json_data[GetArrayNum(ctx)]['StockDict'][stock_name]
             
         elif stock_name in GetStockDictionary().keys():
             stock_name = GetStockDictionary()[stock_name]
@@ -1347,7 +1570,7 @@ async def _StockSelling(ctx: SlashContext, stock_name: str, num: Union[int, str]
     stop_trading_soup = bs(requests.get(f'https://finance.naver.com/item/sise.naver?code={stock_name}', headers={'User-agent' : ua.random}).text, 'lxml')
     stop_trading = stop_trading_soup.select_one('#content > div.section.inner_sub > div:nth-child(1) > table > tbody > tr:nth-child(4) > td:nth-child(4) > span').text #시가
 
-    if stock_name in json_data[GetUserIDArrayNum(ctx)]['Stock'].keys():
+    if stock_name in json_data[GetArrayNum(ctx)]['Stock'].keys():
         if stop_trading == '0':
             logger.info(f'{name}의 주식이 거래중지 중이라 매도할 수 없습니다.')
             await ctx.reply(f'{name}의 주식이 거래중지 중이라 매도할 수 없습니다.')
@@ -1355,10 +1578,10 @@ async def _StockSelling(ctx: SlashContext, stock_name: str, num: Union[int, str]
         
         if isinstance(num, str):
             if num in ('풀매도', '모두'):
-                num: int = json_data[GetUserIDArrayNum(ctx)]['Stock'][stock_name] #보유주식의 수 만큼 설정
+                num: int = json_data[GetArrayNum(ctx)]['Stock'][stock_name] #보유주식의 수 만큼 설정
                 
             elif num == '반매도':
-                num: int = json_data[GetUserIDArrayNum(ctx)]['Stock'][stock_name] // 2
+                num: int = json_data[GetArrayNum(ctx)]['Stock'][stock_name] // 2
                 if num == 0:
                     logger.info(f'매도하려는 {name}의 주식이 1주밖에 없어 반매도 할 수 없습니다.')
                     await ctx.reply(f'매도하려는 {name}의 주식이 1주밖에 없어 반매도 할 수 없습니다.')
@@ -1368,20 +1591,20 @@ async def _StockSelling(ctx: SlashContext, stock_name: str, num: Union[int, str]
                 await ctx.reply(f'「.{ctx.invoked_with} {ctx.args[0]} __{ctx.args[1]}__」밑줄 친 부분에는「풀매도」,「모두」또는「반매도」또는 숫자만 입력해 주세요.')
                 return
         
-        if num <= json_data[GetUserIDArrayNum(ctx)]['Stock'][stock_name]:
-            json_data[GetUserIDArrayNum(ctx)]['Stock'][stock_name] -= num
-            json_data[GetUserIDArrayNum(ctx)]['Deposit'] += (int(price) * num)
+        if num <= json_data[GetArrayNum(ctx)]['Stock'][stock_name]:
+            json_data[GetArrayNum(ctx)]['Stock'][stock_name] -= num
+            json_data[GetArrayNum(ctx)]['Deposit'] += (int(price) * num)
             
-            if json_data[GetUserIDArrayNum(ctx)]['Stock'][stock_name] == 0:
-                del(json_data[GetUserIDArrayNum(ctx)]['Stock'][stock_name])
+            if json_data[GetArrayNum(ctx)]['Stock'][stock_name] == 0:
+                del(json_data[GetArrayNum(ctx)]['Stock'][stock_name])
             
             SetUserInformation(json_data)
             
             logger.info(f'{name}의 주식이 {int(price):,}원에 {num:,}주가 매도되었습니다.')
             await ctx.reply(f'{name}의 주식이 {int(price):,}원에 {num:,}주가 매도되었습니다.')
         else:
-            logger.info(f'매도 하려는 주식개수가 현재 {name}의 주식 보유수량보다 더 높습니다. (현재 보유수량: {json_data[GetUserIDArrayNum(ctx)]["Stock"][stock_name]}주)')
-            await ctx.reply(f'매도 하려는 주식개수가 현재 {name}의 주식 보유수량보다 더 높습니다. (현재 보유수량: {json_data[GetUserIDArrayNum(ctx)]["Stock"][stock_name]}주)')
+            logger.info(f'매도 하려는 주식개수가 현재 {name}의 주식 보유수량보다 더 높습니다. (현재 보유수량: {json_data[GetArrayNum(ctx)]["Stock"][stock_name]}주)')
+            await ctx.reply(f'매도 하려는 주식개수가 현재 {name}의 주식 보유수량보다 더 높습니다. (현재 보유수량: {json_data[GetArrayNum(ctx)]["Stock"][stock_name]}주)')
             return
     else:
         logger.info(f'{name}의 주식이 자산에 없습니다.')
@@ -1423,13 +1646,13 @@ async def _SupportFund(ctx: Union[Context, SlashContext]):
     
     cool_down = 3600 * 4 #쿨타임
     
-    if int(time.time()) - json_data[GetUserIDArrayNum(ctx)]['SupportFundTime'] > cool_down: #만약 저장되있는 현재시간 - 저장된시간이 cool_down을 넘는다면
+    if int(time.time()) - json_data[GetArrayNum(ctx)]['SupportFundTime'] > cool_down: #만약 저장되있는 현재시간 - 저장된시간이 cool_down을 넘는다면
         
         random_added_deposit = randint(1, 10) * 10000
 
-        json_data[GetUserIDArrayNum(ctx)]['Deposit'] += random_added_deposit
-        json_data[GetUserIDArrayNum(ctx)]['SupportFund'] += random_added_deposit
-        json_data[GetUserIDArrayNum(ctx)]['SupportFundTime'] = int(time.time())
+        json_data[GetArrayNum(ctx)]['Deposit'] += random_added_deposit
+        json_data[GetArrayNum(ctx)]['SupportFund'] += random_added_deposit
+        json_data[GetArrayNum(ctx)]['SupportFundTime'] = int(time.time())
         
         SetUserInformation(json_data)
 
@@ -1437,7 +1660,7 @@ async def _SupportFund(ctx: Union[Context, SlashContext]):
         await ctx.reply(f'{random_added_deposit:,}원이 지급되었습니다.')
         
     else:
-        now_time = ConvertSecToTimeStruct(json_data[GetUserIDArrayNum(ctx)]['SupportFundTime'] - int(time.time()) + cool_down)
+        now_time = ConvertSecToTimeStruct(json_data[GetArrayNum(ctx)]['SupportFundTime'] - int(time.time()) + cool_down)
         logger.info(f'지원금을 받으려면 {now_time.hour}시간 {now_time.min}분 {now_time.sec}초를 더 기다려야 합니다.')
         await ctx.reply(f'지원금을 받으려면 {now_time.hour}시간 {now_time.min}분 {now_time.sec}초를 더 기다려야 합니다.')
     
@@ -1454,7 +1677,7 @@ async def _Initialization(ctx: Context, *, string: str):
     
     if string == '초기화확인':
         json_data = GetUserInformation()
-        del(json_data[GetUserIDArrayNum(ctx)])
+        del(json_data[GetArrayNum(ctx)])
         json_data.append(AddUser(ctx.author.id)) #사용자 추가
         SetUserInformation(json_data)
         logger.info('초기화가 완료되었습니다.')
@@ -1500,7 +1723,7 @@ async def _Initialization(ctx: SlashContext, string: str):
     
     if string == '초기화확인':
         json_data = GetUserInformation()
-        del(json_data[GetUserIDArrayNum(ctx)])
+        del(json_data[GetArrayNum(ctx)])
         json_data.append(AddUser(ctx.author.id)) #사용자 추가
         SetUserInformation(json_data)
         logger.info('초기화가 완료되었습니다.')
@@ -1523,7 +1746,7 @@ async def _Withdrawal(ctx: Context, *, string: str):
     
     if string == '탈퇴확인':
         json_data = GetUserInformation()
-        del(json_data[GetUserIDArrayNum(ctx)])
+        del(json_data[GetArrayNum(ctx)])
         SetUserInformation(json_data)
         logger.info('회원탈퇴가 완료되었습니다.')
         await ctx.reply('회원탈퇴가 완료되었습니다.')
@@ -1568,7 +1791,7 @@ async def _Withdrawal(ctx: SlashContext, string: str):
     
     if string == '탈퇴확인':
         json_data = GetUserInformation()
-        del(json_data[GetUserIDArrayNum(ctx)])
+        del(json_data[GetArrayNum(ctx)])
         SetUserInformation(json_data)
         logger.info('회원탈퇴가 완료되었습니다.')
         await ctx.reply('회원탈퇴가 완료되었습니다.')

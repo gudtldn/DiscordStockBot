@@ -16,7 +16,7 @@ from platform import platform
 
 from module._define_ import *
 
-test_guilds_id = (714012054721396786, 940546043651710986)
+test_guilds_id = (714012054721396786,)
 permission_setting = {
     id: [
         create_permission(
@@ -232,6 +232,8 @@ async def _DownloadFile(ctx: SlashContext, file_type: str, link: str, path: str=
             await ctx.send('올바르지 않은 링크입니다. 다시 확인해 주세요.')
             return
         
+        await ctx.send('백업파일이 업로드 되었습니다.', file=discord.File('./json/UserInformation.json'))
+        
         with open('./json/UserInformation.json', 'wb') as f:
             f.write(r.get(link, allow_redirects=True).content)
         
@@ -241,6 +243,8 @@ async def _DownloadFile(ctx: SlashContext, file_type: str, link: str, path: str=
         if link.find('StockDictionary.json') == -1:
             await ctx.send('올바르지 않은 링크입니다. 다시 확인해 주세요.')
             return
+        
+        await ctx.send('백업파일이 업로드 되었습니다.', file=discord.File('./json/StockDictionary.json'))
         
         with open('./json/StockDictionary.json', 'wb') as f:
             f.write(r.get(link, allow_redirects=True).content)
@@ -272,11 +276,14 @@ async def _DownloadFile_error(ctx: SlashContext, error):
     permissions=permission_setting
 )
 async def reload_commands(ctx: SlashContext):
+    await ctx.defer()
+    
     for cog_file in os.listdir('Cogs'):
         if cog_file.endswith('.py'):
             bot.unload_extension(f'Cogs.{cog_file[:-3]}')
             bot.load_extension(f'Cogs.{cog_file[:-3]}')
-            await ctx.send('모든 명령어를 다시 불러왔습니다.')
+    
+    await ctx.send('모든 명령어를 다시 불러왔습니다.')
 
 ################################################################################ /역할
 
@@ -307,6 +314,8 @@ async def reload_commands(ctx: SlashContext):
     connector={'역할설정': 'rule_setting'}
 )
 async def _RuleSetting(ctx: SlashContext, rule_setting: str):
+    await ctx.defer()
+    
     if rule_setting == 'add':
         for guild in guilds_id:
             guild: discord.Guild = bot.get_guild(guild)

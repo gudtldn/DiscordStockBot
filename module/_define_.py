@@ -1,8 +1,6 @@
 from discord.ext.commands import Context
 
 from discord_slash import SlashContext
-from discord_slash.model import SlashCommandPermissionType as PermissionType
-from discord_slash.utils.manage_commands import create_permission
 
 from datetime import timedelta, datetime
 
@@ -14,16 +12,7 @@ from typing import Union
 
 DEBUGGING = True
 
-guilds_id = (940546043651710986,)
-permission_setting = {
-    id: [
-        create_permission(
-            id=642288666156466176,
-            id_type=PermissionType.USER,
-            permission=True
-        )
-    ] for id in guilds_id
-}
+guilds_id = (925277183147147265, 915543134648287242, 921706352957620285)
 
 ################################################################################ 로깅
 

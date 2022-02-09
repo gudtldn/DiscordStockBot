@@ -1,10 +1,12 @@
 import discord
 from discord.ext import commands
 from discord.ext.commands.errors import CommandNotFound
+from discord.utils import get
 
 from discord_slash import SlashCommand, SlashContext
 from discord_slash.model import SlashCommandOptionType as OptionType
-from discord_slash.utils.manage_commands import create_option, create_choice
+from discord_slash.model import SlashCommandPermissionType as PermissionType
+from discord_slash.utils.manage_commands import create_option, create_choice, create_permission
 
 import os
 
@@ -13,6 +15,17 @@ from time import time
 from platform import platform
 
 from module._define_ import *
+
+test_guilds_id = (714012054721396786, 940546043651710986)
+permission_setting = {
+    id: [
+        create_permission(
+            id=642288666156466176,
+            id_type=PermissionType.USER,
+            permission=True
+        )
+    ] for id in test_guilds_id
+}
 
 ################################################################################ 기본값 설정 ################################################################################
 
@@ -35,9 +48,9 @@ def _InitialVarSetting():
     with open('./etc/Token.txt', 'r', encoding='utf-8') as Token_txt:
         Token = Token_txt.read()
         
-    for file in os.listdir('./Cogs'): #코그 설정
-        if file.endswith('.py'):
-            bot.load_extension(f'Cogs.{file[:-3]}')
+    for cog_file in os.listdir('./Cogs'): #코그 설정
+        if cog_file.endswith('.py'):
+            bot.load_extension(f'Cogs.{cog_file[:-3]}')
             
 _InitialVarSetting()
         
@@ -47,7 +60,7 @@ _InitialVarSetting()
 async def on_ready():
     logger.info(f'{bot.user.name + " 디버깅으" if DEBUGGING else bot.user.name}로 로그인')
     print(f'{bot.user.name + " 디버깅으" if DEBUGGING else bot.user.name}로 로그인')
-        
+    
 ################################################################################
 
 @bot.event
@@ -62,7 +75,7 @@ async def on_command_error(ctx, error):
 @slash.slash(
     name='정보',
     description='현재 봇의 정보를 확인합니다.',
-    guild_ids=guilds_id,
+    guild_ids=test_guilds_id,
     options=[],
     default_permission=False,
     permissions=permission_setting
@@ -80,7 +93,7 @@ async def _BotInformation(ctx: SlashContext):
 @slash.slash(
     name='업로드',
     description='파일을 업로드합니다.',
-    guild_ids=guilds_id,
+    guild_ids=test_guilds_id,
     options=[
         create_option(
             name='파일타입',
@@ -158,7 +171,7 @@ async def _UploadFile_error(ctx: SlashContext, error):
 @slash.slash(
     name='다운로드',
     description='파일을 다운로드 합니다.',
-    guild_ids=guilds_id,
+    guild_ids=test_guilds_id,
     options=[
         create_option(
             name='파일타입',
@@ -247,6 +260,78 @@ async def _DownloadFile(ctx: SlashContext, file_type: str, link: str, path: str=
 @_DownloadFile.error
 async def _DownloadFile_error(ctx: SlashContext, error):
     await ctx.send(error)
+
+################################################################################ /리로드
+
+@slash.slash(
+    name='리로드',
+    description='명령어를 다시 불러옵니다.',
+    guild_ids=test_guilds_id,
+    options=[],
+    default_permission=False,
+    permissions=permission_setting
+)
+async def reload_commands(ctx: SlashContext):
+    for cog_file in os.listdir('Cogs'):
+        if cog_file.endswith('.py'):
+            bot.unload_extension(f'Cogs.{cog_file[:-3]}')
+            bot.load_extension(f'Cogs.{cog_file[:-3]}')
+            await ctx.send('모든 명령어를 다시 불러왔습니다.')
+
+################################################################################ /역할
+
+@slash.slash(
+    name='역할',
+    description='봇 테스트 중 역할을 추가하거나 제거합니다.',
+    guild_ids=test_guilds_id,
+    options=[
+        create_option(
+            name='역할설정',
+            description='역할을 추가하거나 제거합니다.',
+            option_type=OptionType.STRING,
+            required=True,
+            choices=[
+                create_choice(
+                    name='추가',
+                    value='add'
+                ),
+                create_choice(
+                    name='제거',
+                    value='delete'
+                )
+            ]
+        )
+    ],
+    default_permission=False,
+    permissions=permission_setting,
+    connector={'역할설정': 'rule_setting'}
+)
+async def _RuleSetting(ctx: SlashContext, rule_setting: str):
+    if rule_setting == 'add':
+        for guild in guilds_id:
+            guild: discord.Guild = bot.get_guild(guild)
+            role: discord.Role = get(guild.roles, name='봇 테스트 중')
+            member: discord.Member
+            
+            for member in guild.members:
+                if not member.bot:
+                    await member.add_roles(role)
+            logger.info(f'{guild}: added')
+        
+        await ctx.send('추가완료.')
+            
+    elif rule_setting == 'delete':
+        for guild in guilds_id:
+            guild: discord.Guild = bot.get_guild(guild)
+            role: discord.Role = get(guild.roles, name='봇 테스트 중')
+            member: discord.Member
+            
+            for member in guild.members:
+                if not member.bot:
+                    await member.remove_roles(role)
+            logger.info(f'{guild}: removed')
+            
+        await ctx.send('제거완료.')
 
 ################################################################################
 

@@ -42,7 +42,8 @@ async def _PersonalSettings_code(ctx: Union[Context, SlashContext], setting: str
         string = ''
         d = {
             'InformationDisclosure': '자산정보 공개여부',
-            'ShowSupportFund': '지원금으로 얻은 돈 표시'
+            'ShowSupportFund': '지원금으로 얻은 돈 표시',
+            'ShowStockChartImage': '주식차트 표시'
         }
         
         for _key, _value in json_data[GetArrayNum(ctx)]['Settings'].items():
@@ -67,6 +68,15 @@ async def _PersonalSettings_code(ctx: Union[Context, SlashContext], setting: str
         json_data[GetArrayNum(ctx)]['Settings']['ShowSupportFund'] = boolean
         SetUserInformation(json_data)
         await reply(f'지원금으로 얻은 돈 표시가 {boolean}로 설정되었습니다.')
+        
+    elif setting in ('ShowStockChartImage', '차트표시'):
+        if boolean is None:
+            await reply('boolean을 입력해 주세요')
+            return
+        
+        json_data[GetArrayNum(ctx)]['Settings']['ShowStockChartImage'] = boolean
+        SetUserInformation(json_data)
+        await reply(f'주식차트 표시가 {boolean}로 설정되었습니다.')
         
     else:
         await reply('다시 입력해 주세요.')
@@ -99,6 +109,10 @@ class PersonalSettings_SlashContext(commands.Cog):
                     create_choice(
                         name='지원금으로 얻은 돈 표시',
                         value='ShowSupportFund'
+                    ),
+                    create_choice(
+                        name='주식차트 표시',
+                        value='ShowStockChartImage'
                     )
                 ]
             ),

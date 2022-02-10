@@ -13,6 +13,8 @@ from bs4 import BeautifulSoup as bs
 from fake_useragent import UserAgent
 from urllib.parse import quote_plus
 
+from random import randint
+
 from typing import Union
 
 from module._define_ import *
@@ -22,11 +24,6 @@ from module._define_ import *
 async def _StockPrices_code(ctx: Union[Context, SlashContext], stock_name: str):
     logger.info(f'{ctx.author.name}: {ctx.invoked_with} {stock_name}')
 
-    if not IsVaildUser(ctx):
-        logger.info('먼저 `.사용자등록` 부터 해 주세요.')
-        await ctx.reply('먼저 `.사용자등록` 부터 해 주세요.')
-        return
-
     if isinstance(ctx, SlashContext):
         await ctx.defer()
     
@@ -34,14 +31,21 @@ async def _StockPrices_code(ctx: Union[Context, SlashContext], stock_name: str):
     stock_name = stock_name.lower()
     json_data = GetUserInformation()
 
-    try: int(stock_name) #입력받은 문자가 숫자일 경우
+    try: int(stock_name) #입력받은 문자가 숫자인지 확인
     except:
-        if stock_name in json_data[GetArrayNum(ctx)]['StockDict'].keys():
-            stock_name = json_data[GetArrayNum(ctx)]['StockDict'][stock_name]
-            
-        elif stock_name in GetStockDictionary().keys():
-            stock_name = GetStockDictionary()[stock_name]
+        if IsVaildUser(ctx):
+            if stock_name in json_data[GetArrayNum(ctx)]['StockDict'].keys():
+                stock_name = json_data[GetArrayNum(ctx)]['StockDict'][stock_name]
+                
+            elif stock_name in GetStockDictionary().keys():
+                stock_name = GetStockDictionary()[stock_name]
 
+            else:
+                url = f'https://www.google.com/search?q={quote_plus(stock_name)}+주가'
+                soup = bs(requests.get(url, headers={'User-agent' : ua.random}).text, 'lxml')
+                stock_name = soup.select_one('#main > div:nth-child(6) > div > div:nth-child(3) > div > div > div > div > div:nth-child(2) > div > div > div > div > span').text
+                stock_name = stock_name[0:stock_name.find('(')]
+        
         else:
             url = f'https://www.google.com/search?q={quote_plus(stock_name)}+주가'
             soup = bs(requests.get(url, headers={'User-agent' : ua.random}).text, 'lxml')
@@ -50,7 +54,6 @@ async def _StockPrices_code(ctx: Union[Context, SlashContext], stock_name: str):
         
     url = f'https://finance.naver.com/item/main.naver?code={stock_name}'
     soup = bs(requests.get(url, headers={'User-agent' : ua.random}).text, 'lxml')
-
 
     title = soup.select_one('#middle > div.h_company > div.wrap_company > h2 > a').text #주식회사 이름
     description = soup.select_one('#middle > div.h_company > div.wrap_company > div > span.code').text #기업코드
@@ -83,6 +86,11 @@ async def _StockPrices_code(ctx: Union[Context, SlashContext], stock_name: str):
     UpAndDown = {'상승':'+', '하락':'-', '보합':'', '+':'+', '-':'-'}
     embed = discord.Embed(title=f'{title}({stock_time})', description=f'기업번호: {description}', color=RandomEmbedColor())
     embed.add_field(name=f'{price}원', value=f'전일대비: {UpAndDown[UpAndDown_soup]}{lastday} | {UpAndDown[UpAndDown_soup]}{lastday_per}%', inline=False)
+    if IsVaildUser(ctx):
+        if json_data[GetArrayNum(ctx)]['Settings']['ShowStockChartImage'] == True:
+            chart_img = f'https://ssl.pstatic.net/imgfinance/chart/item/area/day/{stock_name}.png?sidcode=1644477{randint(1, 999999):06}'
+            embed.set_image(url=chart_img)
+        
     logger.info('Done.')
     await ctx.reply(embed=embed)
 
@@ -119,7 +127,7 @@ class StockPrices_SlashContext(commands.Cog):
             logger.warning(error)
             await ctx.send(f'{error}')
 
-####################################################################################################
+#################################################################################################### .주가
 
 class StockPrices_Context(commands.Cog):
     def __init__(self, bot: commands.Bot):
@@ -142,7 +150,6 @@ class StockPrices_Context(commands.Cog):
         else:
             logger.warning(error)
             await ctx.send(f'{error}')
-
 
 ######################################################################################################################################################
 

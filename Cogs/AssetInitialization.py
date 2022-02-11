@@ -16,7 +16,7 @@ from module._define_ import *
 ######################################################################################################################################################
 
 async def _AssetInitialization_code(ctx: Union[Context, SlashContext], string: str):
-    logger.info(f'{ctx.author.name}: {ctx.invoked_with} {string}')
+    logger.info(f'[{type(ctx)}] {ctx.author.name}: {ctx.invoked_with} {string}')
     
     if not IsVaildUser(ctx):
         logger.info('먼저 `.사용자등록` 부터 해 주세요.')
@@ -36,8 +36,8 @@ async def _AssetInitialization_code(ctx: Union[Context, SlashContext], string: s
             logger.info('「.초기화 초기화확인」을 입력해야 초기화 할 수 있습니다.')
             await ctx.reply('「.초기화 초기화확인」을 입력해야 초기화 할 수 있습니다.')
         else:
-            logger.info('「초기화확인」을 입력해야 초기화 할 수 있습니다.')
-            await ctx.reply('「초기화확인」을 입력해야 초기화 할 수 있습니다.')
+            logger.info('확인문구에「초기화확인」을 입력해야 초기화 할 수 있습니다.')
+            await ctx.reply('확인문구에「초기화확인」을 입력해야 초기화 할 수 있습니다.')
 
 ######################################################################################################################################################
 

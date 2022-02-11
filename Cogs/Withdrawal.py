@@ -15,7 +15,7 @@ from module._define_ import *
 ######################################################################################################################################################
 
 async def _Withdrawal_code(ctx: Union[Context, SlashContext], string: str):
-    logger.info(f'{ctx.author.name}: {ctx.invoked_with} {string}')
+    logger.info(f'[{type(ctx)}] {ctx.author.name}: {ctx.invoked_with} {string}')
     
     if not IsVaildUser(ctx):
         logger.info('먼저 `.사용자등록` 부터 해 주세요.')

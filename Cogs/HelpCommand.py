@@ -12,7 +12,7 @@ class HelpCommand_Context(commands.Cog):
         
     @commands.command(name='도움말', aliases=['명령어', '?'])
     async def _HelpCommand(self, ctx: Context, command: str=None):
-        logger.info(f'{ctx.author.name}: {ctx.invoked_with} {command}')
+        logger.info(f'[{type(ctx)}] {ctx.author.name}: {ctx.invoked_with} {command}')
         
         if command is not None:
             command = command.replace('.', '')

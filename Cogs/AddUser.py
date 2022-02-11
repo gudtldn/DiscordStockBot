@@ -11,7 +11,7 @@ from module._define_ import *
 ######################################################################################################################################################
 
 async def _AddUser_code(ctx: Union[Context, SlashContext]):
-    logger.info(f'{ctx.author.name}: {ctx.invoked_with}')
+    logger.info(f'[{type(ctx)}] {ctx.author.name}: {ctx.invoked_with}')
         
     json_data = GetUserInformation()
 
@@ -47,7 +47,7 @@ class AddUser_Context(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
     
-    @commands.command(name='사용자등록', aliases=['동록'])
+    @commands.command(name='사용자등록', aliases=['등록'])
     async def _AddUser(self, ctx: Context):
         await _AddUser_code(ctx)
 

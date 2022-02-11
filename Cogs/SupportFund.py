@@ -15,7 +15,7 @@ from module._define_ import *
 ######################################################################################################################################################
 
 async def _SupportFund_code(ctx: Union[Context, SlashContext]):
-    logger.info(f'{ctx.author.name}: {ctx.invoked_with}')
+    logger.info(f'[{type(ctx)}] {ctx.author.name}: {ctx.invoked_with}')
     
     if not IsVaildUser(ctx):
         logger.info('먼저 `.사용자등록` 부터 해 주세요.')
@@ -41,8 +41,8 @@ async def _SupportFund_code(ctx: Union[Context, SlashContext]):
         
     else:
         now_time = ConvertSecToTimeStruct(json_data[GetArrayNum(ctx)]['SupportFundTime'] - int(time()) + cool_down)
-        logger.info(f'지원금을 받으려면 {now_time.hour}시간 {now_time.min}분 {now_time.sec}초를 더 기다려야 합니다.')
-        await ctx.reply(f'지원금을 받으려면 {now_time.hour}시간 {now_time.min}분 {now_time.sec}초를 더 기다려야 합니다.')
+        logger.info(f'지원금을 받으려면 {now_time.hour24}시간 {now_time.min}분 {now_time.sec}초를 더 기다려야 합니다.')
+        await ctx.reply(f'지원금을 받으려면 {now_time.hour24}시간 {now_time.min}분 {now_time.sec}초를 더 기다려야 합니다.')
 
 ######################################################################################################################################################
 

@@ -96,8 +96,8 @@ def IsVaildUser(ctx: Union[Context, SlashContext, int]): #ctx.author.id를 가�
     return False
 
 def ErrorCheck(error, error_context): #찾으려는 에러가 error.args에 있는지 여부
-    # logger.warning(error)
-    return any(error_context in i for i in error.args)
+    # return any(error_context in i for i in error.args)
+    return error_context in error.args
 
 ################################################################################ 클래스 선언 ################################################################################
 
@@ -110,6 +110,8 @@ class ConvertSecToTimeStruct():
         self.day = _delta.days
         
         _delta = str(timedelta(seconds=_delta.seconds)).split(':')
-        self.hour = int(_delta[0])
+        self.hour24 = int(_delta[0])
         self.min = int(_delta[1])
         self.sec = int(_delta[2])
+        
+        self.hour12 = int(_delta[0])-12 if self.hour24 >= 12 else int(_delta[0])

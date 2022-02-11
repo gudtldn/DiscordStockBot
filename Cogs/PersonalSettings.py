@@ -3,20 +3,20 @@
 import discord
 from discord.ext import commands
 from discord.ext.commands import Context
-from discord.ext.commands.errors import MissingRequiredArgument
+from discord.ext.commands.errors import MissingRequiredArgument, CommandInvokeError
 
 from discord_slash import SlashContext, cog_ext
 from discord_slash.model import SlashCommandOptionType as OptionType
 from discord_slash.utils.manage_commands import create_option, create_choice
 
-from typing import Union
+from typing import Any, Union
 
 from module._define_ import *
 
 ######################################################################################################################################################
 
 async def _PersonalSettings_code(ctx: Union[Context, SlashContext], setting: str, boolean: Union[bool, str]=None):
-    logger.info(f'{ctx.author.name}: {ctx.invoked_with} {setting} {boolean}')
+    logger.info(f'[{type(ctx)}] {ctx.author.name}: {ctx.invoked_with} {setting} {boolean}')
     
     if not IsVaildUser(ctx):
         logger.info('먼저 `.사용자등록` 부터 해 주세요.')
@@ -42,38 +42,32 @@ async def _PersonalSettings_code(ctx: Union[Context, SlashContext], setting: str
         string = ''
         d = {
             'InformationDisclosure': '자산정보 공개여부',
-            'ShowSupportFund': '지원금으로 얻은 돈 표시',
-            'ShowStockChartImage': '주식차트 표시'
+            'ShowSupportFund': '지원금으로 얻은 돈 표시여부',
+            'ShowStockChartImage': '주식차트 표시여부'
         }
-        
+
         for _key, _value in json_data[GetArrayNum(ctx)]['Settings'].items():
             string += f'{d[_key]} = {_value}\n'
 
         await reply(string)
-        
-    elif setting in ('InformationDisclosure', '자산정보'):
+    
+    else:
         if boolean is None:
-            await reply('boolean을 입력해 주세요')
+            logger.warning('설정할 값(「true」또는「false」)를 입력해 주세요.')
+            await ctx.reply('설정할 값(「true」또는「false」)를 입력해 주세요.')
             return
         
+    if setting in ('InformationDisclosure', '자산정보'):
         json_data[GetArrayNum(ctx)]['Settings']['InformationDisclosure'] = boolean
         SetUserInformation(json_data)
         await reply(f'자산정보 공개여부가 {boolean}로 설정되었습니다.')
         
     elif setting in ('ShowSupportFund', '지원금표시'):
-        if boolean is None:
-            await reply('boolean을 입력해 주세요')
-            return
-        
         json_data[GetArrayNum(ctx)]['Settings']['ShowSupportFund'] = boolean
         SetUserInformation(json_data)
         await reply(f'지원금으로 얻은 돈 표시가 {boolean}로 설정되었습니다.')
         
     elif setting in ('ShowStockChartImage', '차트표시'):
-        if boolean is None:
-            await reply('boolean을 입력해 주세요')
-            return
-        
         json_data[GetArrayNum(ctx)]['Settings']['ShowStockChartImage'] = boolean
         SetUserInformation(json_data)
         await reply(f'주식차트 표시가 {boolean}로 설정되었습니다.')
@@ -144,15 +138,15 @@ class PersonalSettings_Context(commands.Cog):
         await _PersonalSettings_code(ctx, setting, boolean)
     
     @_PersonalSettings.error
-    async def _PersonalSettings_error(self, ctx: Context, error):
+    async def _PersonalSettings_error(self, ctx: Context, error: Union[CommandInvokeError, Any]):
         if isinstance(error, MissingRequiredArgument):
             logger.warning('「설정타입」을 입력해 주세요.')
             await ctx.reply('「설정타입」을 입력해 주세요.')
         
-        elif ErrorCheck(error, f"Command raised an exception: KeyError: '{ctx.args[2]}'"):
+        elif isinstance(error.original, KeyError):
             logger.warning('「true」또는「false」만 입력해 주세요.')
             await ctx.reply('「true」또는「false」만 입력해 주세요.')
-        
+            
         else:
             logger.warning(error)
             await ctx.send(error)

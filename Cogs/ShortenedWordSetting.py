@@ -10,17 +10,25 @@ import requests
 from bs4 import BeautifulSoup as bs
 from fake_useragent import UserAgent
 
+from typing import Union
+
 from module._define_ import *
 
 ######################################################################################################################################################
 
-async def _ShortenedWordSetting_code(ctx: SlashContext, setting_name: str, add_stock_name: str = None, add_stock_num: str = None):
-    logger.info(f'{ctx.author.name}: {setting_name} {add_stock_name} {add_stock_num}')
+async def _ShortenedWordSetting_code(ctx: Union[Context, SlashContext], setting_name: str, add_stock_name: str = None, add_stock_num: str = None):
+    logger.info(f'[{type(ctx)}] {ctx.author.name}: {setting_name} {add_stock_name} {add_stock_num}')
     
     if not IsVaildUser(ctx):
         logger.info('먼저 `.사용자등록` 부터 해 주세요.')
         await ctx.reply('먼저 `.사용자등록` 부터 해 주세요.')
         return
+    
+    async def reply(msg: str):
+        if isinstance(ctx, Context):
+            await ctx.reply(msg)
+        else:
+            await ctx.reply(msg, hidden=True)
     
     json_data = GetUserInformation()
     
@@ -30,14 +38,20 @@ async def _ShortenedWordSetting_code(ctx: SlashContext, setting_name: str, add_s
         for stock_name in json_data[GetArrayNum(ctx)]['StockDict']:
             value += f'{stock_name}: {json_data[GetArrayNum(ctx)]["StockDict"][stock_name]}\n'
         
-        await ctx.reply(value, hidden=True)
+        await reply(value)
         
     elif setting_name == '추가':
         if add_stock_num is None:
             logger.info('**기업번호**는 필수 입력 항목 입니다.')
-            await ctx.reply('**기업번호**는 필수 입력 항목 입니다.', hidden=True)
+            await reply('**기업번호**는 필수 입력 항목 입니다.')
             return
-            
+        
+        try: int(add_stock_num) #숫자 외의 다른 문자가 들어왔을 경우
+        except:
+            logger.info('숫자만 입력해 주세요.')
+            await reply('숫자만 입력해 주세요.')
+            return
+        
         if not add_stock_name: #add_stock_name이 None일 경우 인터넷에서 검색
             ua = UserAgent()
             url = f'https://finance.naver.com/item/main.naver?code={add_stock_num}'
@@ -46,34 +60,33 @@ async def _ShortenedWordSetting_code(ctx: SlashContext, setting_name: str, add_s
             add_stock_name = soup.select_one('#middle > div.h_company > div.wrap_company > h2 > a').text.lower() #주식회사 이름
             add_stock_num = soup.select_one('#middle > div.h_company > div.wrap_company > div > span.code').text #기업코드
             
-        for i in json_data[GetArrayNum(ctx)]['StockDict']:
-            if i == add_stock_name:
-                logger.info('이미 추가되있는 기업입니다.')
-                await ctx.reply('이미 추가되있는 기업입니다.', hidden=True)
-                return
+        if add_stock_name in json_data[GetArrayNum(ctx)]['StockDict'].keys():
+            logger.info('이미 추가되있는 기업이름입니다.')
+            await reply('이미 추가되있는 기업이름입니다.')
+            return
             
         json_data[GetArrayNum(ctx)]['StockDict'][add_stock_name] = add_stock_num
         SetUserInformation(json_data)
         
         logger.info(f'`{add_stock_name}: {add_stock_num}`이/가 추가되었습니다.')
-        await ctx.reply(f'`{add_stock_name}: {add_stock_num}`이/가 추가되었습니다.', hidden=True)
+        await reply(f'`{add_stock_name}: {add_stock_num}`이/가 추가되었습니다.')
         
     elif setting_name == '제거':
         if not add_stock_name:
             logger.info('**기업이름**는 필수 입력 항목 입니다.')
-            await ctx.reply('**기업이름**는 필수 입력 항목 입니다.', hidden=True)
+            await reply('**기업이름**는 필수 입력 항목 입니다.')
             return
         
-        for i in json_data[GetArrayNum(ctx)]['StockDict']:
-            if i == add_stock_name:
-                logger.info(f'`{i}: {json_data[GetArrayNum(ctx)]["StockDict"][i]}`이/가 제거되었습니다.')
-                await ctx.reply(f'`{i}: {json_data[GetArrayNum(ctx)]["StockDict"][i]}`이/가 제거되었습니다.', hidden=True)
-                del(json_data[GetArrayNum(ctx)]['StockDict'][i])
+        for k in json_data[GetArrayNum(ctx)]['StockDict']:
+            if k == add_stock_name:
+                logger.info(f'`{k}: {json_data[GetArrayNum(ctx)]["StockDict"][k]}`이/가 제거되었습니다.')
+                await reply(f'`{k}: {json_data[GetArrayNum(ctx)]["StockDict"][k]}`이/가 제거되었습니다.')
+                del(json_data[GetArrayNum(ctx)]['StockDict'][k])
                 SetUserInformation(json_data)
                 return
             
         logger.info(f'{add_stock_name}이/가 목록에 존재하지 않습니다.')
-        await ctx.reply(f'{add_stock_name}이/가 목록에 존재하지 않습니다.', hidden=True)
+        await reply(f'{add_stock_name}이/가 목록에 존재하지 않습니다.')
         return
 
 ######################################################################################################################################################
@@ -130,7 +143,7 @@ class ShortenedWordSetting_SlashContext(commands.Cog):
         await _ShortenedWordSetting_code(ctx, setting_name, add_stock_name, add_stock_num)
 
     @_ShortenedWordSetting.error
-    async def _ShortenedWordSetting_error(self, ctx: SlashContext, error):      
+    async def _ShortenedWordSetting_error(self, ctx: SlashContext, error):
         if isinstance(error, AttributeError):
             logger.warning('존재하지 않는 기업번호입니다.')
             await ctx.reply('존재하지 않는 기업번호입니다.', hidden=True)
@@ -144,7 +157,21 @@ class ShortenedWordSetting_SlashContext(commands.Cog):
 class ShortenedWordSetting_Context(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
+    
+    # @commands.command(name='단축어설정')    
+    # async def _ShortenedWordSetting(self, ctx: Context, setting_name: str, add_stock_name: str = None, add_stock_num: str = None):
+    #     await _ShortenedWordSetting_code(ctx, setting_name, add_stock_name, add_stock_num)
 
+    # @_ShortenedWordSetting.error
+    # async def _ShortenedWordSetting_error(self, ctx: Context, error):
+    #     if isinstance(error, AttributeError):
+    #         logger.warning('존재하지 않는 기업번호입니다.')
+    #         await ctx.reply('존재하지 않는 기업번호입니다.')
+            
+    #     else:
+    #         logger.warning(f'{error}')
+    #         await ctx.send(f'{error}')
+            
 ######################################################################################################################################################
 
 def setup(bot: commands.Bot):

@@ -9,7 +9,6 @@ from discord_slash.model import SlashCommandOptionType as OptionType
 from discord_slash.utils.manage_commands import create_option, create_choice
 
 import asyncio
-import nest_asyncio; nest_asyncio.apply()
 from functools import partial
 
 import requests
@@ -80,8 +79,8 @@ async def get_text_(author_id, keywords):
 
 ######################################################################################################################################################
 
-async def _AssetInformation_code(ctx: Union[Context, SlashContext], option: str):
-    logger.info(f'{ctx.author.name}: {ctx.invoked_with} {option}')
+async def _AssetInformation_code(ctx: Union[Context, SlashContext], option: Union[discord.User, str]):
+    logger.info(f'[{type(ctx)}] {ctx.author.name}: {ctx.invoked_with} {option}')
         
     if not IsVaildUser(ctx):
         logger.info('먼저 `.사용자등록` 부터 해 주세요.')
@@ -126,7 +125,7 @@ async def _AssetInformation_code(ctx: Union[Context, SlashContext], option: str)
                 await ctx.reply(f'{user_name}님의 정보가 비공개되어 있습니다.')
                 return
     
-    async def _crawling():
+    def _crawling():
         global stock_num_array
         global TotalAssets
         
@@ -157,15 +156,15 @@ async def _AssetInformation_code(ctx: Union[Context, SlashContext], option: str)
             embed.add_field(name=add_embed[0], value=f'잔고수량: {add_embed[1]:,} | {add_embed[2]:,}원', inline=False)
         
         logger.info(f'All Done. {time() - start_time} seconds')
-        await ctx.reply(embed=embed)
+        return embed
     
     if isinstance(ctx, Context):
         async with ctx.typing():
-            await _crawling()
+            await ctx.reply(embed=_crawling())
     else:
         hidden = not json_data[GetArrayNum(author_id)]['Settings']['InformationDisclosure']
         await ctx.defer(hidden=hidden)
-        await _crawling()
+        await ctx.reply(embed=_crawling())
 
 ######################################################################################################################################################
 
@@ -186,7 +185,7 @@ class AssetInformation_SlashContext(commands.Cog):
             ),
             create_option(
                 name='랭킹',
-                description='이 서버의 자산랭킹을 나열합니다.',
+                description='이 서버에 있는 유저의 자산랭킹을 나열합니다.',
                 option_type=OptionType.STRING,
                 required=False,
                 choices=[
@@ -208,7 +207,7 @@ class AssetInformation_SlashContext(commands.Cog):
             logger.warning('검색하던중 알 수 없는 에러가 발생하였습니다. 다시 입력해 주세요.')
             await ctx.reply('검색하던중 알 수 없는 에러가 발생하였습니다. 다시 입력해 주세요.')
             
-        elif ErrorCheck(error, "list indices must be integers or slices, not NoneType"):
+        elif isinstance(error, TypeError):
             logger.warning('등록되어 있지 않은 유저입니다.')
             await ctx.reply('등록되어 있지 않은 유저입니다.')
             
@@ -230,14 +229,9 @@ class AssetInformation_Context(commands.Cog):
             logger.warning('검색하던중 알 수 없는 에러가 발생하였습니다. 다시 입력해 주세요.')
             await ctx.reply('검색하던중 알 수 없는 에러가 발생하였습니다. 다시 입력해 주세요.')
             
-        elif ErrorCheck(error, "Command raised an exception: TypeError: list indices must be integers or slices, not NoneType"):
+        elif isinstance(error.original, TypeError):
             logger.warning('등록되어 있지 않은 유저입니다.')
             await ctx.reply('등록되어 있지 않은 유저입니다.')
-            
-        elif ErrorCheck(error, f"Command raised an exception: ValueError: invalid literal for int() with base 10: '{ctx.args[2].replace('<@', '').replace('>', '')}'")or \
-            ErrorCheck(error, "Command raised an exception: ValueError: invalid literal for int() with base 10: '{0}'".format(ctx.args[2].replace('@', '@\u200b'))):
-            logger.warning('다시 입력해 주세요.')
-            await ctx.reply('다시 입력해 주세요.')
             
         elif ErrorCheck(error, "Command raised an exception: AttributeError: 'str' object has no attribute 'id'"):
             logger.warning('다시 입력해 주세요.')

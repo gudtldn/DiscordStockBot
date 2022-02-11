@@ -1,3 +1,5 @@
+import nest_asyncio; nest_asyncio.apply()
+
 import discord
 from discord.ext import commands
 from discord.ext.commands.errors import CommandNotFound
@@ -81,12 +83,17 @@ async def on_command_error(ctx, error):
     permissions=permission_setting
 )
 async def _BotInformation(ctx: SlashContext):
-    logger.info(f'{ctx.author.name}: {ctx.invoked_with}')
+    logger.info(f'봇 정보')
 
     now_time = ConvertSecToTimeStruct(int(time() - operation_time))
+    async def reply(msg):
+        logger.info(f'{msg}')
+        await ctx.reply(f'{msg}', hidden=True)
         
-    logger.info(f'현재 플렛폼: {platform()}, 가동시간: {now_time.day}일 {now_time.hour}시 {now_time.min}분 {now_time.sec}초, 지연시간: {bot.latency}ms')
-    await ctx.reply(f'현재 플렛폼: {platform()}\n가동시간: {now_time.day}일 {now_time.hour}시 {now_time.min}분 {now_time.sec}초\n지연시간: {bot.latency}ms', hidden=True)
+    await reply(f"현재 플렛폼: {platform()}\n\
+가동시간: {now_time.day}일 {now_time.hour24}시 {now_time.min}분 {now_time.sec}초\n\
+지연시간: {bot.latency}ms\n\
+불러온 명령어들: {list(bot.cogs.keys())}")
 
 ################################################################################ /업로드
 
@@ -131,6 +138,8 @@ async def _BotInformation(ctx: SlashContext):
     connector={'파일타입': 'file_type', '경로': 'path'}
 )
 async def _UploadFile(ctx: SlashContext, file_type: str, path: str = None):    
+    logger.info(f'업로드: {file_type}')
+    
     if file_type == 'logs':
         from os import chdir, listdir, remove
         from zipfile import ZipFile
@@ -215,6 +224,8 @@ async def _UploadFile_error(ctx: SlashContext, error):
     connector={'파일타입': 'file_type', '링크': 'link', '경로': 'path'}
 )
 async def _DownloadFile(ctx: SlashContext, file_type: str, link: str, path: str=None):
+    logger.info(f'다운로드: {file_type}')
+    
     import requests as r
     
     if file_type == 'cogs':
@@ -222,10 +233,12 @@ async def _DownloadFile(ctx: SlashContext, file_type: str, link: str, path: str=
             await ctx.send('올바르지 않은 링크입니다. 다시 확인해 주세요.')
             return
         
-        with open(f'./Cogs/{link.split("/")[-1]}', 'wb') as f:
+        file_name = link.split("/")[-1]
+        
+        with open(f'./Cogs/{file_name}', 'wb') as f:
             f.write(r.get(link, allow_redirects=True).content)
         
-        await ctx.send('성공적으로 다운로드가 완료되었습니다.')
+        await ctx.send('{file_name}가 성공적으로 다운로드가 완료되었습니다.')
     
     elif file_type == 'userinfo':
         if link.find('UserInformation.json') == -1:
@@ -276,6 +289,8 @@ async def _DownloadFile_error(ctx: SlashContext, error):
     permissions=permission_setting
 )
 async def reload_commands(ctx: SlashContext):
+    logger.info('명령어 다시불러오는 중...')
+    
     await ctx.defer()
     
     for cog_file in os.listdir('Cogs'):
@@ -283,6 +298,7 @@ async def reload_commands(ctx: SlashContext):
             bot.unload_extension(f'Cogs.{cog_file[:-3]}')
             bot.load_extension(f'Cogs.{cog_file[:-3]}')
     
+    logger.info('모든 명령어를 다시 불러왔습니다.')
     await ctx.send('모든 명령어를 다시 불러왔습니다.')
 
 ################################################################################ /역할
@@ -314,6 +330,8 @@ async def reload_commands(ctx: SlashContext):
     connector={'역할설정': 'rule_setting'}
 )
 async def _RuleSetting(ctx: SlashContext, rule_setting: str):
+    logger.info(f'역할: {rule_setting}')
+    
     await ctx.defer()
     
     if rule_setting == 'add':

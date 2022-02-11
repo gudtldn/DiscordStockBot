@@ -12,6 +12,7 @@ import requests
 from bs4 import BeautifulSoup as bs
 from fake_useragent import UserAgent
 from urllib.parse import quote_plus
+from io import BytesIO
 
 from random import randint
 
@@ -22,7 +23,7 @@ from module._define_ import *
 ######################################################################################################################################################
 
 async def _StockPrices_code(ctx: Union[Context, SlashContext], stock_name: str):
-    logger.info(f'{ctx.author.name}: {ctx.invoked_with} {stock_name}')
+    logger.info(f'[{type(ctx)}] {ctx.author.name}: {ctx.invoked_with} {stock_name}')
 
     if isinstance(ctx, SlashContext):
         await ctx.defer()
@@ -88,11 +89,13 @@ async def _StockPrices_code(ctx: Union[Context, SlashContext], stock_name: str):
     embed.add_field(name=f'{price}원', value=f'전일대비: {UpAndDown[UpAndDown_soup]}{lastday} | {UpAndDown[UpAndDown_soup]}{lastday_per}%', inline=False)
     if IsVaildUser(ctx):
         if json_data[GetArrayNum(ctx)]['Settings']['ShowStockChartImage'] == True:
-            chart_img = f'https://ssl.pstatic.net/imgfinance/chart/item/area/day/{stock_name}.png?sidcode=1644477{randint(1, 999999):06}'
-            embed.set_image(url=chart_img)
+            chart_img_url = f"https://ssl.pstatic.net/imgfinance/chart/item/area/day/{stock_name}.png?sidcode=16444779{randint(1, 99999):05}"
+            data = BytesIO(requests.get(chart_img_url, allow_redirects=True).content)
+            chart_img = discord.File(data, filename="chart_img.png")
+            embed.set_image(url="attachment://chart_img.png")
         
     logger.info('Done.')
-    await ctx.reply(embed=embed)
+    await ctx.reply(embed=embed, file=chart_img)
 
 ######################################################################################################################################################
 
@@ -119,7 +122,7 @@ class StockPrices_SlashContext(commands.Cog):
         
     @_StockPrices.error
     async def _StockPrices_error(self, ctx, error):
-        if ErrorCheck(error, "'NoneType' object has no attribute 'text'"):
+        if isinstance(error, AttributeError):
             logger.warning('주식을 찾지 못하였습니다.')
             await ctx.reply('주식을 찾지 못하였습니다.')
         
@@ -139,7 +142,7 @@ class StockPrices_Context(commands.Cog):
             
     @_StockPrices.error
     async def _StockPrices_error(self, ctx, error):
-        if ErrorCheck(error, "Command raised an exception: AttributeError: 'NoneType' object has no attribute 'text'"):
+        if isinstance(error.original, AttributeError):
             logger.warning('주식을 찾지 못하였습니다.')
             await ctx.reply('주식을 찾지 못하였습니다.')
 

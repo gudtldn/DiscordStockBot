@@ -18,7 +18,7 @@ from module._define_ import *
 ######################################################################################################################################################
 
 async def _StockSelling_code(ctx: Union[Context, SlashContext], stock_name: str, num: Union[int, str]):
-    logger.info(f'{ctx.author.name}: {ctx.invoked_with} {stock_name} {num}')
+    logger.info(f'[{type(ctx)}] {ctx.author.name}: {ctx.invoked_with} {stock_name} {num}')
     
     if not IsVaildUser(ctx):
         logger.info('먼저 `.사용자등록` 부터 해 주세요.')
@@ -81,7 +81,10 @@ async def _StockSelling_code(ctx: Union[Context, SlashContext], stock_name: str,
                     return
                 
             else:
-                await ctx.reply(f'「.{ctx.invoked_with} {ctx.args[1]} __{ctx.args[2]}__」밑줄 친 부분에는「풀매도」,「모두」또는「반매도」또는 숫자만 입력해 주세요.')
+                if isinstance(ctx, Context):
+                    await ctx.reply(f'「.{ctx.invoked_with} {ctx.args[1]} __{ctx.args[2]}__」밑줄 친 부분에는「풀매도」,「모두」또는「반매도」또는 숫자만 입력해 주세요.')
+                else:
+                    await ctx.reply(f'「/{ctx.invoked_with} {ctx.args[0]} __{ctx.args[1]}__」밑줄 친 부분에는「풀매도」,「모두」또는「반매도」또는 숫자만 입력해 주세요.')
                 return
         
         if num <= json_data[GetArrayNum(ctx)]['Stock'][stock_name]:
@@ -135,11 +138,7 @@ class StockSelling_SlashContext(commands.Cog):
         
     @_StockSelling.error
     async def _StockSelling_error(self, ctx, error):
-        if ErrorCheck(error, "'NoneType' object has no attribute 'text'"):
-            logger.warning('매도하려는 주식을 찾지 못하였습니다.')
-            await ctx.reply('매도하려는 주식을 찾지 못하였습니다.')
-            
-        elif ErrorCheck(error, "'NoneType' object has no attribute 'select_one'"):
+        if isinstance(error, AttributeError):
             logger.warning('매도하려는 주식을 찾지 못하였습니다.')
             await ctx.reply('매도하려는 주식을 찾지 못하였습니다.')
             
@@ -167,11 +166,7 @@ class StockSelling_Context(commands.Cog):
             logger.warning('매도 할 주식의 수를 입력해 주세요.')
             await ctx.reply('매도 할 주식의 수를 입력해 주세요.')
             
-        elif ErrorCheck(error, f"Command raised an exception: AttributeError: 'NoneType' object has no attribute 'text'"):
-            logger.warning('매도하려는 주식을 찾지 못하였습니다.')
-            await ctx.reply('매도하려는 주식을 찾지 못하였습니다.')
-            
-        elif ErrorCheck(error, f"Command raised an exception: AttributeError: 'NoneType' object has no attribute 'select_one'"):
+        elif isinstance(error, AttributeError):
             logger.warning('매도하려는 주식을 찾지 못하였습니다.')
             await ctx.reply('매도하려는 주식을 찾지 못하였습니다.')
             

@@ -50,6 +50,7 @@ async def _PersonalSettings_code(ctx: Union[Context, SlashContext], setting: str
             string += f'{d[_key]} = {_value}\n'
 
         await reply(string)
+        return
     
     else:
         if boolean is None:

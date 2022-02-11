@@ -106,12 +106,12 @@ class ConvertSecToTimeStruct():
     (day, hour, min, sec)
     '''
     def __init__(self, seconds: int):
+        self.parm_sec = seconds
+        
         _delta = timedelta(seconds=seconds)
         self.day = _delta.days
         
         _delta = str(timedelta(seconds=_delta.seconds)).split(':')
-        self.hour24 = int(_delta[0])
+        self.hour = int(_delta[0])
         self.min = int(_delta[1])
         self.sec = int(_delta[2])
-        
-        self.hour12 = int(_delta[0])-12 if self.hour24 >= 12 else int(_delta[0])

@@ -91,7 +91,7 @@ async def _BotInformation(ctx: SlashContext):
         await ctx.reply(f'{msg}', hidden=True)
         
     await reply(f"현재 플렛폼: {platform()}\n\
-가동시간: {now_time.day}일 {now_time.hour24}시 {now_time.min}분 {now_time.sec}초\n\
+가동시간: {now_time.day}일 {now_time.hour}시 {now_time.min}분 {now_time.sec}초\n\
 지연시간: {bot.latency}ms\n\
 불러온 명령어들: {list(bot.cogs.keys())}")
 
@@ -139,6 +139,8 @@ async def _BotInformation(ctx: SlashContext):
 )
 async def _UploadFile(ctx: SlashContext, file_type: str, path: str = None):    
     logger.info(f'업로드: {file_type}')
+    
+    await ctx.defer()
     
     if file_type == 'logs':
         from os import chdir, listdir, remove
@@ -226,6 +228,8 @@ async def _UploadFile_error(ctx: SlashContext, error):
 async def _DownloadFile(ctx: SlashContext, file_type: str, link: str, path: str=None):
     logger.info(f'다운로드: {file_type}')
     
+    await ctx.defer()
+    
     import requests as r
     
     if file_type == 'cogs':
@@ -238,7 +242,7 @@ async def _DownloadFile(ctx: SlashContext, file_type: str, link: str, path: str=
         with open(f'./Cogs/{file_name}', 'wb') as f:
             f.write(r.get(link, allow_redirects=True).content)
         
-        await ctx.send('{file_name}가 성공적으로 다운로드가 완료되었습니다.')
+        await ctx.send(f'{file_name}가 성공적으로 다운로드가 완료되었습니다.')
     
     elif file_type == 'userinfo':
         if link.find('UserInformation.json') == -1:

@@ -32,35 +32,23 @@ async def get_text_from_url(author_id, num, stock_num):  # 코루틴 정의
     loop = asyncio.get_event_loop()
     ua = UserAgent().random
 
-    url = f'https://finance.naver.com/item/main.naver?code={stock_num}' #네이버 금융에 검색
+    url = f'https://finance.naver.com/item/sise.naver?code={stock_num}' #네이버 금융에 검색
     request = partial(requests.get, url, headers={'user-agent': ua})
     timer = time()
     res = await loop.run_in_executor(None, request)
     
     soup = bs(res.text, 'lxml')
-    stock_name = soup.select_one('#middle > div.h_company > div.wrap_company > h2 > a').text
-    price = soup.select_one('#chart_area > div.rate_info > div > p.no_today').select_one('span.blind').text.replace('\n', '').replace(',', '') #현재 시세
-    lastday_per = soup.select_one('#chart_area > div.rate_info > div > p.no_exday > em:nth-child(4)').select_one('span.blind').text.replace('\n', '') #어제 대비 시세%
-    balance = json_data[GetArrayNum(author_id)]['Stock'][stock_num] #현재 주식 수량
-    try:
-        UpAndDown_soup = soup.select_one('#chart_area > div.rate_info > div > p.no_exday > em:nth-child(2) > span.ico.up').text #+
-    except:
-        try:
-            UpAndDown_soup = soup.select_one('#chart_area > div.rate_info > div > p.no_exday > em:nth-child(2) > span.ico.down').text #-
-        except:
-            try:
-                UpAndDown_soup = soup.select_one('#chart_area > div.rate_info > div > p.no_exday > em:nth-child(2) > span.ico.sam').text #X
-            except:
-                try:
-                    UpAndDown_soup = soup.select_one('#chart_area > div.rate_info > div > p.no_exday > em:nth-child(4) > span.ico.plus').text #+
-                except:
-                    UpAndDown_soup = soup.select_one('#chart_area > div.rate_info > div > p.no_exday > em:nth-child(4) > span.ico.minus').text #-
-                    
-    UpAndDown = {'상승':'+', '하락':'-', '보합':'', '+':'+', '-':'-'}
+    stock_name: str = soup.select_one('#middle > div.h_company > div.wrap_company > h2 > a').text #주식명
+    price: int = int(soup.select_one('#_nowVal').text.replace(',', '')) #현재 시세
+    yesterday_price: int = int(soup.select_one('#content > div.section.inner_sub > div:nth-child(1) > table > tbody > tr:nth-child(3) > td:nth-child(4) > span').text.replace(',', '')) #어제 시세
+    compared_price: int = price - yesterday_price #어제대비 가격
+    compared_per: int = round((price - yesterday_price) / yesterday_price * 100, 2) #어제대비 가격%
+    balance: int = json_data[GetArrayNum(author_id)]['Stock'][stock_num] #가지고 있는 주식 수량
+    price_sign = '' if compared_price <= 0 else '+' #부호설정
     
     logger.info(f'{num} Done. {time() - timer}seconds')
     
-    stock_num_array[num].append(f'{stock_name} | {int(price):,}원 | {UpAndDown[UpAndDown_soup]}{lastday_per}%') #['주식이름']
+    stock_num_array[num].append(f'{stock_name} | {int(price):,}원 | {price_sign}{compared_per}%') #['주식이름']
     stock_num_array[num].append(balance) #['주식이름', 주식수량]
     stock_num_array[num].append(int(price) * balance) #['주식이름', 주식수량, 현재시세 * 주식 수]
     

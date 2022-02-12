@@ -57,7 +57,8 @@ def AddUser(ID: int):
         'SupportFundTime': 0,
         'Settings': {
             'InformationDisclosure': True,
-            'ShowSupportFund': True
+            'ShowSupportFund': True,
+            'ShowStockChartImage': False
         },
         'StockDict': {},
         'Stock': {}

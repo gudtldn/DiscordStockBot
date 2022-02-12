@@ -3,13 +3,13 @@
 import discord
 from discord.ext import commands
 from discord.ext.commands import Context
-from discord.ext.commands.errors import MissingRequiredArgument, CommandInvokeError
+from discord.ext.commands.errors import MissingRequiredArgument
 
 from discord_slash import SlashContext, cog_ext
 from discord_slash.model import SlashCommandOptionType as OptionType
 from discord_slash.utils.manage_commands import create_option, create_choice
 
-from typing import Any, Union
+from typing import Union
 
 from module._define_ import *
 
@@ -139,7 +139,7 @@ class PersonalSettings_Context(commands.Cog):
         await _PersonalSettings_code(ctx, setting, boolean)
     
     @_PersonalSettings.error
-    async def _PersonalSettings_error(self, ctx: Context, error: Union[CommandInvokeError, Any]):
+    async def _PersonalSettings_error(self, ctx: Context, error):
         if isinstance(error, MissingRequiredArgument):
             logger.warning('「설정타입」을 입력해 주세요.')
             await ctx.reply('「설정타입」을 입력해 주세요.')

@@ -22,77 +22,68 @@ from module._define_ import *
 
 ######################################################################################################################################################
 
-async def _StockPrices_code(ctx: Union[Context, SlashContext], stock_name: str):
-    logger.info(f'[{type(ctx)}] {ctx.author.name}: {ctx.invoked_with} {stock_name}')
+async def _StockPrices_code(ctx: Union[Context, SlashContext], input_stock_name: str):
+    logger.info(f'[{type(ctx)}] {ctx.author.name}: {ctx.invoked_with} {input_stock_name}')
 
     if isinstance(ctx, SlashContext):
         await ctx.defer()
     
     ua = UserAgent()
-    stock_name = stock_name.lower()
+    input_stock_name = input_stock_name.lower()
     json_data = GetUserInformation()
 
-    try: int(stock_name) #입력받은 문자가 숫자인지 확인
+    try: int(input_stock_name) #입력받은 문자가 숫자인지 확인
     except:
         if IsVaildUser(ctx):
-            if stock_name in json_data[GetArrayNum(ctx)]['StockDict'].keys():
-                stock_name = json_data[GetArrayNum(ctx)]['StockDict'][stock_name]
+            if input_stock_name in json_data[GetArrayNum(ctx)]['StockDict'].keys():
+                input_stock_name = json_data[GetArrayNum(ctx)]['StockDict'][input_stock_name]
                 
-            elif stock_name in GetStockDictionary().keys():
-                stock_name = GetStockDictionary()[stock_name]
+            elif input_stock_name in GetStockDictionary().keys():
+                input_stock_name = GetStockDictionary()[input_stock_name]
 
             else:
-                url = f'https://www.google.com/search?q={quote_plus(stock_name)}+주가'
+                url = f'https://www.google.com/search?q={quote_plus(input_stock_name)}+주가'
                 soup = bs(requests.get(url, headers={'User-agent' : ua.random}).text, 'lxml')
-                stock_name = soup.select_one('#main > div:nth-child(6) > div > div:nth-child(3) > div > div > div > div > div:nth-child(2) > div > div > div > div > span').text
-                stock_name = stock_name[0:stock_name.find('(')]
+                input_stock_name = soup.select_one('#main > div:nth-child(6) > div > div:nth-child(3) > div > div > div > div > div:nth-child(2) > div > div > div > div > span').text
+                input_stock_name = input_stock_name[0:input_stock_name.find('(')]
         
         else:
-            url = f'https://www.google.com/search?q={quote_plus(stock_name)}+주가'
+            url = f'https://www.google.com/search?q={quote_plus(input_stock_name)}+주가'
             soup = bs(requests.get(url, headers={'User-agent' : ua.random}).text, 'lxml')
-            stock_name = soup.select_one('#main > div:nth-child(6) > div > div:nth-child(3) > div > div > div > div > div:nth-child(2) > div > div > div > div > span').text
-            stock_name = stock_name[0:stock_name.find('(')]
-        
-    url = f'https://finance.naver.com/item/main.naver?code={stock_name}'
+            input_stock_name = soup.select_one('#main > div:nth-child(6) > div > div:nth-child(3) > div > div > div > div > div:nth-child(2) > div > div > div > div > span').text
+            input_stock_name = input_stock_name[0:input_stock_name.find('(')]
+    
+    url = f'https://finance.naver.com/item/sise.naver?code={input_stock_name}'
     soup = bs(requests.get(url, headers={'User-agent' : ua.random}).text, 'lxml')
 
-    title = soup.select_one('#middle > div.h_company > div.wrap_company > h2 > a').text #주식회사 이름
-    description = soup.select_one('#middle > div.h_company > div.wrap_company > div > span.code').text #기업코드
-    price = soup.select_one('#chart_area > div.rate_info > div > p.no_today').select_one('span.blind').text.replace('\n', '') #현재 시세
-    lastday = soup.select_one('#chart_area > div.rate_info > div > p.no_exday > em:nth-child(2)').select_one('span.blind').text.replace('\n', '') #어제 대비 시세
-    lastday_per = soup.select_one('#chart_area > div.rate_info > div > p.no_exday > em:nth-child(4)').select_one('span.blind').text.replace('\n', '') #어제 대비 시세%
+    soup_stock_name: str = soup.select_one('#middle > div.h_company > div.wrap_company > h2 > a').text #주식회사 이름
+    soup_stock_num: str = soup.select_one('#middle > div.h_company > div.wrap_company > div > span.code').text #기업코드
+    price: int = int(soup.select_one('#_nowVal').text.replace(',', '')) #현재 시세
+    yesterday_price: int = int(soup.select_one('#content > div.section.inner_sub > div:nth-child(1) > table > tbody > tr:nth-child(3) > td:nth-child(4) > span').text.replace(',', '')) #어제 시세
+    compared_price: int = price - yesterday_price #어제대비 가격
+    compared_per: int = round((price - yesterday_price) / yesterday_price * 100, 2) #어제대비 가격%
+    price_sign = '' if compared_price <= 0 else '+' #부호설정
+    stock_time: str = soup.select_one('#time > em').text #기준일 (개장전, 장중, 장마감)
+    date: list[int] = stock_time[:10].split('.')
+    for n, i in enumerate(date):
+        date[n] = int(i)
     
-    stop_trading_soup = bs(requests.get(f'https://finance.naver.com/item/sise.naver?code={stock_name}', headers={'User-agent' : ua.random}).text, 'lxml')
-    stop_trading = stop_trading_soup.select_one('#content > div.section.inner_sub > div:nth-child(1) > table > tbody > tr:nth-child(4) > td:nth-child(4) > span').text #시가
+    stop_trading = soup.select_one('#content > div.section.inner_sub > div:nth-child(1) > table > tbody > tr:nth-child(4) > td:nth-child(4) > span').text #시가
     if stop_trading == '0':
         stock_time = '거래정지'
     else:
-        stock_time = soup.select_one('#time > em > span').text; stock_time = stock_time[stock_time.find('(')+1:stock_time.find(')')] #장중 & 장 마감
-        
-    try:
-        UpAndDown_soup = soup.select_one('#chart_area > div.rate_info > div > p.no_exday > em:nth-child(2) > span.ico.up').text #+
-    except:
-        try:
-            UpAndDown_soup = soup.select_one('#chart_area > div.rate_info > div > p.no_exday > em:nth-child(2) > span.ico.down').text #-
-        except:
-            try:
-                UpAndDown_soup = soup.select_one('#chart_area > div.rate_info > div > p.no_exday > em:nth-child(2) > span.ico.sam').text #X
-            except:
-                try:
-                    UpAndDown_soup = soup.select_one('#chart_area > div.rate_info > div > p.no_exday > em:nth-child(4) > span.ico.plus').text #+
-                except:
-                    UpAndDown_soup = soup.select_one('#chart_area > div.rate_info > div > p.no_exday > em:nth-child(4) > span.ico.minus').text #-
-
-
-    UpAndDown = {'상승':'+', '하락':'-', '보합':'', '+':'+', '-':'-'}
-    embed = discord.Embed(title=f'{title}({stock_time})', description=f'기업번호: {description}', color=RandomEmbedColor())
-    embed.add_field(name=f'{price}원', value=f'전일대비: {UpAndDown[UpAndDown_soup]}{lastday} | {UpAndDown[UpAndDown_soup]}{lastday_per}%', inline=False)
+        stock_time = stock_time[stock_time.find('(')+1:stock_time.find(')')] #장중 & 장 마감
+   
+    chart_img = None
+    embed = discord.Embed(title=f'{soup_stock_name}({stock_time})', description=f'기업번호: {soup_stock_num}', color=RandomEmbedColor())
+    embed.add_field(name=f'{price:,}원', value=f'전일대비: {price_sign}{compared_price:,} | {price_sign}{compared_per:,}%', inline=False)
     if IsVaildUser(ctx):
         if json_data[GetArrayNum(ctx)]['Settings']['ShowStockChartImage'] == True:
-            chart_img_url = f"https://ssl.pstatic.net/imgfinance/chart/item/area/day/{stock_name}.png?sidcode=16444779{randint(1, 99999):05}"
-            data = BytesIO(requests.get(chart_img_url, allow_redirects=True).content)
-            chart_img = discord.File(data, filename="chart_img.png")
+            chart_img_url = f"https://ssl.pstatic.net/imgfinance/chart/item/area/day/{input_stock_name}.png?sidcode=16444779{randint(1, 99999):05}"
+            img_data = BytesIO(requests.get(chart_img_url, allow_redirects=True).content)
+            chart_img = discord.File(img_data, filename="chart_img.png")
             embed.set_image(url="attachment://chart_img.png")
+    embed.set_footer(text=f"{date[0]}년 {date[1]}월 {date[2]}일 기준")
         
     logger.info('Done.')
     await ctx.reply(embed=embed, file=chart_img)

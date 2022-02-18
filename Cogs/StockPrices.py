@@ -133,13 +133,13 @@ class StockPrices_Context(commands.Cog):
             
     @_StockPrices.error
     async def _StockPrices_error(self, ctx, error):
-        if isinstance(error.original, AttributeError):
-            logger.warning('주식을 찾지 못하였습니다.')
-            await ctx.reply('주식을 찾지 못하였습니다.')
-
-        elif isinstance(error, MissingRequiredArgument):
+        if isinstance(error, MissingRequiredArgument):
             logger.warning('검색할 주식을 입력해 주세요.')
             await ctx.reply('검색할 주식을 입력해 주세요.')
+
+        elif isinstance(error.original, AttributeError):
+            logger.warning('주식을 찾지 못하였습니다.')
+            await ctx.reply('주식을 찾지 못하였습니다.')
 
         else:
             logger.warning(error)

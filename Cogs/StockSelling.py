@@ -34,7 +34,6 @@ async def _StockSelling_code(ctx: Union[Context, SlashContext], stock_name: str,
             await ctx.reply('매도 할 개수는 음수이거나 0일 수 없습니다.')
             return
     
-    json_data = GetUserInformation()
     ua = UserAgent()
     stock_name = stock_name.lower()
     
@@ -43,8 +42,8 @@ async def _StockSelling_code(ctx: Union[Context, SlashContext], stock_name: str,
     
     try: int(stock_name) #입력받은 문자가 숫자일 경우
     except:
-        if stock_name in json_data[GetArrayNum(ctx)]['StockDict'].keys():
-            stock_name = json_data[GetArrayNum(ctx)]['StockDict'][stock_name]
+        if stock_name in GetUserInformation()[GetArrayNum(ctx)]['StockDict'].keys():
+            stock_name = GetUserInformation()[GetArrayNum(ctx)]['StockDict'][stock_name]
             
         elif stock_name in GetStockDictionary().keys():
             stock_name = GetStockDictionary()[stock_name]
@@ -63,7 +62,7 @@ async def _StockSelling_code(ctx: Union[Context, SlashContext], stock_name: str,
     stop_trading_soup = bs(requests.get(f'https://finance.naver.com/item/sise.naver?code={stock_name}', headers={'User-agent' : ua.random}).text, 'lxml')
     stop_trading = stop_trading_soup.select_one('#content > div.section.inner_sub > div:nth-child(1) > table > tbody > tr:nth-child(4) > td:nth-child(4) > span').text #시가
 
-    if stock_name in json_data[GetArrayNum(ctx)]['Stock'].keys():
+    if stock_name in GetUserInformation()[GetArrayNum(ctx)]['Stock'].keys():
         if stop_trading == '0':
             logger.info(f'{name}의 주식이 거래중지 중이라 매도할 수 없습니다.')
             await ctx.reply(f'{name}의 주식이 거래중지 중이라 매도할 수 없습니다.')
@@ -71,10 +70,10 @@ async def _StockSelling_code(ctx: Union[Context, SlashContext], stock_name: str,
         
         if isinstance(num, str):
             if num in ('풀매도', '모두'):
-                num: int = json_data[GetArrayNum(ctx)]['Stock'][stock_name] #보유주식의 수 만큼 설정
+                num: int = GetUserInformation()[GetArrayNum(ctx)]['Stock'][stock_name] #보유주식의 수 만큼 설정
                 
             elif num == '반매도':
-                num: int = json_data[GetArrayNum(ctx)]['Stock'][stock_name] // 2
+                num: int = GetUserInformation()[GetArrayNum(ctx)]['Stock'][stock_name] // 2
                 if num == 0:
                     logger.info(f'매도하려는 {name}의 주식이 1주밖에 없어 반매도 할 수 없습니다.')
                     await ctx.reply(f'매도하려는 {name}의 주식이 1주밖에 없어 반매도 할 수 없습니다.')
@@ -87,7 +86,8 @@ async def _StockSelling_code(ctx: Union[Context, SlashContext], stock_name: str,
                     await ctx.reply(f'「/{ctx.invoked_with} {ctx.args[0]} __{ctx.args[1]}__」밑줄 친 부분에는「풀매도」,「모두」또는「반매도」또는 숫자만 입력해 주세요.')
                 return
         
-        if num <= json_data[GetArrayNum(ctx)]['Stock'][stock_name]:
+        if num <= GetUserInformation()[GetArrayNum(ctx)]['Stock'][stock_name]:
+            json_data = GetUserInformation()
             json_data[GetArrayNum(ctx)]['Stock'][stock_name] -= num
             json_data[GetArrayNum(ctx)]['Deposit'] += (int(price) * num)
             
@@ -166,7 +166,7 @@ class StockSelling_Context(commands.Cog):
             logger.warning('매도 할 주식의 수를 입력해 주세요.')
             await ctx.reply('매도 할 주식의 수를 입력해 주세요.')
             
-        elif isinstance(error, AttributeError):
+        elif isinstance(error.original, AttributeError):
             logger.warning('매도하려는 주식을 찾지 못하였습니다.')
             await ctx.reply('매도하려는 주식을 찾지 못하였습니다.')
             

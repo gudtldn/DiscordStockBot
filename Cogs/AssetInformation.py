@@ -75,7 +75,6 @@ async def _AssetInformation_code(ctx: Union[Context, SlashContext], option: Unio
         await ctx.reply('먼저 `.사용자등록` 부터 해 주세요.')
         return
     
-    json_data = GetUserInformation()
     author_id = ctx.author.id
     
     if option is not None: #부가 옵션이 전달되어 있을 때
@@ -85,8 +84,8 @@ async def _AssetInformation_code(ctx: Union[Context, SlashContext], option: Unio
             
             for member in members:
                 if IsVaildUser(member.id):
-                    if json_data[GetArrayNum(member.id)]['Settings']['InformationDisclosure']:
-                        member_assets.append((member.name, json_data[GetArrayNum(member.id)]['TotalAssets']))
+                    if GetUserInformation()[GetArrayNum(member.id)]['Settings']['InformationDisclosure']:
+                        member_assets.append((member.name, GetUserInformation()[GetArrayNum(member.id)]['TotalAssets']))
                     
             member_assets.sort(key=lambda total: total[1], reverse=True) #총 자산을 기준으로 리스트 정렬
             
@@ -108,7 +107,7 @@ async def _AssetInformation_code(ctx: Union[Context, SlashContext], option: Unio
                 option = None
                 author_id: int = ctx.author.id
             
-            elif not json_data[GetArrayNum(author_id)]['Settings']['InformationDisclosure']:
+            elif not GetUserInformation()[GetArrayNum(author_id)]['Settings']['InformationDisclosure']:
                 logger.info(f'{user_name}님의 정보가 비공개되어 있습니다.')
                 await ctx.reply(f'{user_name}님의 정보가 비공개되어 있습니다.')
                 return
@@ -125,6 +124,7 @@ async def _AssetInformation_code(ctx: Union[Context, SlashContext], option: Unio
         asyncio.get_event_loop().run_until_complete(
             get_text_(author_id, json_data[GetArrayNum(author_id)]['Stock'])
         )
+        json_data = GetUserInformation()
         
         TotalAssets += json_data[GetArrayNum(author_id)]['Deposit'] #예수금
         
@@ -150,7 +150,7 @@ async def _AssetInformation_code(ctx: Union[Context, SlashContext], option: Unio
         async with ctx.typing():
             await ctx.reply(embed=_crawling())
     else:
-        hidden = not json_data[GetArrayNum(author_id)]['Settings']['InformationDisclosure']
+        hidden = not GetUserInformation()[GetArrayNum(author_id)]['Settings']['InformationDisclosure']
         await ctx.defer(hidden=hidden)
         await ctx.reply(embed=_crawling())
 
@@ -184,7 +184,7 @@ class AssetInformation_SlashContext(commands.Cog):
                 ]
             )
         ],
-        connector={'유저': 'option', '공개정보': 'option', '랭킹': 'option'}
+        connector={'유저': 'option', '랭킹': 'option'}
     )
     async def _AssetInformation(self, ctx: SlashContext, option: Union[discord.User, str]=None):
         await _AssetInformation_code(ctx, option)
@@ -217,13 +217,13 @@ class AssetInformation_Context(commands.Cog):
             logger.warning('검색하던중 알 수 없는 에러가 발생하였습니다. 다시 입력해 주세요.')
             await ctx.reply('검색하던중 알 수 없는 에러가 발생하였습니다. 다시 입력해 주세요.')
             
-        elif isinstance(error.original, TypeError):
-            logger.warning('등록되어 있지 않은 유저입니다.')
-            await ctx.reply('등록되어 있지 않은 유저입니다.')
-            
         elif ErrorCheck(error, "Command raised an exception: AttributeError: 'str' object has no attribute 'id'"):
             logger.warning('다시 입력해 주세요.')
             await ctx.reply('다시 입력해 주세요.')
+            
+        elif isinstance(error.original, TypeError):
+            logger.warning('등록되어 있지 않은 유저입니다.')
+            await ctx.reply('등록되어 있지 않은 유저입니다.')
             
         else:
             logger.warning(error)

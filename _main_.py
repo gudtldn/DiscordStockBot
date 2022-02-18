@@ -276,7 +276,7 @@ async def _DownloadFile(ctx: SlashContext, file_type: str, link: str, path: str=
         with open(path, 'wb') as f:
             f.write(r.get(link, allow_redirects=True).content)
         
-        await ctx.send('성공적으로 다운로드가 완료되었습니다.')
+        await ctx.send(f'{link.split("/")[-1]}가 {path}에 성공적으로 다운로드가 완료되었습니다.')
 
 @_DownloadFile.error
 async def _DownloadFile_error(ctx: SlashContext, error):
@@ -301,6 +301,7 @@ async def reload_commands(ctx: SlashContext):
         if cog_file.endswith('.py'):
             bot.unload_extension(f'Cogs.{cog_file[:-3]}')
             bot.load_extension(f'Cogs.{cog_file[:-3]}')
+            logger.info(f'리로드 완료: Cogs.{cog_file[:-3]}')
     
     logger.info('모든 명령어를 다시 불러왔습니다.')
     await ctx.send('모든 명령어를 다시 불러왔습니다.')

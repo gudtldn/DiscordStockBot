@@ -6,7 +6,7 @@ from discord_slash import SlashContext, cog_ext
 
 from random import randint
 
-from time import time, gmtime
+from time import time
 
 from typing import Union
 
@@ -21,15 +21,15 @@ async def _SupportFund_code(ctx: Union[Context, SlashContext]):
         logger.info('먼저 `.사용자등록` 부터 해 주세요.')
         await ctx.reply('먼저 `.사용자등록` 부터 해 주세요.')
         return
-    
-    json_data = GetUserInformation()
-    
+        
     cool_down = 3600 * 4 #쿨타임
     
-    if int(time()) - json_data[GetArrayNum(ctx)]['SupportFundTime'] > cool_down: #만약 저장되있는 현재시간 - 저장된시간이 cool_down을 넘는다면
+    if int(time()) - GetUserInformation()[GetArrayNum(ctx)]['SupportFundTime'] > cool_down: #만약 저장되있는 현재시간 - 저장된시간이 cool_down을 넘는다면
         
         random_added_deposit = randint(1, 10) * 10000
 
+        json_data = GetUserInformation()        
+        
         json_data[GetArrayNum(ctx)]['Deposit'] += random_added_deposit
         json_data[GetArrayNum(ctx)]['SupportFund'] += random_added_deposit
         json_data[GetArrayNum(ctx)]['SupportFundTime'] = int(time())
@@ -40,12 +40,10 @@ async def _SupportFund_code(ctx: Union[Context, SlashContext]):
         await ctx.reply(f'{random_added_deposit:,}원이 지급되었습니다.')
         
     else:
-        now_time = ConvertSecToTimeStruct(int(time()) - json_data[GetArrayNum(ctx)]['SupportFundTime'] + cool_down)
-        gmt = gmtime(time()+now_time.parm_sec+32400)
-        ampm = '오후' if gmt.tm_hour >= 12 else '오전'
-        hour12 = gmt.tm_hour-12 if gmt.tm_hour >= 12 else gmt.tm_hour
-        logger.info(f'지원금을 받으려면 {now_time.hour}시간 {now_time.min}분 {now_time.sec}초를 더 기다려야 합니다. | ({ampm} {hour12}시 {gmt.tm_min}분 {gmt.tm_sec}초 이후에 받을 수 있습니다.)')
-        await ctx.reply(f'지원금을 받으려면 {now_time.hour}시간 {now_time.min}분 {now_time.sec}초를 더 기다려야 합니다.\n({ampm} {hour12}시 {gmt.tm_min}분 {gmt.tm_sec}초 이후에 받을 수 있습니다.)')
+        now_time = ConvertSecToTimeStruct(json_data[GetArrayNum(ctx)]['SupportFundTime'] - int(time()) + cool_down)
+        cool_down_unix = json_data[GetArrayNum(ctx)]['SupportFundTime'] + cool_down
+        logger.info(f'지원금을 받으려면 {now_time.hour}시간 {now_time.min}분 {now_time.sec}초를 더 기다려야 합니다. | (<t:{cool_down_unix}:T> 이후에 받을 수 있습니다.)')
+        await ctx.reply(f'지원금을 받으려면 {now_time.hour}시간 {now_time.min}분 {now_time.sec}초를 더 기다려야 합니다.\n(<t:{cool_down_unix}:T> 이후에 받을 수 있습니다.)')
 
 ######################################################################################################################################################
 

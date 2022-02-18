@@ -34,7 +34,6 @@ async def _StockPurchase_code(ctx: Union[Context, SlashContext], stock_name: str
             await ctx.reply('매수 할 개수는 음수이거나 0일 수 없습니다.')
             return
     
-    json_data = GetUserInformation()
     stock_name = stock_name.lower()
     ua = UserAgent()
     
@@ -43,8 +42,8 @@ async def _StockPurchase_code(ctx: Union[Context, SlashContext], stock_name: str
     
     try: int(stock_name) #입력받은 stock_name이 int인지 검사
     except: #int가 아닌경우
-        if stock_name in json_data[GetArrayNum(ctx)]['StockDict'].keys():
-            stock_name = json_data[GetArrayNum(ctx)]['StockDict'][stock_name]
+        if stock_name in GetUserInformation()[GetArrayNum(ctx)]['StockDict'].keys():
+            stock_name = GetUserInformation()[GetArrayNum(ctx)]['StockDict'][stock_name]
             
         elif stock_name in GetStockDictionary().keys():
             stock_name = GetStockDictionary()[stock_name]
@@ -69,7 +68,7 @@ async def _StockPurchase_code(ctx: Union[Context, SlashContext], stock_name: str
     
     if isinstance(num, str):
         if num in ('풀매수', '모두'):
-            num = json_data[GetArrayNum(ctx)]['Deposit'] // int(price)
+            num = GetUserInformation()[GetArrayNum(ctx)]['Deposit'] // int(price)
             if num < 1:
                 logger.info('예수금이 부족합니다.')
                 await ctx.reply('예수금이 부족합니다.')
@@ -83,12 +82,13 @@ async def _StockPurchase_code(ctx: Union[Context, SlashContext], stock_name: str
             return
         
     else:
-        if json_data[GetArrayNum(ctx)]['Deposit'] - (int(price) * num) < 0:
+        if GetUserInformation()[GetArrayNum(ctx)]['Deposit'] - (int(price) * num) < 0:
             logger.info('예수금이 부족합니다.')
             await ctx.reply('예수금이 부족합니다.')
             return
-        
-    if stock_name in json_data[GetArrayNum(ctx)]['Stock'].keys(): #Stock안에 stock_name이 있는가?
+    
+    json_data = GetUserInformation()
+    if stock_name in GetUserInformation()[GetArrayNum(ctx)]['Stock'].keys(): #Stock안에 stock_name이 있는가?
         json_data[GetArrayNum(ctx)]['Stock'][stock_name] += num
     else:
         json_data[GetArrayNum(ctx)]['Stock'][stock_name] = num

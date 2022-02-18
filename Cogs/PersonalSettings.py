@@ -35,9 +35,7 @@ async def _PersonalSettings_code(ctx: Union[Context, SlashContext], setting: str
             '거짓': False, '비공개': False, 'false': False
         }
         boolean = d[boolean]
-    
-    json_data = GetUserInformation()
-    
+        
     if setting == '설정정보':
         string = ''
         d = {
@@ -46,7 +44,7 @@ async def _PersonalSettings_code(ctx: Union[Context, SlashContext], setting: str
             'ShowStockChartImage': '주식차트 표시여부'
         }
 
-        for _key, _value in json_data[GetArrayNum(ctx)]['Settings'].items():
+        for _key, _value in GetUserInformation()[GetArrayNum(ctx)]['Settings'].items():
             string += f'{d[_key]} = {_value}\n'
 
         await reply(string)
@@ -59,16 +57,19 @@ async def _PersonalSettings_code(ctx: Union[Context, SlashContext], setting: str
             return
         
     if setting in ('InformationDisclosure', '자산정보'):
+        json_data = GetUserInformation()
         json_data[GetArrayNum(ctx)]['Settings']['InformationDisclosure'] = boolean
         SetUserInformation(json_data)
         await reply(f'자산정보 공개여부가 {boolean}로 설정되었습니다.')
         
     elif setting in ('ShowSupportFund', '지원금표시'):
+        json_data = GetUserInformation()
         json_data[GetArrayNum(ctx)]['Settings']['ShowSupportFund'] = boolean
         SetUserInformation(json_data)
         await reply(f'지원금으로 얻은 돈 표시가 {boolean}로 설정되었습니다.')
         
     elif setting in ('ShowStockChartImage', '차트표시'):
+        json_data = GetUserInformation()
         json_data[GetArrayNum(ctx)]['Settings']['ShowStockChartImage'] = boolean
         SetUserInformation(json_data)
         await reply(f'주식차트 표시가 {boolean}로 설정되었습니다.')

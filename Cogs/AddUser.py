@@ -13,13 +13,12 @@ from module._define_ import *
 async def _AddUser_code(ctx: Union[Context, SlashContext]):
     logger.info(f'[{type(ctx)}] {ctx.author.name}: {ctx.invoked_with}')
         
-    json_data = GetUserInformation()
-
     if IsVaildUser(ctx):
         logger.info('이미 등록되어 있는 사용자 입니다.')
         await ctx.reply('이미 등록되어 있는 사용자 입니다.')
         return
 
+    json_data = GetUserInformation()
     json_data.append(AddUser(ctx.author.id)) #사용자 추가
     SetUserInformation(json_data)
         

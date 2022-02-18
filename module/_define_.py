@@ -107,8 +107,6 @@ class ConvertSecToTimeStruct():
     (day, hour, min, sec)
     '''
     def __init__(self, seconds: int):
-        self.parm_sec = seconds
-        
         _delta = timedelta(seconds=seconds)
         self.day = _delta.days
         

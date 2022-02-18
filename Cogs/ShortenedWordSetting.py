@@ -29,14 +29,12 @@ async def _ShortenedWordSetting_code(ctx: Union[Context, SlashContext], setting_
             await ctx.reply(msg)
         else:
             await ctx.reply(msg, hidden=True)
-    
-    json_data = GetUserInformation()
-    
+        
     if setting_name == '목록':
         value: str = '단축어 목록:\n'
         
-        for stock_name in json_data[GetArrayNum(ctx)]['StockDict']:
-            value += f'{stock_name}: {json_data[GetArrayNum(ctx)]["StockDict"][stock_name]}\n'
+        for stock_name in GetUserInformation()[GetArrayNum(ctx)]['StockDict']:
+            value += f'{stock_name}: {GetUserInformation()[GetArrayNum(ctx)]["StockDict"][stock_name]}\n'
         
         await reply(value)
         
@@ -60,11 +58,12 @@ async def _ShortenedWordSetting_code(ctx: Union[Context, SlashContext], setting_
             add_stock_name = soup.select_one('#middle > div.h_company > div.wrap_company > h2 > a').text.lower() #주식회사 이름
             add_stock_num = soup.select_one('#middle > div.h_company > div.wrap_company > div > span.code').text #기업코드
             
-        if add_stock_name in json_data[GetArrayNum(ctx)]['StockDict'].keys():
+        if add_stock_name in GetUserInformation()[GetArrayNum(ctx)]['StockDict'].keys():
             logger.info('이미 추가되있는 기업이름입니다.')
             await reply('이미 추가되있는 기업이름입니다.')
             return
-            
+        
+        json_data = GetUserInformation()
         json_data[GetArrayNum(ctx)]['StockDict'][add_stock_name] = add_stock_num
         SetUserInformation(json_data)
         
@@ -77,12 +76,14 @@ async def _ShortenedWordSetting_code(ctx: Union[Context, SlashContext], setting_
             await reply('**기업이름**는 필수 입력 항목 입니다.')
             return
         
-        for k in json_data[GetArrayNum(ctx)]['StockDict']:
+        for k in GetUserInformation()[GetArrayNum(ctx)]['StockDict']:
             if k == add_stock_name:
-                logger.info(f'`{k}: {json_data[GetArrayNum(ctx)]["StockDict"][k]}`이/가 제거되었습니다.')
-                await reply(f'`{k}: {json_data[GetArrayNum(ctx)]["StockDict"][k]}`이/가 제거되었습니다.')
+                json_data = GetUserInformation()
                 del(json_data[GetArrayNum(ctx)]['StockDict'][k])
                 SetUserInformation(json_data)
+                
+                logger.info(f'`{k}: {GetUserInformation()[GetArrayNum(ctx)]["StockDict"][k]}`이/가 제거되었습니다.')
+                await reply(f'`{k}: {GetUserInformation()[GetArrayNum(ctx)]["StockDict"][k]}`이/가 제거되었습니다.')
                 return
             
         logger.info(f'{add_stock_name}이/가 목록에 존재하지 않습니다.')

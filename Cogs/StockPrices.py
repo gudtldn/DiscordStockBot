@@ -18,7 +18,7 @@ from random import randint
 
 from typing import Union
 
-from module._define_ import *
+from module.__define__ import *
 
 ######################################################################################################################################################
 

@@ -10,7 +10,7 @@ from time import time
 
 from typing import Union
 
-from module._define_ import *
+from module.__define__ import *
 
 ######################################################################################################################################################
 

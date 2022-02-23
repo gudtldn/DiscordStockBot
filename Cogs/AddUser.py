@@ -6,7 +6,7 @@ from discord_slash import SlashContext, cog_ext
 
 from typing import Union
 
-from module._define_ import *
+from module.__define__ import *
 
 ######################################################################################################################################################
 

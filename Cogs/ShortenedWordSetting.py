@@ -12,7 +12,7 @@ from fake_useragent import UserAgent
 
 from typing import Union
 
-from module._define_ import *
+from module.__define__ import *
 
 ######################################################################################################################################################
 

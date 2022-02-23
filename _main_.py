@@ -16,7 +16,7 @@ from time import time
 
 from platform import platform
 
-from module._define_ import *
+from module.__define__ import *
 
 test_guilds_id = (714012054721396786,)
 permission_setting = {

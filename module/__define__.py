@@ -20,9 +20,9 @@ guilds_id = (940546043651710986,)
 def _Logging(): #변수의 혼용을 막기위해 함수로 만듦
     import logging
 
-    now = str(datetime.today())[:19].replace(' ', '_', 1).replace(':', '-')
+    now = str(datetime.today())[:19].replace(" ", "_", 1).replace(":", "-")
 
-    open(f'./logs/{now}.log', 'w', encoding='utf-8').close()
+    open(f"./logs/{now}.log", "w", encoding="utf-8").close()
 
     global logger
     logger = logging.getLogger()
@@ -31,9 +31,9 @@ def _Logging(): #변수의 혼용을 막기위해 함수로 만듦
     else:
         logger.setLevel(logging.INFO)
 
-    formatter = logging.Formatter(u'[%(asctime)s][%(levelname)s]: <%(module)s> [%(funcName)s | %(lineno)d] >> %(message)s')
+    formatter = logging.Formatter(u"[%(asctime)s][%(levelname)s]: <%(module)s> [%(funcName)s | %(lineno)d] >> %(message)s")
 
-    file_handler = logging.FileHandler(f'./logs/{now}.log', encoding='utf-8')
+    file_handler = logging.FileHandler(f"./logs/{now}.log", encoding="utf-8")
     # file_handler.setLevel(logging.INFO)
     file_handler.setFormatter(formatter)
 
@@ -45,37 +45,38 @@ _Logging()
 
 def RandomEmbedColor():
     r = lambda: randint(0,255)
-    value = f'0x{r():02x}{r():02x}{r():02x}'
+    value = f"0x{r():02x}{r():02x}{r():02x}"
     return int(value, 16)
 
 def AddUser(ID: int):
     dictionary = {
-        'UserID': ID,
-        'Deposit': 10000000,
-        'TotalAssets': 10000000,
-        'SupportFund': 0,
-        'SupportFundTime': 0,
-        'Settings': {
-            'InformationDisclosure': True,
-            'ShowSupportFund': True,
-            'ShowStockChartImage': False
+        "UserID": ID,
+        "Deposit": 10000000,
+        "TotalAssets": 10000000,
+        "SupportFund": 0,
+        "SupportFundTime": 0,
+        "Settings": {
+            "InformationDisclosure": True,
+            "ShowSupportFund": True,
+            "ShowStockChartImage": False,
+            "ShowSupportFundCooldown": False
         },
-        'StockDict': {},
-        'Stock': {}
+        "StockDict": {},
+        "Stock": {}
     }
     return dictionary
 
 def GetStockDictionary() -> dict:
-    with open('./json/StockDictionary.json', 'r', encoding='utf-8') as Inf:
+    with open("./json/StockDictionary.json", "r", encoding="utf-8") as Inf:
         return load(Inf)
 
 def GetUserInformation() -> list[dict]: #Information.json에 있는 값 불러오기
-    with open('./json/UserInformation.json', 'r', encoding='utf-8') as Inf:
+    with open("./json/UserInformation.json", "r", encoding="utf-8") as Inf:
         return load(Inf)
 
 def SetUserInformation(json_data: list[dict]):
-    with open('./json/UserInformation.json', 'w', encoding='utf-8') as Inf:
-        dump(json_data, Inf, indent='\t', ensure_ascii=False)
+    with open("./json/UserInformation.json", "w", encoding="utf-8") as Inf:
+        dump(json_data, Inf, indent="\t", ensure_ascii=False)
 
 def GetArrayNum(ctx: Union[Context, SlashContext, int]): #ctx.author.id가 들어있는 배열의 번호를 반환
     json_data = GetUserInformation()
@@ -97,7 +98,6 @@ def IsVaildUser(ctx: Union[Context, SlashContext, int]): #ctx.author.id를 가�
     return False
 
 def ErrorCheck(error, error_context): #찾으려는 에러가 error.args에 있는지 여부
-    # return any(error_context in i for i in error.args)
     return error_context in error.args
 
 ################################################################################ 클래스 선언 ################################################################################
@@ -110,7 +110,10 @@ class ConvertSecToTimeStruct():
         _delta = timedelta(seconds=seconds)
         self.day = _delta.days
         
-        _delta = str(timedelta(seconds=_delta.seconds)).split(':')
+        _delta = str(timedelta(seconds=_delta.seconds)).split(":")
         self.hour = int(_delta[0])
         self.min = int(_delta[1])
         self.sec = int(_delta[2])
+        
+    def __str__(self):
+        return f"{self.day}일 {self.hour}시 {self.min}분 {self.sec}초"

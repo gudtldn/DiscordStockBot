@@ -15,11 +15,11 @@ from module.__define__ import *
 ######################################################################################################################################################
 
 async def _SupportFund_code(ctx: Union[Context, SlashContext]):
-    logger.info(f'[{type(ctx)}] {ctx.author.name}: {ctx.invoked_with}')
+    logger.info(f"[{type(ctx)}] {ctx.author.name}: {ctx.invoked_with}")
     
     if not IsVaildUser(ctx):
-        logger.info('먼저 `.사용자등록` 부터 해 주세요.')
-        await ctx.reply('먼저 `.사용자등록` 부터 해 주세요.')
+        logger.info("먼저 `.사용자등록` 부터 해 주세요.")
+        await ctx.reply("먼저 `.사용자등록` 부터 해 주세요.")
         return
         
     cool_down = 3600 * 4 #쿨타임
@@ -35,13 +35,18 @@ async def _SupportFund_code(ctx: Union[Context, SlashContext]):
         json_data[GetArrayNum(ctx)]['SupportFundTime'] = int(time())
         
         SetUserInformation(json_data)
-
+        
         logger.info(f'{random_added_deposit:,}원이 지급되었습니다.')
-        await ctx.reply(f'{random_added_deposit:,}원이 지급되었습니다.')
+        if json_data[GetArrayNum(ctx)]['Settings']['ShowSupportFundCooldown']:
+            cool_down_unix = json_data[GetArrayNum(ctx)]['SupportFundTime'] + cool_down
+            await ctx.reply(f'{random_added_deposit:,}원이 지급되었습니다.\n(다음 지원금은 <t:{cool_down_unix}:T> 이후에 받을 수 있습니다.)')
+        
+        else:
+            await ctx.reply(f'{random_added_deposit:,}원이 지급되었습니다.')
         
     else:
-        now_time = ConvertSecToTimeStruct(json_data[GetArrayNum(ctx)]['SupportFundTime'] - int(time()) + cool_down)
-        cool_down_unix = json_data[GetArrayNum(ctx)]['SupportFundTime'] + cool_down
+        now_time = ConvertSecToTimeStruct(GetUserInformation()[GetArrayNum(ctx)]['SupportFundTime'] - int(time()) + cool_down)
+        cool_down_unix = GetUserInformation()[GetArrayNum(ctx)]['SupportFundTime'] + cool_down
         logger.info(f'지원금을 받으려면 {now_time.hour}시간 {now_time.min}분 {now_time.sec}초를 더 기다려야 합니다. | (<t:{cool_down_unix}:T> 이후에 받을 수 있습니다.)')
         await ctx.reply(f'지원금을 받으려면 {now_time.hour}시간 {now_time.min}분 {now_time.sec}초를 더 기다려야 합니다.\n(<t:{cool_down_unix}:T> 이후에 받을 수 있습니다.)')
 

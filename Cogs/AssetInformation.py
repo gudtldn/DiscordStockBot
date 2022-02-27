@@ -23,62 +23,61 @@ from module.__define__ import *
 
 ################################################################################ 자산정보 코루틴 선언 ################################################################################
 
-async def get_text_from_url(author_id, num, stock_num):  # 코루틴 정의
-    global stock_num_array
-    global TotalAssets
-    
-    json_data = GetUserInformation()
-    
+async def get_text_from_url(author_id, stock_num):  # 코루틴 정의
     loop = asyncio.get_event_loop()
     ua = UserAgent().random
 
-    url = f'https://finance.naver.com/item/sise.naver?code={stock_num}' #네이버 금융에 검색
-    request = partial(requests.get, url, headers={'user-agent': ua})
+    url = f"https://finance.naver.com/item/sise.naver?code={stock_num}" #네이버 금융에 검색
+    request = partial(requests.get, url, headers={"user-agent": ua})
     timer = time()
     res = await loop.run_in_executor(None, request)
     
-    soup = bs(res.text, 'lxml')
-    stock_name: str = soup.select_one('#middle > div.h_company > div.wrap_company > h2 > a').text #주식명
-    price: int = int(soup.select_one('#_nowVal').text.replace(',', '')) #현재 시세
-    yesterday_price: int = int(soup.select_one('#content > div.section.inner_sub > div:nth-child(1) > table > tbody > tr:nth-child(3) > td:nth-child(4) > span').text.replace(',', '')) #어제 시세
+    soup = bs(res.text, "lxml")
+    stock_name: str = soup.select_one("#middle > div.h_company > div.wrap_company > h2 > a").text #주식명
+    price: int = int(soup.select_one("#_nowVal").text.replace(",", "")) #현재 시세
+    yesterday_price: int = int(
+        soup.select_one("#content > div.section.inner_sub > div:nth-child(1) > table > tbody > tr:nth-child(3) > td:nth-child(4) > span").text.replace(",", "")) #어제 시세
     compared_price: int = price - yesterday_price #어제대비 가격
     compared_per: int = round((price - yesterday_price) / yesterday_price * 100, 2) #어제대비 가격%
-    balance: int = json_data[GetArrayNum(author_id)]['Stock'][stock_num] #가지고 있는 주식 수량
-    price_sign = '' if compared_price <= 0 else '+' #부호설정
+    balance: int = GetUserInformation()[GetArrayNum(author_id)]['Stock'][stock_num] #가지고 있는 주식 수량
+    price_sign = "" if compared_price <= 0 else "+" #부호설정
     
-    logger.info(f'{num} Done. {time() - timer}seconds')
-    
-    stock_num_array[num].append(f'{stock_name} | {int(price):,}원 | {price_sign}{compared_per}%') #['주식이름']
-    stock_num_array[num].append(balance) #['주식이름', 주식수량]
-    stock_num_array[num].append(int(price) * balance) #['주식이름', 주식수량, 현재시세 * 주식 수]
-    
-    TotalAssets += int(price) * balance #총 자산
+    logger.info(f"Done. {time() - timer}seconds")
+
+    return [f"{stock_name} | {int(price):,}원 | {price_sign}{compared_per}%", balance, int(price) * balance]
 
 ################################################################################
 
-async def get_text_(author_id, keywords):
-    futures = []
-    
+async def get_text_(author_id):
     # 아직 실행된 것이 아니라, 실행할 것을 계획하는 단계
-    for num, keyword in enumerate(keywords):
-        futures.append(asyncio.ensure_future(get_text_from_url(author_id, num, keyword)))
+    futures: list[asyncio.Task] = [
+        asyncio.ensure_future(get_text_from_url(author_id, keyword))
+            for keyword in GetUserInformation()[GetArrayNum(author_id)]['Stock']
+    ]
 
     await asyncio.gather(*futures)
+    
+    stock_list = [task.result() for task in futures]
+    TotalAssets = 0
+    for i in stock_list:
+        TotalAssets += i[2]
+        
+    return {"stock_list": stock_list, "TotalAssets": TotalAssets}
 
 ######################################################################################################################################################
 
 async def _AssetInformation_code(ctx: Union[Context, SlashContext], option: Union[discord.User, str]):
-    logger.info(f'[{type(ctx)}] {ctx.author.name}: {ctx.invoked_with} {option}')
+    logger.info(f"[{type(ctx)}] {ctx.author.name}: {ctx.invoked_with} {option}")
         
     if not IsVaildUser(ctx):
-        logger.info('먼저 `.사용자등록` 부터 해 주세요.')
-        await ctx.reply('먼저 `.사용자등록` 부터 해 주세요.')
+        logger.info("먼저 `.사용자등록` 부터 해 주세요.")
+        await ctx.reply("먼저 `.사용자등록` 부터 해 주세요.")
         return
     
     author_id = ctx.author.id
     
     if option is not None: #부가 옵션이 전달되어 있을 때
-        if option in ('랭킹', '순위'):
+        if option in ("랭킹", "순위"):
             members: list[discord.Member] = ctx.guild.members
             member_assets = []
             
@@ -89,11 +88,11 @@ async def _AssetInformation_code(ctx: Union[Context, SlashContext], option: Unio
                     
             member_assets.sort(key=lambda total: total[1], reverse=True) #총 자산을 기준으로 리스트 정렬
             
-            embed = discord.Embed(title='자산랭킹', color=RandomEmbedColor())
-            embed.set_footer(text='등록되어 있지 않은 유저, 자산정보가 비공개인 유저는 자산랭킹에 보이지 않습니다.')
+            embed = discord.Embed(title="자산랭킹", color=RandomEmbedColor())
+            embed.set_footer(text="등록되어 있지 않은 유저, 자산정보가 비공개인 유저는 자산랭킹에 보이지 않습니다.")
             for num, asset in enumerate(member_assets):
                 if num <= 10:
-                    embed.add_field(name=f'{num+1}위 {asset[0]}', value=f'{asset[1]:,}원', inline=False)
+                    embed.add_field(name=f"{num+1}위 {asset[0]}", value=f"{asset[1]:,}원", inline=False)
                 else: break
             
             await ctx.reply(embed=embed)
@@ -108,42 +107,34 @@ async def _AssetInformation_code(ctx: Union[Context, SlashContext], option: Unio
                 author_id: int = ctx.author.id
             
             elif not GetUserInformation()[GetArrayNum(author_id)]['Settings']['InformationDisclosure']:
-                logger.info(f'{user_name}님의 정보가 비공개되어 있습니다.')
-                await ctx.reply(f'{user_name}님의 정보가 비공개되어 있습니다.')
+                logger.info(f"{user_name}님의 정보가 비공개되어 있습니다.")
+                await ctx.reply(f"{user_name}님의 정보가 비공개되어 있습니다.")
                 return
     
     def _crawling():
-        global stock_num_array
-        global TotalAssets
-        
-        stock_num_array = [[] for i in range(len(json_data[GetArrayNum(author_id)]['Stock']))] #현재 주식 종류의 개수만큼 배열을 만듦
-        TotalAssets = 0 #총 자산
-        
         start_time = time() #크롤링 시간
         
-        asyncio.get_event_loop().run_until_complete(
-            get_text_(author_id, json_data[GetArrayNum(author_id)]['Stock'])
+        crawling_data = asyncio.get_event_loop().run_until_complete(
+            get_text_(author_id)
         )
         json_data = GetUserInformation()
         
-        TotalAssets += json_data[GetArrayNum(author_id)]['Deposit'] #예수금
-        
-        json_data[GetArrayNum(author_id)]['TotalAssets'] = TotalAssets #다 합친걸 총 자산에 저장
+        json_data[GetArrayNum(author_id)]['TotalAssets'] = crawling_data['TotalAssets'] + json_data[GetArrayNum(author_id)]['Deposit'] #다 합친걸 총 자산에 저장
         
         SetUserInformation(json_data)
         
-        embed = discord.Embed(title=f'{ctx.author.name if option is None else user_name}님의 자산정보', color=RandomEmbedColor())
-        embed.add_field(name='예수금', value=f'{json_data[GetArrayNum(author_id)]["Deposit"]:,}원')
-        embed.add_field(name='총 자산', value=f'{json_data[GetArrayNum(author_id)]["TotalAssets"]:,}원')
+        embed = discord.Embed(title=f"{ctx.author.name if option is None else user_name}님의 자산정보", color=RandomEmbedColor())
+        embed.add_field(name="예수금", value=f"{json_data[GetArrayNum(author_id)]['Deposit']:,}원")
+        embed.add_field(name="총 자산", value=f"{json_data[GetArrayNum(author_id)]['TotalAssets']:,}원")
         if json_data[GetArrayNum(author_id)]['Settings']['ShowSupportFund']:
-            embed.add_field(name='지원금으로 얻은 돈', value=f'{json_data[GetArrayNum(author_id)]["SupportFund"]:,}원', inline=False)
+            embed.add_field(name="지원금으로 얻은 돈", value=f"{json_data[GetArrayNum(author_id)]['SupportFund']:,}원", inline=False)
         if len(json_data[GetArrayNum(author_id)]['Stock']) != 0:
-            embed.add_field(name='='*25, value='_ _', inline=False)
+            embed.add_field(name="="*25, value="_ _", inline=False)
         
-        for add_embed in stock_num_array:
-            embed.add_field(name=add_embed[0], value=f'잔고수량: {add_embed[1]:,} | {add_embed[2]:,}원', inline=False)
+        for add_embed in crawling_data['stock_list']:
+            embed.add_field(name=add_embed[0], value=f"잔고수량: {add_embed[1]:,} | {add_embed[2]:,}원", inline=False)
         
-        logger.info(f'All Done. {time() - start_time} seconds')
+        logger.info(f"All Done. {time() - start_time} seconds")
         return embed
     
     if isinstance(ctx, Context):
@@ -161,30 +152,30 @@ class AssetInformation_SlashContext(commands.Cog):
         self.bot = bot
         
     @cog_ext.cog_slash(
-        name='자산정보',
-        description='현재 자신의 자산정보를 확인합니다.',
+        name="자산정보",
+        description="현재 자신의 자산정보를 확인합니다.",
         guild_ids=guilds_id,
         options=[
             create_option(
-                name='유저',
-                description='다른유저의 자산정보를 확인합니다.',
+                name="유저",
+                description="다른유저의 자산정보를 확인합니다.",
                 option_type=OptionType.USER,
                 required=False
             ),
             create_option(
-                name='랭킹',
-                description='이 서버에 있는 유저의 자산랭킹을 나열합니다.',
+                name="랭킹",
+                description="이 서버에 있는 유저의 자산랭킹을 나열합니다.",
                 option_type=OptionType.STRING,
                 required=False,
                 choices=[
                     create_choice(
-                        name='랭킹',
-                        value='랭킹'
+                        name="랭킹",
+                        value="랭킹"
                     )
                 ]
             )
         ],
-        connector={'유저': 'option', '랭킹': 'option'}
+        connector={"유저": "option", "랭킹": "option"}
     )
     async def _AssetInformation(self, ctx: SlashContext, option: Union[discord.User, str]=None):
         await _AssetInformation_code(ctx, option)
@@ -192,42 +183,42 @@ class AssetInformation_SlashContext(commands.Cog):
     @_AssetInformation.error
     async def _AssetInformation_error(self, ctx, error):
         if ErrorCheck(error, "'NoneType' object has no attribute 'text'"):
-            logger.warning('검색하던중 알 수 없는 에러가 발생하였습니다. 다시 입력해 주세요.')
-            await ctx.reply('검색하던중 알 수 없는 에러가 발생하였습니다. 다시 입력해 주세요.')
+            logger.warning("검색하던중 알 수 없는 에러가 발생하였습니다. 다시 입력해 주세요.")
+            await ctx.reply("검색하던중 알 수 없는 에러가 발생하였습니다. 다시 입력해 주세요.")
             
         elif isinstance(error, TypeError):
-            logger.warning('등록되어 있지 않은 유저입니다.')
-            await ctx.reply('등록되어 있지 않은 유저입니다.')
+            logger.warning("등록되어 있지 않은 유저입니다.")
+            await ctx.reply("등록되어 있지 않은 유저입니다.")
             
         else:
             logger.warning(error)
-            await ctx.send(f'{error}')
+            await ctx.send(f"{error}")
         
 class AssetInformation_Context(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
         
-    @commands.command(name='자산정보', aliases=['자산조회'])
+    @commands.command(name="자산정보", aliases=["자산조회"])
     async def _AssetInformation(self, ctx: Context, option: Union[discord.Member, str]=None):
         await _AssetInformation_code(ctx, option)
     
     @_AssetInformation.error
     async def _AssetInformation_error(self, ctx, error):
         if ErrorCheck(error, "Command raised an exception: AttributeError: 'NoneType' object has no attribute 'text'"):
-            logger.warning('검색하던중 알 수 없는 에러가 발생하였습니다. 다시 입력해 주세요.')
-            await ctx.reply('검색하던중 알 수 없는 에러가 발생하였습니다. 다시 입력해 주세요.')
+            logger.warning("검색하던중 알 수 없는 에러가 발생하였습니다. 다시 입력해 주세요.")
+            await ctx.reply("검색하던중 알 수 없는 에러가 발생하였습니다. 다시 입력해 주세요.")
             
         elif ErrorCheck(error, "Command raised an exception: AttributeError: 'str' object has no attribute 'id'"):
-            logger.warning('다시 입력해 주세요.')
-            await ctx.reply('다시 입력해 주세요.')
+            logger.warning("다시 입력해 주세요.")
+            await ctx.reply("다시 입력해 주세요.")
             
         elif isinstance(error.original, TypeError):
-            logger.warning('등록되어 있지 않은 유저입니다.')
-            await ctx.reply('등록되어 있지 않은 유저입니다.')
+            logger.warning("등록되어 있지 않은 유저입니다.")
+            await ctx.reply("등록되어 있지 않은 유저입니다.")
             
         else:
             logger.warning(error)
-            await ctx.send(f'{error}')
+            await ctx.send(f"{error}")
             
 def setup(bot: commands.Bot):
     bot.add_cog(AssetInformation_Context(bot))

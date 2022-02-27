@@ -1,3 +1,4 @@
+from email.message import Message
 import nest_asyncio; nest_asyncio.apply()
 
 import discord
@@ -66,7 +67,13 @@ async def on_ready():
 ################################################################################
 
 @bot.event
-async def on_command_error(ctx, error):
+async def on_message(msg: discord.Message):
+    await bot.process_commands(msg)
+
+################################################################################
+
+@bot.event
+async def on_command_error(ctx: Context, error):
     if isinstance(error, CommandNotFound):
         logger.warning(f'{ctx.author.name}: {error}')
 
@@ -83,7 +90,7 @@ async def on_command_error(ctx, error):
     permissions=permission_setting
 )
 async def _BotInformation(ctx: SlashContext):
-    logger.info(f'봇 정보')
+    logger.info('봇 정보')
 
     now_time = ConvertSecToTimeStruct(int(time() - operation_time))
     async def reply(msg):
@@ -91,7 +98,7 @@ async def _BotInformation(ctx: SlashContext):
         await ctx.reply(f'{msg}', hidden=True)
         
     await reply(f"현재 플렛폼: {platform()}\n\
-가동시간: {now_time.day}일 {now_time.hour}시 {now_time.min}분 {now_time.sec}초\n\
+가동시간: {now_time}\n\
 지연시간: {bot.latency}ms\n\
 불러온 명령어들: {list(bot.cogs.keys())}")
 
@@ -299,8 +306,9 @@ async def reload_commands(ctx: SlashContext):
     
     for cog_file in os.listdir('Cogs'):
         if cog_file.endswith('.py'):
-            bot.unload_extension(f'Cogs.{cog_file[:-3]}')
-            bot.load_extension(f'Cogs.{cog_file[:-3]}')
+            # bot.unload_extension(f'Cogs.{cog_file[:-3]}')
+            # bot.load_extension(f'Cogs.{cog_file[:-3]}')
+            bot.reload_extension(f'Cogs.{cog_file[:-3]}')
             logger.info(f'리로드 완료: Cogs.{cog_file[:-3]}')
     
     logger.info('모든 명령어를 다시 불러왔습니다.')

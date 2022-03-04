@@ -102,11 +102,7 @@ async def _AssetInformation_code(ctx: Union[Context, SlashContext], option: Unio
             author_id: int = option.id
             user_name: str = option.name
             
-            if user_name == ctx.author.name: #만약 자기 자신을 멘션했다면
-                option = None
-                author_id: int = ctx.author.id
-            
-            elif not GetUserInformation()[GetArrayNum(author_id)]['Settings']['InformationDisclosure']:
+            if not GetUserInformation()[GetArrayNum(author_id)]['Settings']['InformationDisclosure']:
                 logger.info(f"{user_name}님의 정보가 비공개되어 있습니다.")
                 await ctx.reply(f"{user_name}님의 정보가 비공개되어 있습니다.")
                 return

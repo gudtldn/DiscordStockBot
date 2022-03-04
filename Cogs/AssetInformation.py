@@ -159,8 +159,8 @@ class AssetInformation_SlashContext(commands.Cog):
                 required=False
             ),
             create_option(
-                name="랭킹",
-                description="이 서버에 있는 유저의 자산랭킹을 나열합니다.",
+                name="추가옵션",
+                description="추가옵션을 선택해 주세요.",
                 option_type=OptionType.STRING,
                 required=False,
                 choices=[
@@ -171,7 +171,7 @@ class AssetInformation_SlashContext(commands.Cog):
                 ]
             )
         ],
-        connector={"유저": "option", "랭킹": "option"}
+        connector={"유저": "option", "추가옵션": "option"}
     )
     async def _AssetInformation(self, ctx: SlashContext, option: Union[discord.User, str]=None):
         await _AssetInformation_code(ctx, option)

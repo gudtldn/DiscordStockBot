@@ -1,6 +1,5 @@
 #개인설정
 
-import discord
 from discord.ext import commands
 from discord.ext.commands import Context
 from discord.ext.commands.errors import MissingRequiredArgument
@@ -23,11 +22,11 @@ async def _PersonalSettings_code(ctx: Union[Context, SlashContext], setting: str
         await ctx.reply("먼저 `.사용자등록` 부터 해 주세요.")
         return
     
-    async def reply(msg: str, embed: discord.Embed=None):
+    async def reply(msg: str):
         if isinstance(ctx, Context):
-            await ctx.reply(msg, embed=embed)
+            await ctx.reply(msg)
         else:
-            await ctx.reply(msg, embed=embed, hidden=True)
+            await ctx.reply(msg, hidden=True)
             
     if isinstance(boolean, str):
         d = {

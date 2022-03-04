@@ -31,10 +31,10 @@ async def _ShortenedWordSetting_code(ctx: Union[Context, SlashContext], setting_
             await ctx.reply(msg, hidden=True)
         
     if setting_name == "목록":
-        value: str = "단축어 목록:\n"
+        value: str = "단축어 목록\n"
         
         for stock_name in GetUserInformation()[GetArrayNum(ctx)]['StockDict']:
-            value += f"{stock_name}: {GetUserInformation()[GetArrayNum(ctx)]['StockDict'][stock_name]}\n"
+            value += f"> {stock_name}: {GetUserInformation()[GetArrayNum(ctx)]['StockDict'][stock_name]}\n"
         
         await reply(value)
         

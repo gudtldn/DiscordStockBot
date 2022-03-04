@@ -31,10 +31,10 @@ async def _PersonalSettings_code(ctx: Union[Context, SlashContext], setting: str
             
     if isinstance(boolean, str):
         d = {
-            "참": True, "공개": True, "true": True,
-            "거짓": False, "비공개": False, "false": False
+            "참": True, "공개": True, "true": True, "표시": True,
+            "거짓": False, "비공개": False, "false": False, "미표시": False
         }
-        boolean = d[boolean]
+        boolean = d[boolean.lower()]
         
     if setting == "설정정보":
         string = ""

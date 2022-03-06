@@ -8,6 +8,12 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+### My Ignore ###
+_debug/
+etc/
+json/
+logs/
+
 # C extensions
 *.so
 

@@ -101,8 +101,8 @@ class ShortenedWordSetting_SlashContext(commands.Cog):
         guild_ids=guilds_id,
         options=[
             create_option(
-                name="설정이름",
-                description="설정 할 옵션을 선택하세요.",
+                name="옵션",
+                description="설정할 옵션을 선택하세요.",
                 option_type=OptionType.STRING,
                 required=True,
                 choices=[
@@ -122,19 +122,19 @@ class ShortenedWordSetting_SlashContext(commands.Cog):
             ),
             create_option(
                 name="기업이름",
-                description="설정이름이 추가 또는 제거일 때 사용할 기업이름을 입력 해 주세요.",
+                description="옵션이 추가 또는 제거일 때 사용할 기업이름을 입력 해 주세요.",
                 option_type=OptionType.STRING,
                 required=False
             ),
             create_option(
                 name="기업번호",
-                description="설정이름이 추가 또는 제거일 때 사용할 기업번호를 입력 해 주세요.",
+                description="옵션이 추가 또는 제거일 때 사용할 기업번호를 입력 해 주세요.",
                 option_type=OptionType.STRING,
                 required=False
             )
         ],
         connector={
-            "설정이름": "setting_name",
+            "옵션": "setting_name",
             "기업이름": "add_stock_name",
             "기업번호": "add_stock_num"
         }

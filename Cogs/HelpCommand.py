@@ -24,7 +24,7 @@ class HelpCommand_Context(commands.Cog):
             embed.add_field(name=".주가", value="현재 주가를 검색합니다.", inline=False)
             embed.add_field(name=".매수", value="입력한 기업의 주식을 매수합니다.", inline=False)
             embed.add_field(name=".매도", value="입력한 기업의 주식을 매도합니다.", inline=False)
-            embed.add_field(name=".지원금", value="1만원 ~ 10만원 사이에서 랜덤으로 지원금을 지급합니다.", inline=False)
+            embed.add_field(name=".지원금", value="1만원 ~ 10만원 사이의 돈을 랜덤으로 지급합니다.", inline=False)
             embed.add_field(name=".초기화", value="자신의 자산정보를 초기화 합니다.", inline=False)
             embed.add_field(name=".탈퇴", value="이 봇에 저장되어있는 사용자의 정보를 삭제합니다.", inline=False)
             embed.add_field(name=".개인설정", value="개인설정을 확인 또는 수정합니다.", inline=False)
@@ -61,7 +61,7 @@ class HelpCommand_Context(commands.Cog):
             command_list = ["주가", "시세"]
             command_list.remove(command)
             
-            embed = discord.Embed(title="주가", description="검색한 기업의 현재 주가를 확인합니다.", color=RandomEmbedColor())
+            embed = discord.Embed(title="주가", description="입력한 기업의 현재 주가를 확인합니다.", color=RandomEmbedColor())
             embed.add_field(name="다른이름", value=f"{', '.join(command_list)}", inline=False)
             embed.add_field(name=".주가 [기업이름 | 기업번호]", value="기업이름 또는 기업번호로 검색합니다.", inline=False)
             await ctx.reply(embed=embed)
@@ -91,7 +91,7 @@ class HelpCommand_Context(commands.Cog):
             command_list = ["지원금", "돈받기"]
             command_list.remove(command)
             
-            embed = discord.Embed(title="지원금", description="1만원 ~ 10만원 사이에서 랜덤으로 지급합니다. (쿨타임: 4시간)", color=RandomEmbedColor())
+            embed = discord.Embed(title="지원금", description="1만원 ~ 10만원 사이의 돈을 랜덤으로 지급합니다. (쿨타임: 4시간)", color=RandomEmbedColor())
             embed.add_field(name="다른이름", value=f"{', '.join(command_list)}", inline=False)
             await ctx.reply(embed=embed)
             
@@ -104,7 +104,7 @@ class HelpCommand_Context(commands.Cog):
             command_list = ["탈퇴", "회원탈퇴"]
             command_list.remove(command)
             
-            embed = discord.Embed(title="탈퇴", description="「탈퇴확인」를 입력해 저장되어있는 자신의 정보를 삭제합니다.", color=RandomEmbedColor())
+            embed = discord.Embed(title="탈퇴", description="「탈퇴확인」를 입력해 데이터 베이스에서 자신의 자산정보를 삭제합니다.", color=RandomEmbedColor())
             embed.add_field(name="다른이름", value=f"{', '.join(command_list)}", inline=False)
             embed.add_field(name=".탈퇴 [확인문구]", value="확인문구에는 「탈퇴확인」를 입력해 주세요.")
             await ctx.reply(embed=embed)

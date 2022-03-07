@@ -87,14 +87,13 @@ async def _StockPurchase_code(ctx: Union[Context, SlashContext], stock_name: str
             await ctx.reply("예수금이 부족합니다.")
             return
     
-    json_data = GetUserInformation()
-    if stock_name in GetUserInformation()[GetArrayNum(ctx)]['Stock'].keys(): #Stock안에 stock_name이 있는가?
-        json_data[GetArrayNum(ctx)]['Stock'][stock_name] += num
-    else:
-        json_data[GetArrayNum(ctx)]['Stock'][stock_name] = num
-    
-    json_data[GetArrayNum(ctx)]['Deposit'] -= (int(price) * num) #예수금 저장
-    SetUserInformation(json_data)
+    with setUserInformation() as data:
+        if stock_name in GetUserInformation()[GetArrayNum(ctx)]['Stock'].keys(): #Stock안에 stock_name이 있는가?
+            data.json_data[GetArrayNum(ctx)]['Stock'][stock_name] += num
+        else:
+            data.json_data[GetArrayNum(ctx)]['Stock'][stock_name] = num
+        
+        data.json_data[GetArrayNum(ctx)]['Deposit'] -= (int(price) * num) #예수금 저장
     
     logger.info(f"{name}의 주식이 {int(price):,}원에 {num:,}주가 매수되었습니다.")
     await ctx.reply(f"{name}의 주식이 {int(price):,}원에 {num:,}주가 매수되었습니다.")

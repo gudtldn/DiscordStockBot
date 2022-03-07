@@ -87,20 +87,18 @@ async def _StockSelling_code(ctx: Union[Context, SlashContext], stock_name: str,
                 return
         
         if num <= GetUserInformation()[GetArrayNum(ctx)]['Stock'][stock_name]:
-            json_data = GetUserInformation()
-            json_data[GetArrayNum(ctx)]['Stock'][stock_name] -= num
-            json_data[GetArrayNum(ctx)]['Deposit'] += (int(price) * num)
-            
-            if json_data[GetArrayNum(ctx)]['Stock'][stock_name] == 0:
-                del(json_data[GetArrayNum(ctx)]['Stock'][stock_name])
-            
-            SetUserInformation(json_data)
+            with setUserInformation() as data:
+                data.json_data[GetArrayNum(ctx)]['Stock'][stock_name] -= num
+                data.json_data[GetArrayNum(ctx)]['Deposit'] += (int(price) * num)
+                
+                if data.json_data[GetArrayNum(ctx)]['Stock'][stock_name] == 0:
+                    del(data.json_data[GetArrayNum(ctx)]['Stock'][stock_name])
             
             logger.info(f"{name}의 주식이 {int(price):,}원에 {num:,}주가 매도되었습니다.")
             await ctx.reply(f"{name}의 주식이 {int(price):,}원에 {num:,}주가 매도되었습니다.")
         else:
-            logger.info(f"매도 하려는 주식개수가 현재 {name}의 주식 보유수량보다 더 높습니다. (현재 보유수량: {json_data[GetArrayNum(ctx)]['Stock'][stock_name]}주)")
-            await ctx.reply(f"매도 하려는 주식개수가 현재 {name}의 주식 보유수량보다 더 높습니다. (현재 보유수량: {json_data[GetArrayNum(ctx)]['Stock'][stock_name]}주)")
+            logger.info(f"매도 하려는 주식개수가 현재 {name}의 주식 보유수량보다 더 높습니다. (현재 보유수량: {GetUserInformation()[GetArrayNum(ctx)]['Stock'][stock_name]}주)")
+            await ctx.reply(f"매도 하려는 주식개수가 현재 {name}의 주식 보유수량보다 더 높습니다. (현재 보유수량: {GetUserInformation()[GetArrayNum(ctx)]['Stock'][stock_name]}주)")
             return
     else:
         logger.info(f"{name}의 주식이 자산에 없습니다.")

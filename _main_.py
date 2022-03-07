@@ -1,5 +1,3 @@
-import nest_asyncio; nest_asyncio.apply()
-
 import discord
 from discord.ext import commands
 from discord.errors import HTTPException
@@ -16,6 +14,8 @@ import os
 from time import time
 
 from platform import platform
+
+from re import search
 
 from module.__define__ import *
 
@@ -154,17 +154,15 @@ async def _UploadFile(ctx: SlashContext, file_type: str, path: str = None):
         from zipfile import ZipFile
         
         chdir("./logs") #실행폴더 변경
-        zipfile = ZipFile(f"logs.zip", "w")
-
-        logs_dir = [i for i in listdir("./") if i.endswith(".log")]
-        logs_dir.sort()
+        with ZipFile(f"logs.zip", "w") as zipfile:
+            logs_dir = [i for i in listdir("./") if i.endswith(".log")]
+            logs_dir.sort()
+            
+            for n, file in enumerate(logs_dir):
+                zipfile.write(file)
+                if len(logs_dir)-1 != n:
+                    remove(file)
         
-        for n, file in enumerate(logs_dir):
-            zipfile.write(file)
-            if len(logs_dir)-1 != n:
-                remove(file)
-
-        zipfile.close()
         chdir("../")
         
         await ctx.send(f"{len(logs_dir)}개의 파일이 압축되어 업로드되었습니다.", file=discord.File("./logs/logs.zip"))
@@ -247,11 +245,11 @@ async def _DownloadFile(ctx: SlashContext, file_type: str, link: str, path: str=
     import requests as r
     
     if file_type == "cogs":
-        if link.find(".py") == -1:
+        if not search("\/\w+\.py$", link):
             await ctx.send("올바르지 않은 링크입니다. 다시 확인해 주세요.")
             return
         
-        file_name = link.split("/")[-1]
+        file_name = search("\w+\.py$", link).group()
         
         with open(f"./Cogs/{file_name}", "wb") as f:
             f.write(r.get(link, allow_redirects=True).content)
@@ -259,7 +257,7 @@ async def _DownloadFile(ctx: SlashContext, file_type: str, link: str, path: str=
         await ctx.send(f"{file_name}가 성공적으로 다운로드가 완료되었습니다.")
     
     elif file_type == "userinfo":
-        if link.find("UserInformation.json") == -1:
+        if not search("\/UserInformation.json$", link):
             await ctx.send("올바르지 않은 링크입니다. 다시 확인해 주세요.")
             return
         
@@ -271,7 +269,7 @@ async def _DownloadFile(ctx: SlashContext, file_type: str, link: str, path: str=
         await ctx.send("성공적으로 다운로드가 완료되었습니다.")
 
     elif file_type == "stockdict":
-        if link.find("StockDictionary.json") == -1:
+        if not search("\/StockDictionary.json$", link):
             await ctx.send("올바르지 않은 링크입니다. 다시 확인해 주세요.")
             return
         
@@ -287,10 +285,15 @@ async def _DownloadFile(ctx: SlashContext, file_type: str, link: str, path: str=
             await ctx.send("경로를 입력해 주세요.")
             return
         
+        elif not search("(https?:\/\/)([\w]+\.)+\w+\/", link):
+            await ctx.send("올바르지 않은 링크입니다. 다시 확인해 주세요.")
+            return
+        
         with open(path, "wb") as f:
             f.write(r.get(link, allow_redirects=True).content)
         
-        await ctx.send(f"{link.split('/')[-1]}가 {path}에 성공적으로 다운로드가 완료되었습니다.")
+        file_name = search('\w+\.[^\\/\n]+$', link).group()
+        await ctx.send(f"{file_name}가 {path}에 성공적으로 다운로드가 완료되었습니다.")
 
 @_DownloadFile.error
 async def _DownloadFile_error(ctx: SlashContext, error):
@@ -313,8 +316,6 @@ async def reload_commands(ctx: SlashContext):
     
     for cog_file in os.listdir("Cogs"):
         if cog_file.endswith(".py"):
-            # bot.unload_extension(f"Cogs.{cog_file[:-3]}")
-            # bot.load_extension(f"Cogs.{cog_file[:-3]}")
             bot.reload_extension(f"Cogs.{cog_file[:-3]}")
             logger.info(f"리로드 완료: Cogs.{cog_file[:-3]}")
     

@@ -116,8 +116,10 @@ class HelpCommand_Context(commands.Cog):
             embed = discord.Embed(title="개인설정", description="개인설정을 확인 또는 수정합니다.", color=RandomEmbedColor())
             embed.add_field(name="다른이름", value=f"{', '.join(command_list)}", inline=False)
             embed.add_field(name=".개인설정 [설정정보]", value="설정할 수 있는 목록을 나열합니다.", inline=False)
-            embed.add_field(name=".개인설정 [자산정보] [boolean]", value="자산정보 공개여부를 설정합니다.(\"true\", \"false\")", inline=False)
-            embed.add_field(name=".개인설정 [지원금표시] [boolean]", value="지원금으로 얻은 돈 표시여부를 설정합니다.(\"true\", \"false\")", inline=False)
+            embed.add_field(name=".개인설정 [자산정보] [true | false]", value="자산정보 공개여부를 설정합니다.", inline=False)
+            embed.add_field(name=".개인설정 [지원금표시] [true | false]", value="지원금으로 얻은 돈 표시여부를 설정합니다.", inline=False)
+            embed.add_field(name=".개인설정 [차트표시] [true | false]", value="`주가`명령어에 차트를 표시합니다.", inline=False)
+            embed.add_field(name=".개인설정 [쿨타임표시] [true | false]", value="`지원금`명령어에 쿨타임을 바로 표시합니다.", inline=False)
             await ctx.reply(embed=embed)
             
         else:

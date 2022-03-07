@@ -68,7 +68,7 @@ async def get_text_(author_id):
 
 async def _AssetInformation_code(ctx: Union[Context, SlashContext], option: Union[discord.User, str]):
     logger.info(f"[{type(ctx)}] {ctx.author.name}: {ctx.invoked_with} {option}")
-        
+    
     if not IsVaildUser(ctx):
         logger.info("먼저 `.사용자등록` 부터 해 주세요.")
         await ctx.reply("먼저 `.사용자등록` 부터 해 주세요.")
@@ -107,25 +107,23 @@ async def _AssetInformation_code(ctx: Union[Context, SlashContext], option: Unio
                 await ctx.reply(f"{user_name}님의 정보가 비공개되어 있습니다.")
                 return
     
-    def _crawling():
+    async def _crawling():
         start_time = time() #크롤링 시간
         
-        crawling_data = asyncio.get_event_loop().run_until_complete(
-            get_text_(author_id)
-        )
-        json_data = GetUserInformation()
+        crawling_data = await get_text_(author_id)
         
-        json_data[GetArrayNum(author_id)]['TotalAssets'] = crawling_data['TotalAssets'] + json_data[GetArrayNum(author_id)]['Deposit'] #다 합친걸 총 자산에 저장
+        with setUserInformation() as data:
+            data.json_data[GetArrayNum(author_id)]['TotalAssets'] = \
+                crawling_data['TotalAssets'] + data.json_data[GetArrayNum(author_id)]['Deposit'] #다 합친걸 총 자산에 저장
         
-        SetUserInformation(json_data)
-        
-        embed = discord.Embed(title=f"{ctx.author.name if option is None else user_name}님의 자산정보", color=RandomEmbedColor())
-        embed.add_field(name="예수금", value=f"{json_data[GetArrayNum(author_id)]['Deposit']:,}원")
-        embed.add_field(name="총 자산", value=f"{json_data[GetArrayNum(author_id)]['TotalAssets']:,}원")
-        if json_data[GetArrayNum(author_id)]['Settings']['ShowSupportFund']:
-            embed.add_field(name="지원금으로 얻은 돈", value=f"{json_data[GetArrayNum(author_id)]['SupportFund']:,}원", inline=False)
-        if len(json_data[GetArrayNum(author_id)]['Stock']) != 0:
-            embed.add_field(name="="*25, value="_ _", inline=False)
+        with getUserInformation() as data:
+            embed = discord.Embed(title=f"{ctx.author.name if option is None else user_name}님의 자산정보", color=RandomEmbedColor())
+            embed.add_field(name="예수금", value=f"{data.json_data[GetArrayNum(author_id)]['Deposit']:,}원")
+            embed.add_field(name="총 자산", value=f"{data.json_data[GetArrayNum(author_id)]['TotalAssets']:,}원")
+            if data.json_data[GetArrayNum(author_id)]['Settings']['ShowSupportFund']:
+                embed.add_field(name="지원금으로 얻은 돈", value=f"{data.json_data[GetArrayNum(author_id)]['SupportFund']:,}원", inline=False)
+            if len(data.json_data[GetArrayNum(author_id)]['Stock']) != 0:
+                embed.add_field(name="="*25, value="_ _", inline=False)
         
         for add_embed in crawling_data['stock_list']:
             embed.add_field(name=add_embed[0], value=f"잔고수량: {add_embed[1]:,} | {add_embed[2]:,}원", inline=False)
@@ -135,11 +133,11 @@ async def _AssetInformation_code(ctx: Union[Context, SlashContext], option: Unio
     
     if isinstance(ctx, Context):
         async with ctx.typing():
-            await ctx.reply(embed=_crawling())
+            await ctx.reply(embed=await _crawling())
     else:
         hidden = not GetUserInformation()[GetArrayNum(author_id)]['Settings']['InformationDisclosure']
         await ctx.defer(hidden=hidden)
-        await ctx.reply(embed=_crawling())
+        await ctx.reply(embed=await _crawling())
 
 ######################################################################################################################################################
 

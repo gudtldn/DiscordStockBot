@@ -33,8 +33,9 @@ async def _ShortenedWordSetting_code(ctx: Union[Context, SlashContext], setting_
     if setting_name == "목록":
         value: str = "단축어 목록\n"
         
-        for stock_name in GetUserInformation()[GetArrayNum(ctx)]['StockDict']:
-            value += f"> {stock_name}: {GetUserInformation()[GetArrayNum(ctx)]['StockDict'][stock_name]}\n"
+        with getUserInformation() as data:
+            for stock_name in data.json_data[GetArrayNum(ctx)]['StockDict']:
+                value += f"> {stock_name}: {data.json_data[GetArrayNum(ctx)]['StockDict'][stock_name]}\n"
         
         await reply(value)
         
@@ -62,9 +63,8 @@ async def _ShortenedWordSetting_code(ctx: Union[Context, SlashContext], setting_
             await reply("이미 추가되있는 기업이름입니다.")
             return
         
-        json_data = GetUserInformation()
-        json_data[GetArrayNum(ctx)]['StockDict'][add_stock_name] = add_stock_num
-        SetUserInformation(json_data)
+        with setUserInformation() as data:
+            data.json_data[GetArrayNum(ctx)]['StockDict'][add_stock_name] = add_stock_num
         
         logger.info(f"`{add_stock_name}: {add_stock_num}`이/가 추가되었습니다.")
         await reply(f"`{add_stock_name}: {add_stock_num}`이/가 추가되었습니다.")
@@ -77,12 +77,12 @@ async def _ShortenedWordSetting_code(ctx: Union[Context, SlashContext], setting_
         
         for k in GetUserInformation()[GetArrayNum(ctx)]['StockDict']:
             if k == add_stock_name:
-                json_data = GetUserInformation()
-                del(json_data[GetArrayNum(ctx)]['StockDict'][k])
-                SetUserInformation(json_data)
+                with setUserInformation() as data:
+                    del(data.json_data[GetArrayNum(ctx)]['StockDict'][k])
                 
-                logger.info(f"`{k}: {GetUserInformation()[GetArrayNum(ctx)]['StockDict'][k]}`이/가 제거되었습니다.")
-                await reply(f"`{k}: {GetUserInformation()[GetArrayNum(ctx)]['StockDict'][k]}`이/가 제거되었습니다.")
+                with getUserInformation() as data:
+                    logger.info(f"`{k}: {data.json_data[GetArrayNum(ctx)]['StockDict'][k]}`이/가 제거되었습니다.")
+                    await reply(f"`{k}: {data.json_data[GetArrayNum(ctx)]['StockDict'][k]}`이/가 제거되었습니다.")
                 return
             
         logger.info(f"{add_stock_name}이/가 목록에 존재하지 않습니다.")

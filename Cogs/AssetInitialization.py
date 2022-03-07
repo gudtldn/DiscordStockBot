@@ -23,11 +23,11 @@ async def _AssetInitialization_code(ctx: Union[Context, SlashContext], string: s
         await ctx.reply("먼저 `.사용자등록` 부터 해 주세요.")
         return
     
-    if string == "초기화확인":
-        json_data = GetUserInformation()
-        del(json_data[GetArrayNum(ctx)])
-        json_data.append(AddUser(ctx.author.id)) #사용자 추가
-        SetUserInformation(json_data)
+    if string == "초기화확인":        
+        with setUserInformation() as data:
+            del(data.json_data[GetArrayNum(ctx)])
+            data.json_data.append(AddUser(ctx.author.id)) #사용자 추가
+        
         logger.info("초기화가 완료되었습니다.")
         await ctx.reply("초기화가 완료되었습니다.")
     

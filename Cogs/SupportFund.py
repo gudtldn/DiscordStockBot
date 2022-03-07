@@ -28,17 +28,14 @@ async def _SupportFund_code(ctx: Union[Context, SlashContext]):
         
         random_added_deposit = randint(1, 10) * 10000
 
-        json_data = GetUserInformation()        
-        
-        json_data[GetArrayNum(ctx)]['Deposit'] += random_added_deposit
-        json_data[GetArrayNum(ctx)]['SupportFund'] += random_added_deposit
-        json_data[GetArrayNum(ctx)]['SupportFundTime'] = int(time())
-        
-        SetUserInformation(json_data)
+        with setUserInformation() as data:
+            data.json_data[GetArrayNum(ctx)]['Deposit'] += random_added_deposit
+            data.json_data[GetArrayNum(ctx)]['SupportFund'] += random_added_deposit
+            data.json_data[GetArrayNum(ctx)]['SupportFundTime'] = int(time())
         
         logger.info(f'{random_added_deposit:,}원이 지급되었습니다.')
-        if json_data[GetArrayNum(ctx)]['Settings']['ShowSupportFundCooldown']:
-            cool_down_unix = json_data[GetArrayNum(ctx)]['SupportFundTime'] + cool_down
+        if GetUserInformation()[GetArrayNum(ctx)]['Settings']['ShowSupportFundCooldown']:
+            cool_down_unix = GetUserInformation()[GetArrayNum(ctx)]['SupportFundTime'] + cool_down
             await ctx.reply(f'{random_added_deposit:,}원이 지급되었습니다.\n(다음 지원금은 <t:{cool_down_unix}:T> 이후에 받을 수 있습니다.)')
         
         else:

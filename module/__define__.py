@@ -74,25 +74,23 @@ def GetUserInformation() -> list[dict]: #Information.json에 있는 값 불러�
     with open("./json/UserInformation.json", "r", encoding="utf-8") as Inf:
         return load(Inf)
 
-def SetUserInformation(json_data: list[dict]):
+def _SetUserInformation(json_data: list[dict]):
     with open("./json/UserInformation.json", "w", encoding="utf-8") as Inf:
         dump(json_data, Inf, indent="\t", ensure_ascii=False)
 
 def GetArrayNum(ctx: Union[Context, SlashContext, int]): #ctx.author.id가 들어있는 배열의 번호를 반환
-    json_data = GetUserInformation()
     if isinstance(ctx, (Context, SlashContext)):
-        ctx = ctx.author.id
+        ctx: int = ctx.author.id
 
-    for num, i in enumerate(json_data):
+    for num, i in enumerate(GetUserInformation()):
         if i['UserID'] == ctx:
             return num
         
 def IsVaildUser(ctx: Union[Context, SlashContext, int]): #ctx.author.id를 가진 유저가 Information.json에 존재하는지 여부
-    json_data = GetUserInformation()
     if isinstance(ctx, (Context, SlashContext)):
-        ctx = ctx.author.id
+        ctx: int = ctx.author.id
         
-    for i in json_data:
+    for i in GetUserInformation():
         if i['UserID'] == ctx:
             return True
     return False
@@ -117,3 +115,29 @@ class ConvertSecToTimeStruct():
         
     def __str__(self):
         return f"{self.day}일 {self.hour}시 {self.min}분 {self.sec}초"
+    
+class setUserInformation():
+    '''
+    with문이 끝나면 자동으로 저장
+    '''
+    def __init__(self):
+        self.json_data = GetUserInformation()
+        
+    def __enter__(self):
+        return self
+    
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        _SetUserInformation(self.json_data)
+        
+class getUserInformation():
+    '''
+    with문이 끝나도 자동으로 저장이 안됨
+    '''
+    def __init__(self):
+        self.json_data = GetUserInformation()
+        
+    def __enter__(self):
+        return self
+    
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        pass

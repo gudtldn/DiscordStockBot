@@ -10,9 +10,10 @@ from module.__define__ import *
 
 ######################################################################################################################################################
 
+@CommandExecutionTime
 async def _AddUser_code(ctx: Union[Context, SlashContext]):
     logger.info(f"[{type(ctx)}] {ctx.author.name}: {ctx.invoked_with}")
-        
+    
     if IsVaildUser(ctx):
         logger.info("이미 등록되어 있는 사용자 입니다.")
         await ctx.reply("이미 등록되어 있는 사용자 입니다.")

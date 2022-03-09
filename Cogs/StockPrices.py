@@ -22,6 +22,7 @@ from module.__define__ import *
 
 ######################################################################################################################################################
 
+@CommandExecutionTime
 async def _StockPrices_code(ctx: Union[Context, SlashContext], input_stock_name: str):
     logger.info(f"[{type(ctx)}] {ctx.author.name}: {ctx.invoked_with} {input_stock_name}")
 
@@ -63,9 +64,7 @@ async def _StockPrices_code(ctx: Union[Context, SlashContext], input_stock_name:
     compared_per: int = round((price - yesterday_price) / yesterday_price * 100, 2) #어제대비 가격%
     price_sign = "" if compared_price <= 0 else "+" #부호설정
     stock_time: str = soup.select_one("#time > em").text #기준일 (개장전, 장중, 장마감)
-    date: list[int] = stock_time[:10].split(".")
-    for n, i in enumerate(date):
-        date[n] = int(i)
+    date: list[int] = [int(i) for i in stock_time[:10].split(".")]
     
     stop_trading = soup.select_one("#content > div.section.inner_sub > div:nth-child(1) > table > tbody > tr:nth-child(4) > td:nth-child(4) > span").text #시가
     if stop_trading == "0":
@@ -84,7 +83,6 @@ async def _StockPrices_code(ctx: Union[Context, SlashContext], input_stock_name:
             embed.set_image(url="attachment://chart_img.png")
     embed.set_footer(text=f"{date[0]}년 {date[1]}월 {date[2]}일 기준")
         
-    logger.info("Done.")
     await ctx.reply(embed=embed, file=chart_img)
 
 ######################################################################################################################################################

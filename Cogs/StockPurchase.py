@@ -17,6 +17,7 @@ from module.__define__ import *
 
 ######################################################################################################################################################
 
+@CommandExecutionTime
 async def _StockPurchase_code(ctx: Union[Context, SlashContext], stock_name: str, num: str):
     logger.info(f"[{type(ctx)}] {ctx.author.name}: {ctx.invoked_with} {stock_name} {num}")
     

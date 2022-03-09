@@ -11,6 +11,7 @@ class HelpCommand_Context(commands.Cog):
         self.bot = bot
         
     @commands.command(name="도움말", aliases=["명령어", "?"])
+    @CommandExecutionTime
     async def _HelpCommand(self, ctx: Context, command: str=None):
         logger.info(f"[{type(ctx)}] {ctx.author.name}: {ctx.invoked_with} {command}")
         

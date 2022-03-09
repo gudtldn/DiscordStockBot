@@ -14,6 +14,7 @@ from module.__define__ import *
 
 ######################################################################################################################################################
 
+@CommandExecutionTime
 async def _SupportFund_code(ctx: Union[Context, SlashContext]):
     logger.info(f"[{type(ctx)}] {ctx.author.name}: {ctx.invoked_with}")
     
@@ -42,7 +43,7 @@ async def _SupportFund_code(ctx: Union[Context, SlashContext]):
             await ctx.reply(f'{random_added_deposit:,}원이 지급되었습니다.')
         
     else:
-        now_time = ConvertSecToTimeStruct(GetUserInformation()[GetArrayNum(ctx)]['SupportFundTime'] - int(time()) + cool_down)
+        now_time = convertSecToTimeStruct(GetUserInformation()[GetArrayNum(ctx)]['SupportFundTime'] - int(time()) + cool_down)
         cool_down_unix = GetUserInformation()[GetArrayNum(ctx)]['SupportFundTime'] + cool_down
         logger.info(f'지원금을 받으려면 {now_time.hour}시간 {now_time.min}분 {now_time.sec}초를 더 기다려야 합니다. | (<t:{cool_down_unix}:T> 이후에 받을 수 있습니다.)')
         await ctx.reply(f'지원금을 받으려면 {now_time.hour}시간 {now_time.min}분 {now_time.sec}초를 더 기다려야 합니다.\n(<t:{cool_down_unix}:T> 이후에 받을 수 있습니다.)')

@@ -16,6 +16,7 @@ from module.__define__ import *
 
 ######################################################################################################################################################
 
+@CommandExecutionTime
 async def _ShortenedWordSetting_code(ctx: Union[Context, SlashContext], setting_name: str, add_stock_name: str = None, add_stock_num: str = None):
     logger.info(f"[{type(ctx)}] {ctx.author.name}: {setting_name} {add_stock_name} {add_stock_num}")
     

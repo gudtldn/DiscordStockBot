@@ -14,6 +14,7 @@ from module.__define__ import *
 
 ######################################################################################################################################################
 
+@CommandExecutionTime
 async def _PersonalSettings_code(ctx: Union[Context, SlashContext], setting: str, boolean: Union[bool, str]=None):
     logger.info(f"[{type(ctx)}] {ctx.author.name}: {ctx.invoked_with} {setting} {boolean}")
     

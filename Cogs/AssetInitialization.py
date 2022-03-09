@@ -15,6 +15,7 @@ from module.__define__ import *
 
 ######################################################################################################################################################
 
+@CommandExecutionTime
 async def _AssetInitialization_code(ctx: Union[Context, SlashContext], string: str):
     logger.info(f"[{type(ctx)}] {ctx.author.name}: {ctx.invoked_with} {string}")
     

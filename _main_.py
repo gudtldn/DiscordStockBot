@@ -92,7 +92,7 @@ async def on_command_error(ctx: Context, error):
 async def _BotInformation(ctx: SlashContext):
     logger.info("봇 정보")
 
-    now_time = ConvertSecToTimeStruct(int(time() - operation_time))
+    now_time = convertSecToTimeStruct(int(time() - operation_time))
     async def reply(msg):
         logger.info(f"{msg}")
         await ctx.reply(f"{msg}", hidden=True)
@@ -144,6 +144,7 @@ async def _BotInformation(ctx: SlashContext):
     permissions=permission_setting,
     connector={"파일타입": "file_type", "경로": "path"}
 )
+@CommandExecutionTime
 async def _UploadFile(ctx: SlashContext, file_type: str, path: str = None):    
     logger.info(f"업로드: {file_type}")
     
@@ -237,6 +238,7 @@ async def _UploadFile_error(ctx: SlashContext, error):
     permissions=permission_setting,
     connector={"파일타입": "file_type", "링크": "link", "경로": "path"}
 )
+@CommandExecutionTime
 async def _DownloadFile(ctx: SlashContext, file_type: str, link: str, path: str=None):
     logger.info(f"다운로드: {file_type}")
     
@@ -309,6 +311,7 @@ async def _DownloadFile_error(ctx: SlashContext, error):
     default_permission=False,
     permissions=permission_setting
 )
+@CommandExecutionTime
 async def reload_commands(ctx: SlashContext):
     logger.info("명령어 다시불러오는 중...")
     
@@ -350,6 +353,7 @@ async def reload_commands(ctx: SlashContext):
     permissions=permission_setting,
     connector={"역할설정": "rule_setting"}
 )
+@CommandExecutionTime
 async def _RuleSetting(ctx: SlashContext, rule_setting: str):
     logger.info(f"역할: {rule_setting}")
     

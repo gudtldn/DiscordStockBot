@@ -25,10 +25,9 @@ from module.__define__ import *
 
 async def get_text_from_url(author_id, stock_num):  # 코루틴 정의
     loop = asyncio.get_event_loop()
-    ua = UserAgent().random
 
     url = f"https://finance.naver.com/item/sise.naver?code={stock_num}" #네이버 금융에 검색
-    request = partial(requests.get, url, headers={"user-agent": ua})
+    request = partial(requests.get, url, headers={"user-agent": UserAgent().random})
     timer = time()
     res = await loop.run_in_executor(None, request)
     
@@ -55,9 +54,7 @@ async def get_text_(author_id):
             for keyword in GetUserInformation()[GetArrayNum(author_id)]['Stock']
     ]
 
-    await asyncio.gather(*futures)
-    
-    stock_list = [task.result() for task in futures]
+    stock_list = await asyncio.gather(*futures)
     TotalAssets = 0
     for i in stock_list:
         TotalAssets += i[2]
@@ -66,6 +63,7 @@ async def get_text_(author_id):
 
 ######################################################################################################################################################
 
+@CommandExecutionTime
 async def _AssetInformation_code(ctx: Union[Context, SlashContext], option: Union[discord.User, str]):
     logger.info(f"[{type(ctx)}] {ctx.author.name}: {ctx.invoked_with} {option}")
     
@@ -108,8 +106,6 @@ async def _AssetInformation_code(ctx: Union[Context, SlashContext], option: Unio
                 return
     
     async def _crawling():
-        start_time = time() #크롤링 시간
-        
         crawling_data = await get_text_(author_id)
         
         with setUserInformation() as data:
@@ -128,7 +124,6 @@ async def _AssetInformation_code(ctx: Union[Context, SlashContext], option: Unio
         for add_embed in crawling_data['stock_list']:
             embed.add_field(name=add_embed[0], value=f"잔고수량: {add_embed[1]:,} | {add_embed[2]:,}원", inline=False)
         
-        logger.info(f"All Done. {time() - start_time} seconds")
         return embed
     
     if isinstance(ctx, Context):

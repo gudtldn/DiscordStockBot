@@ -1,12 +1,14 @@
 from discord.ext.commands import Context
-
 from discord_slash import SlashContext
 
+from time import time
 from datetime import timedelta, datetime
 
 from json import load, dump
 
 from random import randint
+
+from functools import wraps
 
 from typing import Union
 
@@ -98,9 +100,20 @@ def IsVaildUser(ctx: Union[Context, SlashContext, int]): #ctx.author.id를 가�
 def ErrorCheck(error, error_context): #찾으려는 에러가 error.args에 있는지 여부
     return error_context in error.args
 
+################################################################################ 데코레이터 선언 ################################################################################
+
+def CommandExecutionTime(func): #명령어 실행시간 체크 데코레이터 (코루틴 함수에만 사용가능)
+    @wraps(func)
+    async def wrapper(*args, **kwargs):
+        t = time()
+        await func(*args, **kwargs)
+        logger.info(f"{func.__name__}: {time() - t}seconds")
+        
+    return wrapper
+
 ################################################################################ 클래스 선언 ################################################################################
 
-class ConvertSecToTimeStruct():
+class convertSecToTimeStruct():
     '''
     (day, hour, min, sec)
     '''

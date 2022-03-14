@@ -9,7 +9,7 @@ from discord_slash.model import SlashCommandOptionType as OptionType
 from discord_slash.model import SlashCommandPermissionType as PermissionType
 from discord_slash.utils.manage_commands import create_option, create_choice, create_permission
 
-import os
+from os import listdir, remove
 
 from time import time
 
@@ -19,11 +19,11 @@ from re import search
 
 from module.__define__ import *
 
-test_guilds_id = (714012054721396786,)
+test_guilds_id = (714012054721396786,) #관리자 전용 명령어를 쓸 서버
 permission_setting = {
     id: [
         create_permission(
-            id=642288666156466176,
+            id=642288666156466176, #관리자 유저 id
             id_type=PermissionType.USER,
             permission=True
         )
@@ -33,7 +33,7 @@ permission_setting = {
 ################################################################################ 기본값 설정 ################################################################################
 
 def _InitialVarSetting():
-    global operation_time, bot, slash, Token
+    global operation_time, bot, slash
 
     operation_time = time() #가동된 현재 시간
 
@@ -46,17 +46,14 @@ def _InitialVarSetting():
         game = discord.Game("주식투자") # ~하는 중
         bot = commands.Bot(command_prefix=".", help_command=None, status=discord.Status.online, activity=game, intents=intents)
 
-    slash = SlashCommand(bot, sync_commands=True)
+    slash = SlashCommand(bot, sync_commands=True, sync_on_cog_reload=True)
 
-    with open("./etc/Token.txt", "r", encoding="utf-8") as Token_txt:
-        Token = Token_txt.read()
-        
-    for cog_file in os.listdir("./Cogs"): #코그 설정
+    for cog_file in listdir("./Cogs"): #코그 설정
         if cog_file.endswith(".py"):
             bot.load_extension(f"Cogs.{cog_file[:-3]}")
-            
+
 _InitialVarSetting()
-        
+
 ################################################################################ 봇 이벤트 ################################################################################
 
 @bot.event
@@ -145,26 +142,23 @@ async def _BotInformation(ctx: SlashContext):
     connector={"파일타입": "file_type", "경로": "path"}
 )
 @CommandExecutionTime
-async def _UploadFile(ctx: SlashContext, file_type: str, path: str = None):    
+async def _UploadFile(ctx: SlashContext, file_type: str, path: str = None):
     logger.info(f"업로드: {file_type}")
     
     await ctx.defer()
     
     if file_type == "logs":
-        from os import chdir, listdir, remove
         from zipfile import ZipFile
         
-        chdir("./logs") #실행폴더 변경
-        with ZipFile(f"logs.zip", "w") as zipfile:
-            logs_dir = [i for i in listdir("./") if i.endswith(".log")]
-            logs_dir.sort()
-            
-            for n, file in enumerate(logs_dir):
-                zipfile.write(file)
-                if len(logs_dir)-1 != n:
-                    remove(file)
-        
-        chdir("../")
+        with changeDirectory("./logs"): #실행폴더 변경
+            with ZipFile(f"logs.zip", "w") as zipfile:
+                logs_dir = [i for i in listdir("./") if i.endswith(".log")]
+                logs_dir.sort()
+                
+                for n, file in enumerate(logs_dir):
+                    zipfile.write(file)
+                    if len(logs_dir)-1 != n:
+                        remove(file)
         
         await ctx.send(f"{len(logs_dir)}개의 파일이 압축되어 업로드되었습니다.", file=discord.File("./logs/logs.zip"))
         
@@ -317,7 +311,7 @@ async def reload_commands(ctx: SlashContext):
     
     await ctx.defer()
     
-    for cog_file in os.listdir("Cogs"):
+    for cog_file in listdir("Cogs"):
         if cog_file.endswith(".py"):
             bot.reload_extension(f"Cogs.{cog_file[:-3]}")
             logger.info(f"리로드 완료: Cogs.{cog_file[:-3]}")
@@ -387,4 +381,5 @@ async def _RuleSetting(ctx: SlashContext, rule_setting: str):
 
 ################################################################################
 
-bot.run(Token)
+with open("./etc/Token.txt", "r", encoding="utf-8") as Token_txt:
+    bot.run(Token_txt.read())

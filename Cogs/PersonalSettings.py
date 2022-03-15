@@ -62,27 +62,32 @@ async def _PersonalSettings_code(ctx: Union[Context, SlashContext], setting: str
             data.json_data[GetArrayNum(ctx)]['Settings']['InformationDisclosure'] = boolean
         
         await reply(f"자산정보 공개여부가 {boolean}로 설정되었습니다.")
+        return
         
     elif setting in ("ShowSupportFund", "지원금표시"):
         with setUserInformation() as data:
             data.json_data[GetArrayNum(ctx)]['Settings']['ShowSupportFund'] = boolean
         
         await reply(f"지원금으로 얻은 돈 표시여부가 {boolean}로 설정되었습니다.")
+        return
         
     elif setting in ("ShowStockChartImage", "차트표시"):
         with setUserInformation() as data:
             data.json_data[GetArrayNum(ctx)]['Settings']['ShowStockChartImage'] = boolean
         
         await reply(f"주식차트 표시여부가 {boolean}로 설정되었습니다.")
+        return
 
     elif setting in ("ShowSupportFundCooldown", "쿨타임표시"):
         with setUserInformation() as data:
             data.json_data[GetArrayNum(ctx)]['Settings']['ShowSupportFundCooldown'] = boolean
         
         await reply(f"지원금 쿨타임 바로표시여부가 {boolean}로 설정되었습니다.")
+        return
         
     else:
         await reply("다시 입력해 주세요.")
+        return
         
 ######################################################################################################################################################
 

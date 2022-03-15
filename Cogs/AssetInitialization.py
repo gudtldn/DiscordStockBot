@@ -8,7 +8,6 @@ from discord_slash import SlashContext, cog_ext
 from discord_slash.model import SlashCommandOptionType as OptionType
 from discord_slash.utils.manage_commands import create_option
 
-
 from typing import Union
 
 from module.__define__ import *
@@ -31,14 +30,17 @@ async def _AssetInitialization_code(ctx: Union[Context, SlashContext], string: s
         
         logger.info("초기화가 완료되었습니다.")
         await ctx.reply("초기화가 완료되었습니다.")
+        return
     
     else:
         if isinstance(ctx, Context):
             logger.info("「.초기화 초기화확인」을 입력해야 초기화 할 수 있습니다.")
             await ctx.reply("「.초기화 초기화확인」을 입력해야 초기화 할 수 있습니다.")
+            return
         else:
             logger.info("확인문구에「초기화확인」을 입력해야 초기화 할 수 있습니다.")
             await ctx.reply("확인문구에「초기화확인」을 입력해야 초기화 할 수 있습니다.")
+            return
 
 ######################################################################################################################################################
 

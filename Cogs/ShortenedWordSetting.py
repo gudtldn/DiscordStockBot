@@ -49,8 +49,8 @@ async def _ShortenedWordSetting_code(ctx: Union[Context, SlashContext], setting_
                 await reply("**기업번호**는 필수 입력 항목 입니다.")
                 return
             else:
-                logger.info("**-기업번호**는 필수 입력 항목 입니다.")
-                await reply("**-기업번호**는 필수 입력 항목 입니다.")
+                logger.info("**-번호**는 필수 입력 항목 입니다.")
+                await reply("**-번호**는 필수 입력 항목 입니다.")
                 return
             
         elif not match("[0-9]+", add_stock_num): #기업번호에 숫자만 있는지 확인
@@ -83,18 +83,16 @@ async def _ShortenedWordSetting_code(ctx: Union[Context, SlashContext], setting_
                 await reply("**기업이름**는 필수 입력 항목 입니다.")
                 return
             else:
-                logger.info("**-기업이름**는 필수 입력 항목 입니다.")
-                await reply("**-기업이름**는 필수 입력 항목 입니다.")
+                logger.info("**-이름**는 필수 입력 항목 입니다.")
+                await reply("**-이름**는 필수 입력 항목 입니다.")
                 return
         
         for k in GetUserInformation()[GetArrayNum(ctx)]['StockDict']:
-            if k == add_stock_name:
+            if k == add_stock_name: 
                 with setUserInformation() as data:
-                    del(data.json_data[GetArrayNum(ctx)]['StockDict'][k])
-                
-                with getUserInformation() as data:
                     logger.info(f"`{k}: {data.json_data[GetArrayNum(ctx)]['StockDict'][k]}`이/가 제거되었습니다.")
                     await reply(f"`{k}: {data.json_data[GetArrayNum(ctx)]['StockDict'][k]}`이/가 제거되었습니다.")
+                    del(data.json_data[GetArrayNum(ctx)]['StockDict'][k])
                 return
             
         logger.info(f"{add_stock_name}이/가 목록에 존재하지 않습니다.")
@@ -183,6 +181,12 @@ class ShortenedWordSetting_Context(commands.Cog):
             if match("(-(기업)?(이름|번호)\s[\w|ㄱ-ㅎ|ㅏ-ㅣ|가-힣]+\s?)+$", add_stock):
                 add_stock: dict = dict([split.strip().replace("기업", "").split()
                                 for split in add_stock.split("-") if split != ""])
+                
+                if add_stock.get("번호") is not None and not match("[0-9]+", add_stock.get("번호")):
+                    logger.warning("기업번호는 숫자만 입력할 수 있습니다.")
+                    await ctx.reply("기업번호는 숫자만 입력할 수 있습니다.")
+                    return
+                
                 await _ShortenedWordSetting_code(ctx, setting_name, add_stock.get("이름"), add_stock.get("번호"))
             else:
                 await ctx.reply("다시 입력해 주세요.")
@@ -192,13 +196,13 @@ class ShortenedWordSetting_Context(commands.Cog):
             
     @_ShortenedWordSetting.error
     async def _ShortenedWordSetting_error(self, ctx: Context, error):
-        if isinstance(error, AttributeError):
-            logger.warning("존재하지 않는 기업번호입니다.")
-            await ctx.reply("존재하지 않는 기업번호입니다.")
-            
-        elif ErrorCheck(error, "setting_name is a required argument that is missing."):
+        if ErrorCheck(error, "setting_name is a required argument that is missing."):
             logger.warning("목록, 추가, 제거 중 하나를 선택해 주세요.")
             await ctx.reply("목록, 추가, 제거 중 하나를 선택해 주세요.")
+
+        elif isinstance(error.original, AttributeError):
+            logger.warning("존재하지 않는 기업번호입니다.")
+            await ctx.reply("존재하지 않는 기업번호입니다.")
             
         elif isinstance(error.original, TypeError):
             logger.warning("설정할 기업이름과 기업번호를 입력해 주세요.")

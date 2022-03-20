@@ -312,7 +312,7 @@ async def reload_commands(ctx: SlashContext):
     await ctx.defer()
     
     for cog_file in listdir("Cogs"):
-        if cog_file.endswith(".py"):
+        if cog_file.endswith(".py") and not cog_file.startswith("_"):
             bot.reload_extension(f"Cogs.{cog_file[:-3]}")
             logger.info(f"리로드 완료: Cogs.{cog_file[:-3]}")
     

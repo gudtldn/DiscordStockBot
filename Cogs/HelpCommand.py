@@ -127,11 +127,11 @@ class HelpCommand_Context(commands.Cog):
             
             embed = discord.Embed(title="개인설정", description="개인설정을 확인 또는 수정합니다.", color=RandomEmbedColor())
             embed.add_field(name="다른이름", value=f"{', '.join(command_list)}", inline=False)
-            embed.add_field(name=".개인설정 [설정정보]", value="설정할 수 있는 목록을 확인합니다.", inline=False)
-            embed.add_field(name=".개인설정 [자산정보] [true | false]", value="자산정보 공개여부를 설정합니다.", inline=False)
-            embed.add_field(name=".개인설정 [지원금표시] [true | false]", value="지원금으로 얻은 돈 표시여부를 설정합니다.", inline=False)
-            embed.add_field(name=".개인설정 [차트표시] [true | false]", value="`주가` 명령어에 차트를 표시합니다.", inline=False)
-            embed.add_field(name=".개인설정 [쿨타임표시] [true | false]", value="`지원금` 명령어에 쿨타임을 바로 표시합니다.", inline=False)
+            embed.add_field(name=".개인설정 설정정보", value="설정할 수 있는 목록을 확인합니다.", inline=False)
+            embed.add_field(name=".개인설정 자산정보 [true | false]", value="자산정보 공개여부를 설정합니다.", inline=False)
+            embed.add_field(name=".개인설정 지원금표시 [true | false]", value="지원금으로 얻은 돈 표시여부를 설정합니다.", inline=False)
+            embed.add_field(name=".개인설정 차트표시 [true | false]", value="`주가` 명령어에 차트를 표시합니다.", inline=False)
+            embed.add_field(name=".개인설정 쿨타임표시 [true | false]", value="`지원금` 명령어에 쿨타임을 바로 표시합니다.", inline=False)
             await ctx.reply(embed=embed)
             return
         
@@ -141,12 +141,12 @@ class HelpCommand_Context(commands.Cog):
             
             embed = discord.Embed(title="단축어설정", description="단축어목록을 확인하거나, 추가 또는 제거합니다.", color=RandomEmbedColor())
             embed.add_field(name="다른이름", value=f"{', '.join(command_list)}", inline=False)
-            embed.add_field(name=".단축어설정 [목록]", value="자신의 단축어 목록을 확인합니다", inline=False)
-            embed.add_field(name=".단축어설정 [추가] -이름 [기업이름] -번호 [기업번호]", value="단축어 목록에 단축어를 새로 추가합니다.\n\
+            embed.add_field(name=".단축어설정 목록", value="자신의 단축어 목록을 확인합니다", inline=False)
+            embed.add_field(name=".단축어설정 추가 -이름 [기업이름] -번호 [기업번호]", value="단축어 목록에 단축어를 새로 추가합니다.\n\
     사용 예: `.단축어 추가 -이름 삼전 -번호 005930`", inline=False)
-            embed.add_field(name=".단축어설정 [추가] -번호 [기업번호]", value="단축어 목록에 단축어를 새로 추가합니다.(이름은 기업이름으로 설정됩니다)\n\
+            embed.add_field(name=".단축어설정 추가 -번호 [기업번호]", value="단축어 목록에 단축어를 새로 추가합니다.(이름은 기업이름으로 설정됩니다)\n\
     사용 예: `.단축어 추가 -번호 005930`", inline=False)
-            embed.add_field(name=".단축어설정 [제거] -이름 [기업이름]", value="단축어 목록에 있는 단축어를 제거합니다.\n\
+            embed.add_field(name=".단축어설정 제거 -이름 [기업이름]", value="단축어 목록에 있는 단축어를 제거합니다.\n\
     사용 예: `.단축어 제거 -이름 삼전`", inline=False)
             await ctx.reply(embed=embed)
             return

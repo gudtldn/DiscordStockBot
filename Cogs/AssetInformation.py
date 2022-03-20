@@ -5,7 +5,8 @@ from discord.ext import commands
 from discord.ext.commands import Context
 
 from discord_slash import SlashContext, cog_ext
-from discord_slash.model import SlashCommandOptionType as OptionType
+from discord_slash.context import MenuContext
+from discord_slash.model import ContextMenuType, SlashCommandOptionType as OptionType
 from discord_slash.utils.manage_commands import create_option, create_choice
 
 import asyncio
@@ -64,7 +65,7 @@ async def get_text_(author_id):
 ######################################################################################################################################################
 
 @CommandExecutionTime
-async def _AssetInformation_code(ctx: Union[Context, SlashContext], option: Union[discord.User, str]):
+async def _AssetInformation_code(ctx: Union[Context, SlashContext, MenuContext], option: Union[discord.User, str]):
     logger.info(f"[{type(ctx)}] {ctx.author.name}: {ctx.invoked_with} {option}")
     
     if not IsVaildUser(ctx):
@@ -182,6 +183,55 @@ class AssetInformation_SlashContext(commands.Cog):
         else:
             logger.warning(error)
             await ctx.send(f"{error}")
+        
+    @cog_ext.cog_context_menu(
+        target=ContextMenuType.USER,
+        name="자산정보 조회",
+        guild_ids=guilds_id
+    )
+    @CommandExecutionTime
+    async def _AssetInformation_Context_Menu(self, ctx: MenuContext):
+        logger.info(f"[{type(ctx)}] {ctx.author.name}: {ctx.invoked_with} {ctx.target_id}")
+        
+        author_id: int = ctx.target_author.id
+        user_name: str = ctx.target_author.name
+
+        if not IsVaildUser(author_id):
+            logger.warning("등록되어 있지 않은 유저입니다.")
+            await ctx.reply("등록되어 있지 않은 유저입니다.")
+            return
+        
+        if ctx.author_id != author_id and not GetUserInformation()[GetArrayNum(author_id)]['Settings']['InformationDisclosure']:
+            logger.info(f"{user_name}님의 정보가 비공개되어 있습니다.")
+            await ctx.reply(f"{user_name}님의 정보가 비공개되어 있습니다.")
+            return
+
+        async def _crawling():
+            crawling_data = await get_text_(author_id)
+
+            with setUserInformation() as data:
+                data.json_data[GetArrayNum(author_id)]['TotalAssets'] = \
+                    crawling_data['TotalAssets'] + data.json_data[GetArrayNum(author_id)]['Deposit'] #다 합친걸 총 자산에 저장
+
+            with getUserInformation() as data:
+                embed = discord.Embed(title=f"{user_name}님의 자산정보", color=RandomEmbedColor())
+                embed.add_field(name="예수금", value=f"{data.json_data[GetArrayNum(author_id)]['Deposit']:,}원")
+                embed.add_field(name="총 자산", value=f"{data.json_data[GetArrayNum(author_id)]['TotalAssets']:,}원")
+                if data.json_data[GetArrayNum(author_id)]['Settings']['ShowSupportFund']:
+                    embed.add_field(name="지원금으로 얻은 돈", value=f"{data.json_data[GetArrayNum(author_id)]['SupportFund']:,}원", inline=False)
+                if len(data.json_data[GetArrayNum(author_id)]['Stock']) != 0:
+                    embed.add_field(name="="*25, value="_ _", inline=False)
+
+            for add_embed in crawling_data['stock_list']:
+                embed.add_field(name=add_embed[0], value=f"잔고수량: {add_embed[1]:,} | {add_embed[2]:,}원", inline=False)
+
+            return embed
+
+        if ctx.author_id == author_id:
+            await ctx.defer(hidden=not GetUserInformation()[GetArrayNum(author_id)]['Settings']['InformationDisclosure'])
+        else:
+            await ctx.defer()
+        await ctx.reply(embed=await _crawling())
         
 class AssetInformation_Context(commands.Cog):
     def __init__(self, bot: commands.Bot):

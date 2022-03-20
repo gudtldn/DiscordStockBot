@@ -49,7 +49,7 @@ def _InitialVarSetting():
     slash = SlashCommand(bot, sync_commands=True, sync_on_cog_reload=True)
 
     for cog_file in listdir("./Cogs"): #코그 설정
-        if cog_file.endswith(".py"):
+        if cog_file.endswith(".py") and not cog_file.startswith("_"):
             bot.load_extension(f"Cogs.{cog_file[:-3]}")
 
 _InitialVarSetting()

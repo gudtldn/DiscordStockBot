@@ -354,6 +354,9 @@ async def _RuleSetting(ctx: SlashContext, rule_setting: str):
     await ctx.defer()
     
     if rule_setting == "add":
+        if not DEBUGGING:
+            await bot.change_presence(status=discord.Status.do_not_disturb, activity=discord.Game("봇 테스트"))
+        
         for guild in guilds_id:
             guild: discord.Guild = bot.get_guild(guild)
             role: discord.Role = get(guild.roles, name="봇 테스트 중")
@@ -367,6 +370,9 @@ async def _RuleSetting(ctx: SlashContext, rule_setting: str):
         await ctx.send("추가완료.")
             
     elif rule_setting == "delete":
+        if not DEBUGGING:
+            await bot.change_presence(status=discord.Status.online, activity= discord.Game("주식투자"))
+        
         for guild in guilds_id:
             guild: discord.Guild = bot.get_guild(guild)
             role: discord.Role = get(guild.roles, name="봇 테스트 중")
@@ -378,6 +384,10 @@ async def _RuleSetting(ctx: SlashContext, rule_setting: str):
             logger.info(f"{guild}: removed")
             
         await ctx.send("제거완료.")
+
+@_RuleSetting.error
+async def _RuleSetting_error(ctx: SlashContext, error):
+    await ctx.send(f"역할을 변경하던 중 에러가 발생하였습니다.\n```{error}```")
 
 ################################################################################
 

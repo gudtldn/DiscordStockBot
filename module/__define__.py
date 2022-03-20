@@ -1,6 +1,10 @@
 from discord.ext.commands import Context
 from discord_slash import SlashContext
 
+# import requests
+
+# from ast import literal_eval
+
 from time import time
 from datetime import timedelta, datetime
 
@@ -75,6 +79,32 @@ def AddUser(ID: int):
 def GetStockDictionary() -> dict:
     with open("./json/StockDictionary.json", "r", encoding="utf-8") as Inf:
         return load(Inf)
+
+# def GetStockInformation(stock_num: str):
+#     '''
+#     ['날짜', '시가', '고가', '저가', '종가', '거래량']
+#     Dictionary Keys:
+#         date: 날짜 -> str
+#         opening_price: 시가 -> int
+#         max_price: 고가 -> int
+#         min_price: 저가 -> int
+#         closing_price: 종가 -> int
+#         units_traded: 거래량 -> int
+#     '''
+#     url = f"https://api.finance.naver.com/siseJson.naver?symbol={stock_num}&requestType=1\
+# &startTime={(datetime.today() - timedelta(days=14)).strftime('%Y%m%d')}&endTime={datetime.today().strftime('%Y%m%d')}&timeframe=day"
+    
+#     stock_value: list = literal_eval(requests.get(url).text.replace(" ", "").replace("\n", "").replace("\t", ""))[-1]
+#     del(stock_value[-1])
+    
+#     stock_key: list = ["date", "opening_price", "max_price", "min_price", "closing_price", "units_traded"]
+    
+#     stock_dict: dict = dict(zip(stock_key, stock_value))
+
+#     if stock_dict['date'] == "날짜":
+#         return None
+#     else:
+#         return stock_dict
 
 def GetUserInformation() -> list[dict]: #Information.json에 있는 값 불러오기
     with open("./json/UserInformation.json", "r", encoding="utf-8") as Inf:

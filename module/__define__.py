@@ -140,8 +140,12 @@ def CommandExecutionTime(func): #명령어 실행시간 체크 데코레이터 (
     @wraps(func)
     async def wrapper(*args, **kwargs):
         t = time()
-        await func(*args, **kwargs)
-        logger.info(f"{func.__name__}: {time() - t}seconds")
+        try:
+            await func(*args, **kwargs)
+        except:
+            logger.info(f"{func.__name__}: {time() - t}seconds (error)")
+        else:
+            logger.info(f"{func.__name__}: {time() - t}seconds")
     
     return wrapper
 

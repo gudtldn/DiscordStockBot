@@ -143,7 +143,7 @@ class PersonalSettings_SlashContext(commands.Cog):
     @_PersonalSettings.error
     async def _PersonalSettings_error(self, ctx: SlashContext, error):
         logger.waring(error)
-        await ctx.send(error)
+        await ctx.send(f"에러가 발생하였습니다.\n```{error}```")
 
 ######################################################################################################################################################
 
@@ -167,7 +167,7 @@ class PersonalSettings_Context(commands.Cog):
             
         else:
             logger.warning(error)
-            await ctx.send(error)
+            await ctx.send(f"에러가 발생하였습니다.\n```{error}```")
     
 ######################################################################################################################################################
 

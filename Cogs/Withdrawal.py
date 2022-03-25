@@ -72,14 +72,14 @@ class Withdrawal_Context(commands.Cog):
         await _Withdrawal_code(ctx, string)
         
     @_Withdrawal.error
-    async def _Withdrawal_error(self, ctx, error):
+    async def _Withdrawal_error(self, ctx: Context, error):
         if isinstance(error, MissingRequiredArgument):
             logger.warning(f'「.{ctx.invoked_with} 탈퇴확인」을 입력해야 탈퇴할 수 있습니다.')
             await ctx.reply(f'「.{ctx.invoked_with} 탈퇴확인」을 입력해야 탈퇴할 수 있습니다.')
         
         else:
             logger.warning(error)
-            await ctx.reply(error)
+            await ctx.send(f"에러가 발생하였습니다.```{error}```")
 
 ######################################################################################################################################################
 

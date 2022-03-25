@@ -109,14 +109,14 @@ class StockPrices_SlashContext(commands.Cog):
         await _StockPrices_code(ctx, stock_name)
         
     @_StockPrices.error
-    async def _StockPrices_error(self, ctx, error):
+    async def _StockPrices_error(self, ctx: SlashContext, error):
         if isinstance(error, AttributeError):
             logger.warning("주식을 찾지 못하였습니다.")
             await ctx.reply("주식을 찾지 못하였습니다.")
         
         else:
             logger.warning(error)
-            await ctx.send(f"{error}")
+            await ctx.send(f"에러가 발생하였습니다.\n```{error}```")
 
 #################################################################################################### .주가
 
@@ -129,7 +129,7 @@ class StockPrices_Context(commands.Cog):
         await _StockPrices_code(ctx, stock_name)
             
     @_StockPrices.error
-    async def _StockPrices_error(self, ctx, error):
+    async def _StockPrices_error(self, ctx: Context, error):
         if isinstance(error, MissingRequiredArgument):
             logger.warning("검색할 주식을 입력해 주세요.")
             await ctx.reply("검색할 주식을 입력해 주세요.")
@@ -140,7 +140,7 @@ class StockPrices_Context(commands.Cog):
 
         else:
             logger.warning(error)
-            await ctx.send(f"{error}")
+            await ctx.send(f"에러가 발생하였습니다.\n```{error}```")
 
 ######################################################################################################################################################
 

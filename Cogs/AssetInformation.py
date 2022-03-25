@@ -171,7 +171,7 @@ class AssetInformation_SlashContext(commands.Cog):
         await _AssetInformation_code(ctx, option)
         
     @_AssetInformation.error
-    async def _AssetInformation_error(self, ctx, error):
+    async def _AssetInformation_error(self, ctx: SlashContext, error):
         if ErrorCheck(error, "'NoneType' object has no attribute 'text'"):
             logger.warning("검색하던중 알 수 없는 에러가 발생하였습니다. 다시 입력해 주세요.")
             await ctx.reply("검색하던중 알 수 없는 에러가 발생하였습니다. 다시 입력해 주세요.")
@@ -182,7 +182,7 @@ class AssetInformation_SlashContext(commands.Cog):
             
         else:
             logger.warning(error)
-            await ctx.send(f"{error}")
+            await ctx.send(f"에러가 발생하였습니다.\n```{error}```")
         
     @cog_ext.cog_context_menu(
         target=ContextMenuType.USER,
@@ -197,8 +197,8 @@ class AssetInformation_SlashContext(commands.Cog):
         user_name: str = ctx.target_author.name
 
         if not IsVaildUser(author_id):
-            logger.warning("등록되어 있지 않은 유저입니다.")
-            await ctx.reply("등록되어 있지 않은 유저입니다.")
+            logger.warning(f"{user_name}님은 아직 등록되지 않은 유저입니다.")
+            await ctx.reply(f"{user_name}님은 아직 등록되지 않은 유저입니다.")
             return
         
         if ctx.author_id != author_id and not GetUserInformation()[GetArrayNum(author_id)]['Settings']['InformationDisclosure']:
@@ -242,7 +242,7 @@ class AssetInformation_Context(commands.Cog):
         await _AssetInformation_code(ctx, option)
     
     @_AssetInformation.error
-    async def _AssetInformation_error(self, ctx, error):
+    async def _AssetInformation_error(self, ctx: Context, error):
         if ErrorCheck(error, "Command raised an exception: AttributeError: 'NoneType' object has no attribute 'text'"):
             logger.warning("검색하던중 알 수 없는 에러가 발생하였습니다. 다시 입력해 주세요.")
             await ctx.reply("검색하던중 알 수 없는 에러가 발생하였습니다. 다시 입력해 주세요.")
@@ -257,7 +257,7 @@ class AssetInformation_Context(commands.Cog):
             
         else:
             logger.warning(error)
-            await ctx.send(f"{error}")
+            await ctx.send(f"에러가 발생하였습니다.\n```{error}```")
             
 def setup(bot: commands.Bot):
     bot.add_cog(AssetInformation_Context(bot))

@@ -159,8 +159,8 @@ class ShortenedWordSetting_SlashContext(commands.Cog):
             await ctx.reply("존재하지 않는 기업번호입니다.", hidden=True)
             
         else:
-            logger.warning(f"{error}")
-            await ctx.send(f"{error}", hidden=True)
+            logger.warning(error)
+            await ctx.send(f"에러가 발생하였습니다.\n```{error}```")
 
 ######################################################################################################################################################
 
@@ -209,8 +209,8 @@ class ShortenedWordSetting_Context(commands.Cog):
             await ctx.reply("설정할 기업이름과 기업번호를 입력해 주세요.")
             
         else:
-            logger.warning(f"{error}")
-            await ctx.send(f"{error}")
+            logger.warning(error)
+            await ctx.send(f"에러가 발생하였습니다.\n```{error}```")
             
 ######################################################################################################################################################
 

@@ -83,7 +83,7 @@ class AssetInitialization_Context(commands.Cog):
         
         else:
             logger.warning(error)
-            await ctx.reply(error)
+            await ctx.send(f"에러가 발생하였습니다.```{error}```")
 
 ######################################################################################################################################################
 

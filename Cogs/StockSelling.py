@@ -136,14 +136,14 @@ class StockSelling_SlashContext(commands.Cog):
         await _StockSelling_code(ctx, stock_name, num)
         
     @_StockSelling.error
-    async def _StockSelling_error(self, ctx, error):
+    async def _StockSelling_error(self, ctx: SlashContext, error):
         if isinstance(error, AttributeError):
             logger.warning("매도하려는 주식을 찾지 못하였습니다.")
             await ctx.reply("매도하려는 주식을 찾지 못하였습니다.")
             
         else:
             logger.warning(error)
-            await ctx.send(f"{error}")
+            await ctx.send(f"에러가 발생하였습니다.\n```{error}```")
 
 ######################################################################################################################################################
 
@@ -156,7 +156,7 @@ class StockSelling_Context(commands.Cog):
         await _StockSelling_code(ctx, stock_name, num)
 
     @_StockSelling.error
-    async def _StockSelling_error(self, ctx, error):
+    async def _StockSelling_error(self, ctx: Context, error):
         if ErrorCheck(error, "stock_name is a required argument that is missing."):
             logger.warning("매도 할 주식을 입력해 주세요.")
             await ctx.reply("매도 할 주식을 입력해 주세요.")
@@ -171,7 +171,7 @@ class StockSelling_Context(commands.Cog):
             
         else:
             logger.warning(error)
-            await ctx.send(f"{error}")
+            await ctx.send(f"에러가 발생하였습니다.\n```{error}```")
 
 
 ######################################################################################################################################################

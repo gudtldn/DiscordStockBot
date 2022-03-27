@@ -38,13 +38,28 @@ async def get_text_from_url(author_id, stock_num):  # 코루틴 정의
     yesterday_price: int = int(
         soup.select_one("#content > div.section.inner_sub > div:nth-child(1) > table > tbody > tr:nth-child(3) > td:nth-child(4) > span").text.replace(",", "")) #어제 시세
     compared_price: int = price - yesterday_price #어제대비 가격
-    compared_per: int = round((price - yesterday_price) / yesterday_price * 100, 2) #어제대비 가격%
+    compared_per: float = round((price - yesterday_price) / yesterday_price * 100, 2) #어제대비 가격%
     balance: int = GetUserInformation()[GetArrayNum(author_id)]['Stock'][stock_num] #가지고 있는 주식 수량
     price_sign = "" if compared_price <= 0 else "+" #부호설정
+    if compared_price == 0:
+        price_sign_img = "<:0:957290558982869053>" #보합
+    elif compared_price > 0:
+        price_sign_img = "<:p:957290559217762324>" #상승
+    else:
+        price_sign_img = "<:m:957290558857048086>" #하락
+
+    with getUserInformation() as data:
+        price_str = f"{price_sign}{compared_price:,}원" if data.json_data[GetArrayNum(author_id)]['Settings']['ShowComparedPrice'] else f"{price:,}원"
     
     logger.info(f"Done. {time() - timer}seconds")
 
-    return [f"{stock_name} | {int(price):,}원 | {price_sign}{compared_per}%", balance, int(price) * balance]
+    return [
+        f"{stock_name} | {price_str} | {price_sign}{compared_per}% {price_sign_img}", #주식정보
+        balance, #주식수량
+        compared_per, #어제대비 %
+        price * balance, #현재가격x수량
+        compared_price * balance #어제대비 가격x수량
+    ]
 
 ################################################################################
 
@@ -56,11 +71,21 @@ async def get_text_(author_id):
     ]
 
     stock_list = await asyncio.gather(*futures)
-    TotalAssets = 0
-    for i in stock_list:
-        TotalAssets += i[2]
-        
-    return {"stock_list": stock_list, "TotalAssets": TotalAssets}
+    TotalAssets: int = 0 #총 자산
+    TotalCompared_Price: int = 0 #총 수익
+    TotalCompared_Per: float = 0 #총 수익%
+    
+    for l in stock_list:
+        TotalCompared_Per += l[2]
+        TotalAssets += l[3]
+        TotalCompared_Price += l[4]
+    
+    return {
+        "stock_list": stock_list,
+        "TotalAssets": TotalAssets,
+        "TotalCompared_Price": TotalCompared_Price,
+        "TotalCompared_Per": round(TotalCompared_Per, 2)
+    }
 
 ######################################################################################################################################################
 
@@ -107,23 +132,35 @@ async def _AssetInformation_code(ctx: Union[Context, SlashContext, MenuContext],
                 return
     
     async def _crawling():
-        crawling_data = await get_text_(author_id)
+        crawl_data = await get_text_(author_id)
         
         with setUserInformation() as data:
             data.json_data[GetArrayNum(author_id)]['TotalAssets'] = \
-                crawling_data['TotalAssets'] + data.json_data[GetArrayNum(author_id)]['Deposit'] #다 합친걸 총 자산에 저장
+                crawl_data['TotalAssets'] + data.json_data[GetArrayNum(author_id)]['Deposit'] #다 합친걸 총 자산에 저장
         
         with getUserInformation() as data:
+            price_sign = "" if crawl_data['TotalCompared_Price'] <= 0 else "+" #부호설정
+            if crawl_data['TotalCompared_Price'] == 0:
+                price_sign_img = "<:0:957290558982869053>" #보합
+            elif crawl_data['TotalCompared_Price'] > 0:
+                price_sign_img = "<:p:957290559217762324>" #상승
+            else:
+                price_sign_img = "<:m:957290558857048086>" #하락
+            
             embed = discord.Embed(title=f"{ctx.author.name if option is None else user_name}님의 자산정보", color=RandomEmbedColor())
             embed.add_field(name="예수금", value=f"{data.json_data[GetArrayNum(author_id)]['Deposit']:,}원")
-            embed.add_field(name="총 자산", value=f"{data.json_data[GetArrayNum(author_id)]['TotalAssets']:,}원")
+            
+            embed.add_field(name="총 자산", value=f"{data.json_data[GetArrayNum(author_id)]['TotalAssets']:,}원\n\
+{price_sign_img} {price_sign}{crawl_data['TotalCompared_Price']:,}원 | {price_sign}{crawl_data['TotalCompared_Per']}%")
+            
             if data.json_data[GetArrayNum(author_id)]['Settings']['ShowSupportFund']:
                 embed.add_field(name="지원금으로 얻은 돈", value=f"{data.json_data[GetArrayNum(author_id)]['SupportFund']:,}원", inline=False)
+                
             if len(data.json_data[GetArrayNum(author_id)]['Stock']) != 0:
                 embed.add_field(name="="*25, value="_ _", inline=False)
         
-        for add_embed in crawling_data['stock_list']:
-            embed.add_field(name=add_embed[0], value=f"잔고수량: {add_embed[1]:,} | {add_embed[2]:,}원", inline=False)
+        for add_embed in crawl_data['stock_list']:
+            embed.add_field(name=add_embed[0], value=f"잔고수량: {add_embed[1]:,} | {add_embed[3]:,}원", inline=False)
         
         return embed
     
@@ -207,24 +244,36 @@ class AssetInformation_SlashContext(commands.Cog):
             return
 
         async def _crawling():
-            crawling_data = await get_text_(author_id)
+            crawl_data = await get_text_(author_id)
 
             with setUserInformation() as data:
                 data.json_data[GetArrayNum(author_id)]['TotalAssets'] = \
-                    crawling_data['TotalAssets'] + data.json_data[GetArrayNum(author_id)]['Deposit'] #다 합친걸 총 자산에 저장
+                    crawl_data['TotalAssets'] + data.json_data[GetArrayNum(author_id)]['Deposit'] #다 합친걸 총 자산에 저장
 
             with getUserInformation() as data:
+                price_sign = "" if crawl_data['TotalCompared_Price'] <= 0 else "+" #부호설정
+                if crawl_data['TotalCompared_Price'] == 0:
+                    price_sign_img = "<:0:957290558982869053>" #보합
+                elif crawl_data['TotalCompared_Price'] > 0:
+                    price_sign_img = "<:p:957290559217762324>" #상승
+                else:
+                    price_sign_img = "<:m:957290558857048086>" #하락
+                
                 embed = discord.Embed(title=f"{user_name}님의 자산정보", color=RandomEmbedColor())
                 embed.add_field(name="예수금", value=f"{data.json_data[GetArrayNum(author_id)]['Deposit']:,}원")
-                embed.add_field(name="총 자산", value=f"{data.json_data[GetArrayNum(author_id)]['TotalAssets']:,}원")
+                
+                embed.add_field(name="총 자산", value=f"{data.json_data[GetArrayNum(author_id)]['TotalAssets']:,}원\n\
+{price_sign_img} {price_sign}{crawl_data['TotalCompared_Price']:,}원 | {price_sign}{crawl_data['TotalCompared_Per']}%")
+                
                 if data.json_data[GetArrayNum(author_id)]['Settings']['ShowSupportFund']:
                     embed.add_field(name="지원금으로 얻은 돈", value=f"{data.json_data[GetArrayNum(author_id)]['SupportFund']:,}원", inline=False)
+                    
                 if len(data.json_data[GetArrayNum(author_id)]['Stock']) != 0:
                     embed.add_field(name="="*25, value="_ _", inline=False)
-
-            for add_embed in crawling_data['stock_list']:
-                embed.add_field(name=add_embed[0], value=f"잔고수량: {add_embed[1]:,} | {add_embed[2]:,}원", inline=False)
-
+            
+            for add_embed in crawl_data['stock_list']:
+                embed.add_field(name=add_embed[0], value=f"잔고수량: {add_embed[1]:,} | {add_embed[3]:,}원", inline=False)
+            
             return embed
 
         if ctx.author_id == author_id:

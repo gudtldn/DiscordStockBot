@@ -132,6 +132,7 @@ class HelpCommand_Context(commands.Cog):
             embed.add_field(name=".개인설정 지원금표시 [true | false]", value="지원금으로 얻은 돈 표시여부를 설정합니다.", inline=False)
             embed.add_field(name=".개인설정 차트표시 [true | false]", value="`주가` 명령어에 차트를 표시합니다.", inline=False)
             embed.add_field(name=".개인설정 쿨타임표시 [true | false]", value="`지원금` 명령어에 쿨타임을 바로 표시합니다.", inline=False)
+            embed.add_field(name=".개인설정 어제대비가격 [true | false]", value="`자산정보` 명령어에 현재 주가 대신, 어제 대비 가격을 표시합니다.", inline=False)
             await ctx.reply(embed=embed)
             return
         

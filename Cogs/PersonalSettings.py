@@ -39,10 +39,11 @@ async def _PersonalSettings_code(ctx: Union[Context, SlashContext], setting: str
     if setting == "설정정보":
         string = ""
         d = {
-            "InformationDisclosure": "자산정보 공개여부",
-            "ShowSupportFund": "지원금으로 얻은 돈 표시여부",
-            "ShowStockChartImage": "주식차트 표시여부",
-            "ShowSupportFundCooldown": "지원금 쿨타임 바로표시여부"
+            "InformationDisclosure": "자산정보 공개 여부",
+            "ShowSupportFund": "지원금으로 얻은 돈 표시 여부",
+            "ShowStockChartImage": "주식차트 표시 여부",
+            "ShowSupportFundCooldown": "지원금 쿨타임 바로 표시 여부",
+            "ShowComparedPrice": "자산정보에 어제 대비 가격 표시 여부"
         }
 
         for _key, _value in GetUserInformation()[GetArrayNum(ctx)]['Settings'].items():
@@ -83,6 +84,13 @@ async def _PersonalSettings_code(ctx: Union[Context, SlashContext], setting: str
             data.json_data[GetArrayNum(ctx)]['Settings']['ShowSupportFundCooldown'] = boolean
         
         await reply(f"지원금 쿨타임 바로표시여부가 {boolean}로 설정되었습니다.")
+        return
+
+    elif setting in ("ShowComparedPrice", "어제대비가격"):
+        with setUserInformation() as data:
+            data.json_data[GetArrayNum(ctx)]['Settings']['ShowComparedPrice'] = boolean
+        
+        await reply(f"자산정보에 어제 대비 가격 표시 여부가 {boolean}로 설정되었습니다.")
         return
         
     else:
@@ -125,6 +133,10 @@ class PersonalSettings_SlashContext(commands.Cog):
                     create_choice(
                         name="지원금 쿨타임 바로표시여부",
                         value="ShowSupportFundCooldown"
+                    ),
+                    create_choice(
+                        name="자산정보에 어제 대비 가격 표시 여부",
+                        value="ShowComparedPrice"
                     )
                 ]
             ),

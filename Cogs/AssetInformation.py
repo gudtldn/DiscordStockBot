@@ -98,7 +98,8 @@ async def _AssetInformation_code(ctx: Union[Context, SlashContext, MenuContext],
         await ctx.reply("먼저 `.사용자등록` 부터 해 주세요.")
         return
     
-    author_id = ctx.author.id
+    author_id: int = ctx.author.id
+    user_name: str = ctx.author.name
     
     if option is not None: #부가 옵션이 전달되어 있을 때
         if option in ("랭킹", "순위"):
@@ -147,11 +148,14 @@ async def _AssetInformation_code(ctx: Union[Context, SlashContext, MenuContext],
             else:
                 price_sign_img = "<:m:957290558857048086>" #하락
             
-            embed = discord.Embed(title=f"{ctx.author.name if option is None else user_name}님의 자산정보", color=RandomEmbedColor())
+            embed = discord.Embed(title=f"{user_name}님의 자산정보", color=RandomEmbedColor())
             embed.add_field(name="예수금", value=f"{data.json_data[GetArrayNum(author_id)]['Deposit']:,}원")
             
-            embed.add_field(name="총 자산", value=f"{data.json_data[GetArrayNum(author_id)]['TotalAssets']:,}원\n\
-{price_sign_img} {price_sign}{crawl_data['TotalCompared_Price']:,}원 | {price_sign}{crawl_data['TotalCompared_Per']}%")
+            if len(data.json_data[GetArrayNum(author_id)]['Stock']): #가지고 있는 주식 수가 1개 이상이라면
+                embed.add_field(name="총 자산", value=f"{data.json_data[GetArrayNum(author_id)]['TotalAssets']:,}원\n\
+    {price_sign_img} {price_sign}{crawl_data['TotalCompared_Price']:,}원 | {price_sign}{crawl_data['TotalCompared_Per']}%")
+            else:
+                embed.add_field(name="총 자산", value=f"{data.json_data[GetArrayNum(author_id)]['TotalAssets']:,}원")
             
             if data.json_data[GetArrayNum(author_id)]['Settings']['ShowSupportFund']:
                 embed.add_field(name="지원금으로 얻은 돈", value=f"{data.json_data[GetArrayNum(author_id)]['SupportFund']:,}원", inline=False)

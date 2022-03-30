@@ -55,21 +55,21 @@ async def _StockPurchase_code(ctx: Union[Context, SlashContext], stock_name: str
             stock_name = soup.select_one("#main > div:nth-child(6) > div > div:nth-child(3) > div > div > div > div > div:nth-child(2) > div > div > div > div > span").text
             stock_name = stock_name[0:stock_name.find("(")]
         
-    url = f"https://finance.naver.com/item/main.naver?code={stock_name}"
+    url = f"https://finance.naver.com/item/sise.naver?code={stock_name}"
     soup = bs(requests.get(url, headers={"User-agent" : ua}).text, "lxml")
     
-    price = soup.select_one("#chart_area > div.rate_info > div > p.no_today").select_one("span.blind").text.replace("\n", "").replace(",", "") #현재 시세
-    name = soup.select_one("#middle > div.h_company > div.wrap_company > h2 > a").text #주식회사 이름
-    stop_trading_soup = bs(requests.get(f"https://finance.naver.com/item/sise.naver?code={stock_name}", headers={"User-agent" : ua}).text, "lxml")
-    stop_trading = stop_trading_soup.select_one("#content > div.section.inner_sub > div:nth-child(1) > table > tbody > tr:nth-child(4) > td:nth-child(4) > span").text #시가
+    price: int = int(soup.select_one("#_nowVal").text.replace(",", "")) #현재 시세
+    stock_name: str = soup.select_one("#middle > div.h_company > div.wrap_company > h2 > a").text #주식회사 이름
+    stop_trading: str = soup.select_one("#content > div.section.inner_sub > div:nth-child(1) > table > tbody > tr:nth-child(4) > td:nth-child(4) > span").text #시가
+    
     if stop_trading == "0":
-        logger.info(f"{name}의 주식이 거래중지 중이라 매수할 수 없습니다.")
-        await ctx.reply(f"{name}의 주식이 거래중지 중이라 매수할 수 없습니다.")
+        logger.info(f"{stock_name}의 주식이 거래중지 중이라 매수할 수 없습니다.")
+        await ctx.reply(f"{stock_name}의 주식이 거래중지 중이라 매수할 수 없습니다.")
         return
     
     if isinstance(num, str):
         if num in ("풀매수", "모두"):
-            num = GetUserInformation()[GetArrayNum(ctx)]['Deposit'] // int(price)
+            num = GetUserInformation()[GetArrayNum(ctx)]['Deposit'] // price
             if num < 1:
                 logger.info("예수금이 부족합니다.")
                 await ctx.reply("예수금이 부족합니다.")
@@ -83,7 +83,7 @@ async def _StockPurchase_code(ctx: Union[Context, SlashContext], stock_name: str
             return
         
     else:
-        if GetUserInformation()[GetArrayNum(ctx)]['Deposit'] - (int(price) * num) < 0:
+        if GetUserInformation()[GetArrayNum(ctx)]['Deposit'] - (price * num) < 0:
             logger.info("예수금이 부족합니다.")
             await ctx.reply("예수금이 부족합니다.")
             return
@@ -94,10 +94,10 @@ async def _StockPurchase_code(ctx: Union[Context, SlashContext], stock_name: str
         else:
             data.json_data[GetArrayNum(ctx)]['Stock'][stock_name] = num
         
-        data.json_data[GetArrayNum(ctx)]['Deposit'] -= (int(price) * num) #예수금 저장
+        data.json_data[GetArrayNum(ctx)]['Deposit'] -= (price * num) #예수금 저장
     
-    logger.info(f"{name}의 주식이 {int(price):,}원에 {num:,}주가 매수되었습니다.")
-    await ctx.reply(f"{name}의 주식이 {int(price):,}원에 {num:,}주가 매수되었습니다.")
+    logger.info(f"{stock_name}의 주식이 {price:,}원에 {num:,}주가 매수되었습니다.")
+    await ctx.reply(f"{stock_name}의 주식이 {price:,}원에 {num:,}주가 매수되었습니다.")
 
 ######################################################################################################################################################
 

@@ -48,25 +48,24 @@ async def _StockSelling_code(ctx: Union[Context, SlashContext], stock_name: str,
             
         elif stock_name in GetStockDictionary().keys():
             stock_name = GetStockDictionary()[stock_name]
-
+            
         else:
             url = f"https://www.google.com/search?q={quote_plus(stock_name)}+주가"
             soup = bs(requests.get(url, headers={"User-agent" : ua}).text, "lxml")
             stock_name = soup.select_one("#main > div:nth-child(6) > div > div:nth-child(3) > div > div > div > div > div:nth-child(2) > div > div > div > div > span").text
             stock_name = stock_name[0:stock_name.find("(")]
         
-    url = f"https://finance.naver.com/item/main.naver?code={stock_name}"
+    url = f"https://finance.naver.com/item/sise.naver?code={stock_name}"
     soup = bs(requests.get(url, headers={"User-agent" : ua}).text, "lxml")
-
-    price = soup.select_one("#chart_area > div.rate_info > div > p.no_today").select_one("span.blind").text.replace("\n", "").replace(",", "") #현재 시세
-    name = soup.select_one("#middle > div.h_company > div.wrap_company > h2 > a").text #주식회사 이름
-    stop_trading_soup = bs(requests.get(f"https://finance.naver.com/item/sise.naver?code={stock_name}", headers={"User-agent" : ua}).text, "lxml")
-    stop_trading = stop_trading_soup.select_one("#content > div.section.inner_sub > div:nth-child(1) > table > tbody > tr:nth-child(4) > td:nth-child(4) > span").text #시가
+    
+    price: int = int(soup.select_one("#_nowVal").text.replace(",", "")) #현재 시세
+    stock_name: str = soup.select_one("#middle > div.h_company > div.wrap_company > h2 > a").text #주식회사 이름
+    stop_trading: str = soup.select_one("#content > div.section.inner_sub > div:nth-child(1) > table > tbody > tr:nth-child(4) > td:nth-child(4) > span").text #시가
 
     if stock_name in GetUserInformation()[GetArrayNum(ctx)]['Stock'].keys():
         if stop_trading == "0":
-            logger.info(f"{name}의 주식이 거래중지 중이라 매도할 수 없습니다.")
-            await ctx.reply(f"{name}의 주식이 거래중지 중이라 매도할 수 없습니다.")
+            logger.info(f"{stock_name}의 주식이 거래중지 중이라 매도할 수 없습니다.")
+            await ctx.reply(f"{stock_name}의 주식이 거래중지 중이라 매도할 수 없습니다.")
             return
         
         if isinstance(num, str):
@@ -76,8 +75,8 @@ async def _StockSelling_code(ctx: Union[Context, SlashContext], stock_name: str,
             elif num == "반매도":
                 num: int = GetUserInformation()[GetArrayNum(ctx)]['Stock'][stock_name] // 2
                 if num == 0:
-                    logger.info(f"매도하려는 {name}의 주식이 1주밖에 없어 반매도 할 수 없습니다.")
-                    await ctx.reply(f"매도하려는 {name}의 주식이 1주밖에 없어 반매도 할 수 없습니다.")
+                    logger.info(f"매도하려는 {stock_name}의 주식이 1주밖에 없어 반매도 할 수 없습니다.")
+                    await ctx.reply(f"매도하려는 {stock_name}의 주식이 1주밖에 없어 반매도 할 수 없습니다.")
                     return
                 
             else:
@@ -90,20 +89,20 @@ async def _StockSelling_code(ctx: Union[Context, SlashContext], stock_name: str,
         if num <= GetUserInformation()[GetArrayNum(ctx)]['Stock'][stock_name]:
             with setUserInformation() as data:
                 data.json_data[GetArrayNum(ctx)]['Stock'][stock_name] -= num
-                data.json_data[GetArrayNum(ctx)]['Deposit'] += (int(price) * num)
+                data.json_data[GetArrayNum(ctx)]['Deposit'] += (price * num)
                 
                 if data.json_data[GetArrayNum(ctx)]['Stock'][stock_name] == 0:
                     del(data.json_data[GetArrayNum(ctx)]['Stock'][stock_name])
             
-            logger.info(f"{name}의 주식이 {int(price):,}원에 {num:,}주가 매도되었습니다.")
-            await ctx.reply(f"{name}의 주식이 {int(price):,}원에 {num:,}주가 매도되었습니다.")
+            logger.info(f"{stock_name}의 주식이 {price:,}원에 {num:,}주가 매도되었습니다.")
+            await ctx.reply(f"{stock_name}의 주식이 {price:,}원에 {num:,}주가 매도되었습니다.")
         else:
-            logger.info(f"매도 하려는 주식개수가 현재 {name}의 주식 보유수량보다 더 높습니다. (현재 보유수량: {GetUserInformation()[GetArrayNum(ctx)]['Stock'][stock_name]}주)")
-            await ctx.reply(f"매도 하려는 주식개수가 현재 {name}의 주식 보유수량보다 더 높습니다. (현재 보유수량: {GetUserInformation()[GetArrayNum(ctx)]['Stock'][stock_name]}주)")
+            logger.info(f"매도 하려는 주식개수가 현재 {stock_name}의 주식 보유수량보다 더 높습니다. (현재 보유수량: {GetUserInformation()[GetArrayNum(ctx)]['Stock'][stock_name]}주)")
+            await ctx.reply(f"매도 하려는 주식개수가 현재 {stock_name}의 주식 보유수량보다 더 높습니다. (현재 보유수량: {GetUserInformation()[GetArrayNum(ctx)]['Stock'][stock_name]}주)")
             return
     else:
-        logger.info(f"{name}의 주식이 자산에 없습니다.")
-        await ctx.reply(f"{name}의 주식이 자산에 없습니다.")
+        logger.info(f"{stock_name}의 주식이 자산에 없습니다.")
+        await ctx.reply(f"{stock_name}의 주식이 자산에 없습니다.")
         return
 
 ######################################################################################################################################################

@@ -182,7 +182,7 @@ class setUserInformation():
 
 class getUserInformation():
     '''
-    with문이 끝나도 자동으로 저장이 안됨
+    with문이 끝나도 자동으로 저장이 안됨(읽기 전용)
     '''
     def __init__(self):
         self.json_data = GetUserInformation()

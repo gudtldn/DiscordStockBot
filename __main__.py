@@ -178,11 +178,13 @@ async def _UploadFile(ctx: SlashContext, file_type: str, path: str = None):
 @_UploadFile.error
 async def _UploadFile_error(ctx: SlashContext, error):
     if isinstance(error, HTTPException):
+        logger.warning("파일이 너무 커 보낼 수 없습니다.")
         await ctx.send("파일이 너무 커 보낼 수 없습니다.")
         return
     
     else:
-        await ctx.send(f"{error}")
+        logger.warning(error)
+        await ctx.send(f"에러가 발생하였습니다.\n```{error}```")
 
 ################################################################################ /다운로드
 
@@ -250,6 +252,7 @@ async def _DownloadFile(ctx: SlashContext, file_type: str, link: str, path: str=
         with open(f"./Cogs/{file_name}", "wb") as f:
             f.write(r.get(link, allow_redirects=True).content)
         
+        logger.info(f"{file_name} 다운로드 완료.")
         await ctx.send(f"{file_name}가 성공적으로 다운로드가 완료되었습니다.")
     
     elif file_type == "userinfo":
@@ -262,6 +265,7 @@ async def _DownloadFile(ctx: SlashContext, file_type: str, link: str, path: str=
         with open("./json/UserInformation.json", "wb") as f:
             f.write(r.get(link, allow_redirects=True).content)
         
+        logger.info("UserInformation.json 다운로드 완료.")
         await ctx.send("성공적으로 다운로드가 완료되었습니다.")
 
     elif file_type == "stockdict":
@@ -274,6 +278,7 @@ async def _DownloadFile(ctx: SlashContext, file_type: str, link: str, path: str=
         with open("./json/StockDictionary.json", "wb") as f:
             f.write(r.get(link, allow_redirects=True).content)
         
+        logger.info("StockDictionary.json 다운로드 완료.")
         await ctx.send("성공적으로 다운로드가 완료되었습니다.")
     
     elif file_type == "other":
@@ -289,11 +294,13 @@ async def _DownloadFile(ctx: SlashContext, file_type: str, link: str, path: str=
             f.write(r.get(link, allow_redirects=True).content)
         
         file_name = search('\w+\.[^\\/\n]+$', link).group()
+        logger.info(f"{file_name} -> {path} 다운로드 완료.")
         await ctx.send(f"{file_name}가 {path}에 성공적으로 다운로드가 완료되었습니다.")
 
 @_DownloadFile.error
 async def _DownloadFile_error(ctx: SlashContext, error):
-    await ctx.send(f"{error}")
+    logger.warning(error)
+    await ctx.send(f"에러가 발생하였습니다.\n```{error}```")
 
 ################################################################################ /리로드
 
@@ -387,6 +394,7 @@ async def _RuleSetting(ctx: SlashContext, rule_setting: str):
 
 @_RuleSetting.error
 async def _RuleSetting_error(ctx: SlashContext, error):
+    logger.warning(error)
     await ctx.send(f"역할을 변경하던 중 에러가 발생하였습니다.\n```{error}```")
 
 ################################################################################

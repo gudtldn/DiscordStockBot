@@ -73,7 +73,12 @@ async def _StockPrices_code(ctx: Union[Context, SlashContext], input_stock_name:
         stock_time = stock_time[stock_time.find("(")+1:stock_time.find(")")] #장중 & 장 마감
    
     chart_img = None
-    embed = discord.Embed(title=f"{soup_stock_name}({stock_time})", description=f"기업번호: {soup_stock_num}", color=RandomEmbedColor())
+    embed = discord.Embed(
+        title=f"[{soup_stock_name}]({stock_time})",
+        url=f"https://finance.naver.com/item/main.naver?code={input_stock_name}",
+        description=f"기업번호: {soup_stock_num}",
+        color=RandomEmbedColor()
+    )
     embed.add_field(name=f"{price:,}원", value=f"전일대비: {price_sign}{compared_price:,} | {price_sign}{compared_per:,}%", inline=False)
     if IsVaildUser(ctx):
         if GetUserInformation()[GetArrayNum(ctx)]['Settings']['ShowStockChartImage'] == True:

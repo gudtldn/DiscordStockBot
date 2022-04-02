@@ -144,7 +144,7 @@ async def _AssetInformation_code(ctx: Union[Context, SlashContext, MenuContext],
             else:
                 price_sign_img = "<:m:957290558857048086>" #하락
             
-            compared_per: float = round(crawl_data['TotalCompared_Price'] / (data.json_data[GetArrayNum(ctx)]['TotalAssets'] - crawl_data['TotalCompared_Price']) * 100, 2)
+            compared_per: float = round(crawl_data['TotalCompared_Price'] / (data.json_data[GetArrayNum(author_id)]['TotalAssets'] - crawl_data['TotalCompared_Price']) * 100, 2)
             
             embed = discord.Embed(title=f"{user_name}님의 자산정보", color=RandomEmbedColor())
             embed.add_field(name="예수금", value=f"{data.json_data[GetArrayNum(author_id)]['Deposit']:,}원")
@@ -261,7 +261,7 @@ class AssetInformation_SlashContext(commands.Cog):
                 else:
                     price_sign_img = "<:m:957290558857048086>" #하락
                 
-                compared_per: float = round(crawl_data['TotalCompared_Price'] / (data.json_data[GetArrayNum(ctx)]['TotalAssets'] - crawl_data['TotalCompared_Price']) * 100, 2)
+                compared_per: float = round(crawl_data['TotalCompared_Price'] / (data.json_data[GetArrayNum(author_id)]['TotalAssets'] - crawl_data['TotalCompared_Price']) * 100, 2)
                 
                 embed = discord.Embed(title=f"{user_name}님의 자산정보", color=RandomEmbedColor())
                 embed.add_field(name="예수금", value=f"{data.json_data[GetArrayNum(author_id)]['Deposit']:,}원")

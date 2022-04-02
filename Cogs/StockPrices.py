@@ -74,7 +74,7 @@ async def _StockPrices_code(ctx: Union[Context, SlashContext], input_stock_name:
    
     chart_img = None
     embed = discord.Embed(
-        title=f"[{soup_stock_name}]({stock_time})",
+        title=f"{soup_stock_name}({stock_time})",
         url=f"https://finance.naver.com/item/main.naver?code={input_stock_name}",
         description=f"기업번호: {soup_stock_num}",
         color=RandomEmbedColor()

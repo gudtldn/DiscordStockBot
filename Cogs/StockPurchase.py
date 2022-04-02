@@ -18,8 +18,8 @@ from module.__define__ import *
 ######################################################################################################################################################
 
 @CommandExecutionTime
-async def _StockPurchase_code(ctx: Union[Context, SlashContext], stock_name: str, num: str):
-    logger.info(f"[{type(ctx)}] {ctx.author.name}: {ctx.invoked_with} {stock_name} {num}")
+async def _StockPurchase_code(ctx: Union[Context, SlashContext], input_stock_name: str, num: str):
+    logger.info(f"[{type(ctx)}] {ctx.author.name}: {ctx.invoked_with} {input_stock_name} {num}")
     
     if not IsVaildUser(ctx):
         logger.info("먼저 `.사용자등록` 부터 해 주세요.")
@@ -35,36 +35,36 @@ async def _StockPurchase_code(ctx: Union[Context, SlashContext], stock_name: str
             await ctx.reply("매수 할 개수는 음수이거나 0일 수 없습니다.")
             return
     
-    stock_name = stock_name.lower()
+    input_stock_name = input_stock_name.lower()
     ua = UserAgent().random
     
     if isinstance(ctx, SlashContext):
         await ctx.defer()
     
-    try: int(stock_name) #입력받은 stock_name이 int인지 검사
+    try: int(input_stock_name) #입력받은 stock_name이 int인지 검사
     except: #int가 아닌경우
-        if stock_name in GetUserInformation()[GetArrayNum(ctx)]['StockDict'].keys():
-            stock_name = GetUserInformation()[GetArrayNum(ctx)]['StockDict'][stock_name]
+        if input_stock_name in GetUserInformation()[GetArrayNum(ctx)]['StockDict'].keys():
+            input_stock_name = GetUserInformation()[GetArrayNum(ctx)]['StockDict'][input_stock_name]
             
-        elif stock_name in GetStockDictionary().keys():
-            stock_name = GetStockDictionary()[stock_name]
+        elif input_stock_name in GetStockDictionary().keys():
+            input_stock_name = GetStockDictionary()[input_stock_name]
 
         else:
-            url = f"https://www.google.com/search?q={quote_plus(stock_name)}+주가"
+            url = f"https://www.google.com/search?q={quote_plus(input_stock_name)}+주가"
             soup = bs(requests.get(url, headers={"User-agent" : ua}).text, "lxml")
-            stock_name = soup.select_one("#main > div:nth-child(6) > div > div:nth-child(3) > div > div > div > div > div:nth-child(2) > div > div > div > div > span").text
-            stock_name = stock_name[0:stock_name.find("(")]
+            input_stock_name = soup.select_one("#main > div:nth-child(6) > div > div:nth-child(3) > div > div > div > div > div:nth-child(2) > div > div > div > div > span").text
+            input_stock_name = input_stock_name[0:input_stock_name.find("(")]
         
-    url = f"https://finance.naver.com/item/sise.naver?code={stock_name}"
+    url = f"https://finance.naver.com/item/sise.naver?code={input_stock_name}"
     soup = bs(requests.get(url, headers={"User-agent" : ua}).text, "lxml")
     
     price: int = int(soup.select_one("#_nowVal").text.replace(",", "")) #현재 시세
-    stock_name: str = soup.select_one("#middle > div.h_company > div.wrap_company > h2 > a").text #주식회사 이름
+    soup_stock_name: str = soup.select_one("#middle > div.h_company > div.wrap_company > h2 > a").text #주식회사 이름
     stop_trading: str = soup.select_one("#content > div.section.inner_sub > div:nth-child(1) > table > tbody > tr:nth-child(4) > td:nth-child(4) > span").text #시가
     
     if stop_trading == "0":
-        logger.info(f"{stock_name}의 주식이 거래중지 중이라 매수할 수 없습니다.")
-        await ctx.reply(f"{stock_name}의 주식이 거래중지 중이라 매수할 수 없습니다.")
+        logger.info(f"{soup_stock_name}의 주식이 거래중지 중이라 매수할 수 없습니다.")
+        await ctx.reply(f"{soup_stock_name}의 주식이 거래중지 중이라 매수할 수 없습니다.")
         return
     
     if isinstance(num, str):
@@ -89,15 +89,15 @@ async def _StockPurchase_code(ctx: Union[Context, SlashContext], stock_name: str
             return
     
     with setUserInformation() as data:
-        if stock_name in GetUserInformation()[GetArrayNum(ctx)]['Stock'].keys(): #Stock안에 stock_name이 있는가?
-            data.json_data[GetArrayNum(ctx)]['Stock'][stock_name] += num
+        if input_stock_name in GetUserInformation()[GetArrayNum(ctx)]['Stock'].keys(): #Stock안에 stock_name이 있는가?
+            data.json_data[GetArrayNum(ctx)]['Stock'][input_stock_name] += num
         else:
-            data.json_data[GetArrayNum(ctx)]['Stock'][stock_name] = num
+            data.json_data[GetArrayNum(ctx)]['Stock'][input_stock_name] = num
         
         data.json_data[GetArrayNum(ctx)]['Deposit'] -= (price * num) #예수금 저장
     
-    logger.info(f"{stock_name}의 주식이 {price:,}원에 {num:,}주가 매수되었습니다.")
-    await ctx.reply(f"{stock_name}의 주식이 {price:,}원에 {num:,}주가 매수되었습니다.")
+    logger.info(f"{soup_stock_name}의 주식이 {price:,}원에 {num:,}주가 매수되었습니다.")
+    await ctx.reply(f"{soup_stock_name}의 주식이 {price:,}원에 {num:,}주가 매수되었습니다.")
 
 ######################################################################################################################################################
 

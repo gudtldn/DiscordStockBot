@@ -39,7 +39,7 @@ async def get_text_from_url(author_id, stock_num):  # 코루틴 정의
         soup.select_one("#content > div.section.inner_sub > div:nth-child(1) > table > tbody > tr:nth-child(3) > td:nth-child(4) > span").text.replace(",", "")) #어제 시세
     compared_price: int = price - yesterday_price #어제대비 가격
     compared_per: float = round((price - yesterday_price) / yesterday_price * 100, 2) #어제대비 가격%
-    balance: int = GetUserInformation()[GetArrayNum(author_id)]['Stock'][stock_num] #가지고 있는 주식 수량
+    balance: int = GetUserInformation()[GetArrayNum(author_id)]['Stock'][stock_num]['Quantity'] #가지고 있는 주식 수량
     price_sign = "" if compared_price <= 0 else "+" #부호설정
     if compared_price == 0:
         price_sign_img = "<:0:957290558982869053>" #보합

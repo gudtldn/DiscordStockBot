@@ -90,9 +90,9 @@ async def _StockPurchase_code(ctx: Union[Context, SlashContext], input_stock_nam
     
     with setUserInformation() as data:
         if input_stock_name in GetUserInformation()[GetArrayNum(ctx)]['Stock'].keys(): #Stock안에 stock_name이 있는가?
-            data.json_data[GetArrayNum(ctx)]['Stock'][input_stock_name] += num
+            data.json_data[GetArrayNum(ctx)]['Stock'][input_stock_name]['Quantity'] += num
         else:
-            data.json_data[GetArrayNum(ctx)]['Stock'][input_stock_name] = num
+            data.json_data[GetArrayNum(ctx)]['Stock'][input_stock_name] = {"Quantity": num, "PurchasePrice": 0} #PurchasePrice는 나중에 구현 예정
         
         data.json_data[GetArrayNum(ctx)]['Deposit'] -= (price * num) #예수금 저장
     

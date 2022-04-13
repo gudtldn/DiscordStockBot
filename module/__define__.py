@@ -135,8 +135,9 @@ def CommandExecutionTime(func): #명령어 실행시간 체크 데코레이터 (
         t = time()
         try:
             await func(*args, **kwargs)
-        except:
-            logger.info(f"{func.__name__}: {time() - t}seconds (error)")
+        except Exception as e:
+            logger.info(f"{func.__name__}: {time() - t}seconds [ERROR]")
+            raise e
         else:
             logger.info(f"{func.__name__}: {time() - t}seconds")
     

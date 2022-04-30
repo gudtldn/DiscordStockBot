@@ -69,7 +69,8 @@ def AddUser(ID: int):
             "InformationDisclosure": True,
             "ShowSupportFund": True,
             "ShowStockChartImage": False,
-            "ShowSupportFundCooldown": False
+            "ShowSupportFundCooldown": False,
+            "ShowComparedPrice": False
         },
         "StockDict": {},
         "Stock": {}

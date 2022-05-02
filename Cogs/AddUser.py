@@ -7,6 +7,7 @@ from discord_slash import SlashContext, cog_ext
 from typing import Union
 
 from module.__define__ import *
+from module.__define__ import _IsVaildUser
 
 ######################################################################################################################################################
 
@@ -14,7 +15,11 @@ from module.__define__ import *
 async def _AddUser_code(ctx: Union[Context, SlashContext]):
     logger.info(f"[{type(ctx)}] {ctx.author.name}: {ctx.invoked_with}")
     
-    if IsVaildUser(ctx):
+    if ctx.guild is None:
+        logger.info("Guild is None")
+        return
+    
+    elif _IsVaildUser(ctx):
         logger.info("이미 등록되어 있는 사용자 입니다.")
         await ctx.reply("이미 등록되어 있는 사용자 입니다.")
         return

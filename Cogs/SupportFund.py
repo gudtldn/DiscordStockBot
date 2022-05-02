@@ -18,10 +18,7 @@ from module.__define__ import *
 async def _SupportFund_code(ctx: Union[Context, SlashContext]):
     logger.info(f"[{type(ctx)}] {ctx.author.name}: {ctx.invoked_with}")
     
-    if not IsVaildUser(ctx):
-        logger.info("먼저 `.사용자등록` 부터 해 주세요.")
-        await ctx.reply("먼저 `.사용자등록` 부터 해 주세요.")
-        return
+    if await CheckUser(ctx): return
         
     cool_down = 3600 * 4 #쿨타임
     

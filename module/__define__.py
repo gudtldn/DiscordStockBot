@@ -116,7 +116,7 @@ def GetArrayNum(ctx: Union[Context, SlashContext, int]): #ctx.author.id가 들�
         if i['UserID'] == ctx:
             return num
         
-def IsVaildUser(ctx: Union[Context, SlashContext, int]): #ctx.author.id를 가진 유저가 Information.json에 존재하는지 여부
+def _IsVaildUser(ctx: Union[Context, SlashContext, int]): #ctx.author.id를 가진 유저가 Information.json에 존재하는지 여부
     if isinstance(ctx, (Context, SlashContext)):
         ctx: int = ctx.author.id
         
@@ -127,6 +127,18 @@ def IsVaildUser(ctx: Union[Context, SlashContext, int]): #ctx.author.id를 가�
 
 def ErrorCheck(error, error_context): #찾으려는 에러가 error.args에 있는지 여부
     return error_context in error.args
+
+async def CheckUser(ctx: Union[Context, SlashContext]):
+    if ctx.guild is None:
+        logger.info("Guild is None")
+        return True
+    
+    for i in GetUserInformation():
+        if i['UserID'] == ctx.author.id:
+            return False
+    logger.info("먼저 `.사용자등록` 부터 해 주세요.")
+    await ctx.reply("먼저 `.사용자등록` 부터 해 주세요.")
+    return True
 
 ################################################################################ 데코레이터 선언 ################################################################################
 

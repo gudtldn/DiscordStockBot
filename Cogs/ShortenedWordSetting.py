@@ -22,10 +22,7 @@ from module.__define__ import *
 async def _ShortenedWordSetting_code(ctx: Union[Context, SlashContext], setting_name: str, add_stock_name: str = None, add_stock_num: str = None):
     logger.info(f"[{type(ctx)}] {ctx.author.name}: {setting_name} {add_stock_name} {add_stock_num}")
     
-    if not IsVaildUser(ctx):
-        logger.info("먼저 `.사용자등록` 부터 해 주세요.")
-        await ctx.reply("먼저 `.사용자등록` 부터 해 주세요.")
-        return
+    if await CheckUser(ctx): return
     
     async def reply(msg: str):
         if isinstance(ctx, Context):

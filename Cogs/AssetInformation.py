@@ -21,6 +21,7 @@ from time import time
 from typing import Union
 
 from module.__define__ import *
+from module.__define__ import _IsVaildUser
 
 ################################################################################ 자산정보 코루틴 선언 ################################################################################
 
@@ -89,10 +90,7 @@ async def get_text_(author_id):
 async def _AssetInformation_code(ctx: Union[Context, SlashContext, MenuContext], option: Union[discord.User, str]):
     logger.info(f"[{type(ctx)}] {ctx.author.name}: {ctx.invoked_with} {option}")
     
-    if not IsVaildUser(ctx):
-        logger.info("먼저 `.사용자등록` 부터 해 주세요.")
-        await ctx.reply("먼저 `.사용자등록` 부터 해 주세요.")
-        return
+    if await CheckUser(ctx): return
     
     author_id: int = ctx.author.id
     user_name: str = ctx.author.name
@@ -103,7 +101,7 @@ async def _AssetInformation_code(ctx: Union[Context, SlashContext, MenuContext],
             member_assets = []
             
             for member in members:
-                if IsVaildUser(member.id):
+                if _IsVaildUser(member.id):
                     if GetUserInformation()[GetArrayNum(member.id)]['Settings']['InformationDisclosure']:
                         member_assets.append((member.name, GetUserInformation()[GetArrayNum(member.id)]['TotalAssets']))
                     
@@ -235,7 +233,7 @@ class AssetInformation_SlashContext(commands.Cog):
         author_id: int = ctx.target_author.id
         user_name: str = ctx.target_author.name
 
-        if not IsVaildUser(author_id):
+        if not _IsVaildUser(author_id):
             logger.warning(f"{user_name}님은 아직 등록되지 않은 유저입니다.")
             await ctx.reply(f"{user_name}님은 아직 등록되지 않은 유저입니다.")
             return
@@ -288,6 +286,11 @@ class AssetInformation_SlashContext(commands.Cog):
         else:
             await ctx.defer()
         await ctx.reply(embed=await _crawling())
+    
+    @_AssetInformation_Context_Menu.error
+    async def _AssetInformation_Context_Menu_error(self, ctx: MenuContext, error):
+        logger.warning(error)
+        await ctx.send(f"에러가 발생하였습니다.\n```{error}```")
         
 class AssetInformation_Context(commands.Cog):
     def __init__(self, bot: commands.Bot):

@@ -15,8 +15,13 @@ class HelpCommand_Context(commands.Cog):
     async def _HelpCommand(self, ctx: Context, command: str=None):
         logger.info(f"[{type(ctx)}] {ctx.author.name}: {ctx.invoked_with} {command}")
         
+        if ctx.guild is None:
+            logger.info("Guild is None")
+            return
+        
         if command is not None:
-            command = command.replace(".", "")
+            if command.startswith("."):
+                command = command.replace(".", "", 1)
         
         if command is None:
             embed = discord.Embed(title="도움말", description="[] <-- 필수 입력항목 | <> <-- 선택 입력항목", color=RandomEmbedColor())

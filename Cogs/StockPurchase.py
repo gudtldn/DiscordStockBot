@@ -21,10 +21,7 @@ from module.__define__ import *
 async def _StockPurchase_code(ctx: Union[Context, SlashContext], input_stock_name: str, num: str):
     logger.info(f"[{type(ctx)}] {ctx.author.name}: {ctx.invoked_with} {input_stock_name} {num}")
     
-    if not IsVaildUser(ctx):
-        logger.info("먼저 `.사용자등록` 부터 해 주세요.")
-        await ctx.reply("먼저 `.사용자등록` 부터 해 주세요.")
-        return
+    if await CheckUser(ctx): return
     
     try: num = int(num)
     except: pass

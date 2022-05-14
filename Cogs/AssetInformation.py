@@ -10,9 +10,8 @@ from discord_slash.model import ContextMenuType, SlashCommandOptionType as Optio
 from discord_slash.utils.manage_commands import create_option, create_choice
 
 import asyncio
-from functools import partial
+from aiohttp import ClientSession
 
-import requests
 from bs4 import BeautifulSoup as bs
 from fake_useragent import UserAgent
 
@@ -26,40 +25,38 @@ from define import _IsVaildUser
 ################################################################################ 자산정보 코루틴 선언 ################################################################################
 
 async def get_text_from_url(author_id, stock_num):  # 코루틴 정의
-    loop = asyncio.get_event_loop()
-
     url = f"https://finance.naver.com/item/sise.naver?code={stock_num}" #네이버 금융에 검색
-    request = partial(requests.get, url, headers={"user-agent": UserAgent().random})
     timer = time()
-    res = await loop.run_in_executor(None, request)
     
-    soup = bs(res.text, "lxml")
-    stock_name: str = soup.select_one("#middle > div.h_company > div.wrap_company > h2 > a").text #주식명
-    price: int = int(soup.select_one("#_nowVal").text.replace(",", "")) #현재 시세
-    yesterday_price: int = int(
-        soup.select_one("#content > div.section.inner_sub > div:nth-child(1) > table > tbody > tr:nth-child(3) > td:nth-child(4) > span").text.replace(",", "")) #어제 시세
-    compared_price: int = price - yesterday_price #어제대비 가격
-    compared_per: float = round((price - yesterday_price) / yesterday_price * 100, 2) #어제대비 가격%
-    balance: int = GetUserInformation()[GetArrayNum(author_id)]['Stock'][stock_num]['Quantity'] #가지고 있는 주식 수량
-    price_sign = "" if compared_price <= 0 else "+" #부호설정
-    if compared_price == 0:
-        price_sign_img = "<:0:957290558982869053>" #보합
-    elif compared_price > 0:
-        price_sign_img = "<:p:957290559217762324>" #상승
-    else:
-        price_sign_img = "<:m:957290558857048086>" #하락
+    async with ClientSession() as session:
+        async with session.get(url, headers={"user-agent": UserAgent().random}) as res:
+            soup = bs(await res.text(), "lxml")
+            stock_name: str = soup.select_one("#middle > div.h_company > div.wrap_company > h2 > a").text #주식명
+            price: int = int(soup.select_one("#_nowVal").text.replace(",", "")) #현재 시세
+            yesterday_price: int = int(
+                soup.select_one("#content > div.section.inner_sub > div:nth-child(1) > table > tbody > tr:nth-child(3) > td:nth-child(4) > span").text.replace(",", "")) #어제 시세
+            compared_price: int = price - yesterday_price #어제대비 가격
+            compared_per: float = round((price - yesterday_price) / yesterday_price * 100, 2) #어제대비 가격%
+            balance: int = GetUserInformation()[GetArrayNum(author_id)]['Stock'][stock_num]['Quantity'] #가지고 있는 주식 수량
+            price_sign = "" if compared_price <= 0 else "+" #부호설정
+            if compared_price == 0:
+                price_sign_img = "<:0:957290558982869053>" #보합
+            elif compared_price > 0:
+                price_sign_img = "<:p:957290559217762324>" #상승
+            else:
+                price_sign_img = "<:m:957290558857048086>" #하락
 
-    with getUserInformation() as data:
-        price_str = f"{price_sign}{compared_price:,}원" if data.json_data[GetArrayNum(author_id)]['Settings']['ShowComparedPrice'] else f"{price:,}원"
-    
-    logger.info(f"Done. {time() - timer}seconds")
+            with getUserInformation() as data:
+                price_str = f"{price_sign}{compared_price:,}원" if data.json_data[GetArrayNum(author_id)]['Settings']['ShowComparedPrice'] else f"{price:,}원"
+            
+            logger.info(f"Done. {time() - timer}seconds")
 
-    return {
-        "info": f"{stock_name} | {price_str} | {price_sign}{compared_per}% {price_sign_img}", #주식정보
-        "balance": balance, #주식수량
-        "priceXbalance": price * balance, #현재가격x수량
-        "com_priceXbalance": compared_price * balance #어제대비 가격x수량
-    }
+            return {
+                "info": f"{stock_name} | {price_str} | {price_sign}{compared_per}% {price_sign_img}", #주식정보
+                "balance": balance, #주식수량
+                "priceXbalance": price * balance, #현재가격x수량
+                "com_priceXbalance": compared_price * balance #어제대비 가격x수량
+            }
 
 ################################################################################
 

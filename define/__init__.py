@@ -15,10 +15,11 @@ from random import randint
 from json import load, dump
 
 from os import chdir, getcwd
+from platform import system
 
 from typing import Union
 
-DEBUGGING = True
+DEBUGGING = system() == "Windows" #윈도우에서 실행될 시 디버그 켜짐
 
 if DEBUGGING:
     guilds_id = (940546043651710986,)
@@ -73,6 +74,7 @@ def AddUser(ID: int):
             "ShowComparedPrice": False
         },
         "StockDict": {},
+        "InterestStock": [],
         "Stock": {}
     }
     return dictionary

@@ -14,7 +14,7 @@ from re import match
 
 from typing import Union
 
-from module.__define__ import *
+from define import *
 
 ######################################################################################################################################################
 
@@ -57,7 +57,7 @@ async def _ShortenedWordSetting_code(ctx: Union[Context, SlashContext], setting_
         
         if not add_stock_name: #add_stock_name이 None일 경우 인터넷에서 검색
             url = f"https://finance.naver.com/item/main.naver?code={add_stock_num}"
-            soup = bs(requests.get(url, headers={"User-agent" : UserAgent().random}).text, "lxml")
+            soup = bs(requests.get(url, headers={"User-agent": UserAgent().random}).text, "lxml")
             
             add_stock_name = soup.select_one("#middle > div.h_company > div.wrap_company > h2 > a").text.lower() #주식회사 이름
             add_stock_num = soup.select_one("#middle > div.h_company > div.wrap_company > div > span.code").text #기업코드

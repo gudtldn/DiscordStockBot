@@ -20,8 +20,8 @@ from time import time
 
 from typing import Union
 
-from module.__define__ import *
-from module.__define__ import _IsVaildUser
+from define import *
+from define import _IsVaildUser
 
 ################################################################################ 자산정보 코루틴 선언 ################################################################################
 

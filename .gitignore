@@ -14,7 +14,7 @@ etc/
 json/
 logs/
 _*.py
-!__define__.py
+!__init__.py
 !__main__.py
 
 # C extensions

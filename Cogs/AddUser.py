@@ -6,8 +6,8 @@ from discord_slash import SlashContext, cog_ext
 
 from typing import Union
 
-from module.__define__ import *
-from module.__define__ import _IsVaildUser
+from define import *
+from define import _IsVaildUser
 
 ######################################################################################################################################################
 

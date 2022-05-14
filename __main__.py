@@ -17,7 +17,7 @@ from platform import platform
 
 from re import search
 
-from module.__define__ import *
+from define import *
 
 test_guilds_id = (714012054721396786,) #관리자 전용 명령어를 쓸 서버
 permission_setting = {

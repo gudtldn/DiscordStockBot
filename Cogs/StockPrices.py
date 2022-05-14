@@ -18,8 +18,8 @@ from random import randint
 
 from typing import Union
 
-from module.__define__ import *
-from module.__define__ import _IsVaildUser
+from define import *
+from define import _IsVaildUser
 
 ######################################################################################################################################################
 
@@ -48,18 +48,18 @@ async def _StockPrices_code(ctx: Union[Context, SlashContext], input_stock_name:
 
             else:
                 url = f"https://www.google.com/search?q={quote_plus(input_stock_name)}+주가"
-                soup = bs(requests.get(url, headers={"User-agent" : ua}).text, "lxml")
+                soup = bs(requests.get(url, headers={"User-agent": ua}).text, "lxml")
                 input_stock_name = soup.select_one("#main > div:nth-child(6) > div > div:nth-child(3) > div > div > div > div > div:nth-child(2) > div > div > div > div > span").text
                 input_stock_name = input_stock_name[0:input_stock_name.find("(")]
         
         else:
             url = f"https://www.google.com/search?q={quote_plus(input_stock_name)}+주가"
-            soup = bs(requests.get(url, headers={"User-agent" : ua}).text, "lxml")
+            soup = bs(requests.get(url, headers={"User-agent": ua}).text, "lxml")
             input_stock_name = soup.select_one("#main > div:nth-child(6) > div > div:nth-child(3) > div > div > div > div > div:nth-child(2) > div > div > div > div > span").text
             input_stock_name = input_stock_name[0:input_stock_name.find("(")]
     
     url = f"https://finance.naver.com/item/sise.naver?code={input_stock_name}"
-    soup = bs(requests.get(url, headers={"User-agent" : ua}).text, "lxml")
+    soup = bs(requests.get(url, headers={"User-agent": ua}).text, "lxml")
 
     soup_stock_name: str = soup.select_one("#middle > div.h_company > div.wrap_company > h2 > a").text #주식회사 이름
     soup_stock_num: str = soup.select_one("#middle > div.h_company > div.wrap_company > div > span.code").text #기업코드

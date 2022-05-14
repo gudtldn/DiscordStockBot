@@ -10,7 +10,7 @@ from discord_slash.utils.manage_commands import create_option, create_choice
 
 from typing import Union
 
-from module.__define__ import *
+from define import *
 
 ######################################################################################################################################################
 

@@ -4,7 +4,7 @@ import discord
 from discord.ext import commands
 from discord.ext.commands import Context
 
-from module.__define__ import *
+from define import *
 
 class HelpCommand_Context(commands.Cog):
     def __init__(self, bot):

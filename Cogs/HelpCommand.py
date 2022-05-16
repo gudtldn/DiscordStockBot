@@ -147,13 +147,25 @@ class HelpCommand_Context(commands.Cog):
             
             embed = discord.Embed(title="단축어설정", description="단축어목록을 확인하거나, 추가 또는 제거합니다.", color=RandomEmbedColor())
             embed.add_field(name="다른이름", value=f"{', '.join(command_list)}", inline=False)
-            embed.add_field(name=".단축어설정 목록", value="자신의 단축어 목록을 확인합니다", inline=False)
+            embed.add_field(name=".단축어설정 목록", value="자신의 단축어 목록을 확인합니다.", inline=False)
             embed.add_field(name=".단축어설정 추가 -이름 [기업이름] -번호 [기업번호]", value="단축어 목록에 단축어를 새로 추가합니다.\n\
     사용 예: `.단축어 추가 -이름 삼전 -번호 005930`", inline=False)
             embed.add_field(name=".단축어설정 추가 -번호 [기업번호]", value="단축어 목록에 단축어를 새로 추가합니다.(이름은 기업이름으로 설정됩니다)\n\
     사용 예: `.단축어 추가 -번호 005930`", inline=False)
             embed.add_field(name=".단축어설정 제거 -이름 [기업이름]", value="단축어 목록에 있는 단축어를 제거합니다.\n\
     사용 예: `.단축어 제거 -이름 삼전`", inline=False)
+            await ctx.reply(embed=embed)
+            return
+        
+        elif command in ("관심종목", "관심"):
+            command_list = ["관심종목", "관심"]
+            command_list.remove(command)
+            
+            embed = discord.Embed(title="관심목록", description="관심목록에 추가된 주식의 가격을 확인하거나, 추가 또는 제거합니다.", color=RandomEmbedColor())
+            embed.add_field(name="다른이름", value=f"{', '.join(command_list)}", inline=False)
+            embed.add_field(name=".관심목록 주가", value="관심목록에 추가된 주식의 주가를 나열합니다.", inline=False)
+            embed.add_field(name=".관심목록 추가", value="관심목록에 주식을 추가합니다.", inline=False)
+            embed.add_field(name=".관심목록 제거", value="관심목록에서 주식을 제거합니다.", inline=False)
             await ctx.reply(embed=embed)
             return
         

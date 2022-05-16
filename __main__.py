@@ -152,15 +152,20 @@ async def _UploadFile(ctx: SlashContext, file_type: str, path: str = None):
         
         with changeDirectory("./logs"): #실행폴더 변경
             with ZipFile(f"logs.zip", "w") as zipfile:
+                remove_files = []
                 logs_dir = [i for i in listdir("./") if i.endswith(".log")]
                 logs_dir.sort()
                 
                 for n, file in enumerate(logs_dir):
                     zipfile.write(file)
                     if len(logs_dir)-1 != n:
-                        remove(file)
+                        remove_files.append(file)
         
         await ctx.send(f"{len(logs_dir)}개의 파일이 압축되어 업로드되었습니다.", file=discord.File("./logs/logs.zip"))
+        
+        with changeDirectory("./logs"):
+            for file in remove_files:
+                remove(file)
         
     elif file_type == "userinfo":
         await ctx.send("성공적으로 업로드되었습니다.", file=discord.File("./json/UserInformation.json"))

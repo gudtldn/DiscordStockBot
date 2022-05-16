@@ -85,7 +85,7 @@ async def _ShortenedWordSetting_code(ctx: Union[Context, SlashContext], setting_
                 return
         
         for k in GetUserInformation()[GetArrayNum(ctx)]['StockDict']:
-            if k == add_stock_name: 
+            if k == add_stock_name:
                 with setUserInformation() as data:
                     logger.info(f"`{k}: {data.json_data[GetArrayNum(ctx)]['StockDict'][k]}`이/가 제거되었습니다.")
                     await reply(f"`{k}: {data.json_data[GetArrayNum(ctx)]['StockDict'][k]}`이/가 제거되었습니다.")

@@ -88,41 +88,39 @@ async def _Interest_Stock_List_code(ctx: Union[Context, SlashContext], option: s
     if isinstance(ctx, SlashContext):
         await ctx.defer(hidden=True)
     
-    async def reply(msg: str="", embed: Embed=None):
-        if isinstance(ctx, Context):
-            return await ctx.reply(msg, embed=embed)
-        else:
-            return await ctx.reply(msg, embed=embed, hidden=True)
-    
     if option == "주가":
         if not GetUserInformation()[GetArrayNum(ctx)]['InterestStock']:
             logger.info("관심종목을 추가해 주세요.")
-            await reply("관심종목을 추가해 주세요.")
+            await ctx.reply("관심종목을 추가해 주세요.")
             return
         
-        crawl_data = await get_text_(ctx.author.id)
-        embed = Embed(title=f"{ctx.author.name}님의 관심종목", color=RandomEmbedColor())
-        for _stock in crawl_data:
-            embed.add_field(
-                name=f"{_stock['name']}{_stock['stop_trading']} | {_stock['price']:,}원 {_stock['price_sign_img']}",
-                value=f"전일대비: {_stock['compared_price']}원 | {_stock['compared_per']}%",
-                inline=False
-            )
-        embed.set_footer(text=crawl_data[0]['date'])
+        async def _crawling():
+            crawl_data = await get_text_(ctx.author.id)
+            embed = Embed(title=f"{ctx.author.name}님의 관심종목", color=RandomEmbedColor())
+            for _stock in crawl_data:
+                embed.add_field(
+                    name=f"{_stock['name']}{_stock['stop_trading']} | {_stock['price']:,}원 {_stock['price_sign_img']}",
+                    value=f"전일대비: {_stock['compared_price']}원 | {_stock['compared_per']}%",
+                    inline=False
+                )
+            embed.set_footer(text=crawl_data[0]['date'])
+            return embed
         
-        logger.info("관심정보 임베드 보내짐.")
-        await reply(embed=embed)
-        return
+        if isinstance(ctx, Context):
+            async with ctx.typing():
+                await ctx.reply(embed=await _crawling())
+        else:
+            await ctx.reply(embed=await _crawling())
     
     elif option == "추가":
         if input_stock_name is None:
             logger.warning("이름을 입력해 주세요.")
-            await reply("이름을 입력해 주세요.")
+            await ctx.reply("이름을 입력해 주세요.")
             return
         
         elif len(GetUserInformation()[GetArrayNum(ctx)]['InterestStock']) == 10:
             logger.warning("관심종목은 최대 10개까지 추가할 수 있습니다.")
-            await reply("관심종목은 최대 10개까지 추가할 수 있습니다.")
+            await ctx.reply("관심종목은 최대 10개까지 추가할 수 있습니다.")
             return
         
         ua = UserAgent().random
@@ -144,30 +142,30 @@ async def _Interest_Stock_List_code(ctx: Union[Context, SlashContext], option: s
         
         if GetStockInformation(_stock_name) is None:
             logger.warning("주식을 찾지 못하였습니다.")
-            await reply("주식을 찾지 못하였습니다.")
+            await ctx.reply("주식을 찾지 못하였습니다.")
             return
         
         with setUserInformation() as data:
             if _stock_name in data.json_data[GetArrayNum(ctx)]['InterestStock']:
                 logger.warning("이미 추가되어있는 주식 입니다.")
-                await reply("이미 추가되어있는 주식 입니다.")
+                await ctx.reply("이미 추가되어있는 주식 입니다.")
                 return
             
             else:
                 data.json_data[GetArrayNum(ctx)]['InterestStock'].append(_stock_name)
         
         logger.warning("관심종목에 추가되었습니다.")
-        await reply("관심종목에 추가되었습니다.")
+        await ctx.reply("관심종목에 추가되었습니다.")
     
     elif option == "제거":
         if input_stock_name is None:
             logger.warning("이름을 입력해 주세요.")
-            await reply("이름을 입력해 주세요.")
+            await ctx.reply("이름을 입력해 주세요.")
             return
         
         if not GetUserInformation()[GetArrayNum(ctx)]['InterestStock']:
             logger.info("관심종목에 아무것도 없습니다.")
-            await reply("관심종목에 아무것도 없습니다.")
+            await ctx.reply("관심종목에 아무것도 없습니다.")
             return
         
         ua = UserAgent().random
@@ -189,23 +187,22 @@ async def _Interest_Stock_List_code(ctx: Union[Context, SlashContext], option: s
         
         if GetStockInformation(_stock_name) is None:
             logger.warning("주식을 찾지 못하였습니다.")
-            await reply("주식을 찾지 못하였습니다.")
+            await ctx.reply("주식을 찾지 못하였습니다.")
             return
         
         if _stock_name in GetUserInformation()[GetArrayNum(ctx)]['InterestStock']:
             with setUserInformation() as data:
                 logger.info(f"관심종목에서 제거되었습니다.")
-                await reply(f"관심종목에서 제거되었습니다.")
+                await ctx.reply(f"관심종목에서 제거되었습니다.")
                 data.json_data[GetArrayNum(ctx)]['InterestStock'].remove(_stock_name)
             return
             
         logger.warning(f"{input_stock_name}이/가 목록에 존재하지 않습니다.")
-        await reply(f"{input_stock_name}이/가 목록에 존재하지 않습니다.")
-        return
+        await ctx.reply(f"{input_stock_name}이/가 목록에 존재하지 않습니다.")
     
     else:
         logger.warning("옵션을 다시 입력해 주세요.")
-        await reply("옵션을 다시 입력해 주세요.")
+        await ctx.reply("옵션을 다시 입력해 주세요.")
         return
 
 ######################################################################################################################################################

@@ -5,8 +5,6 @@ from discord.ext import commands
 from discord.ext.commands import Context
 from discord_slash import SlashContext, cog_ext
 
-from discord.ext.commands.errors import MissingRequiredArgument
-
 from discord_slash.model import SlashCommandOptionType as OptionType
 from discord_slash.utils.manage_commands import create_option, create_choice
 

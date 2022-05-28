@@ -1,4 +1,4 @@
-#관심목록
+#관심종목
 
 from discord import Embed
 from discord.ext import commands
@@ -88,7 +88,7 @@ async def _Interest_Stock_List_code(ctx: Union[Context, SlashContext], option: s
     if isinstance(ctx, SlashContext):
         await ctx.defer(hidden=True)
     
-    if option == "주가":
+    if option is None or option == "주가":
         if not GetUserInformation()[GetArrayNum(ctx)]['InterestStock']:
             logger.info("관심종목을 추가해 주세요.")
             await ctx.reply("관심종목을 추가해 주세요.")
@@ -220,7 +220,7 @@ class InterestStockList_SlashContext(commands.Cog):
                 name="옵션",
                 description="옵션을 선택해 주세요.",
                 option_type=OptionType.STRING,
-                required=True,
+                required=False,
                 choices=[
                     create_choice(
                         name="주가",
@@ -245,7 +245,7 @@ class InterestStockList_SlashContext(commands.Cog):
         ],
         connector={"옵션": "option", "이름": "input_stock_name"}
     )
-    async def _Interest_Stock_List(self, ctx: SlashContext, option: str, input_stock_name: str=None):
+    async def _Interest_Stock_List(self, ctx: SlashContext, option: str=None, input_stock_name: str=None):
         await _Interest_Stock_List_code(ctx, option, input_stock_name)
     
     @_Interest_Stock_List.error
@@ -265,16 +265,12 @@ class InterestStockList_Context(commands.Cog):
         self.bot = bot
     
     @commands.command(name="관심종목", aliases=["관심"])
-    async def _Interest_Stock_List(self, ctx: Context, option: str, input_stock_name: str=None):
+    async def _Interest_Stock_List(self, ctx: Context, option: str=None, input_stock_name: str=None):
         await _Interest_Stock_List_code(ctx, option, input_stock_name)
     
     @_Interest_Stock_List.error
     async def _Interest_Stock_List_error(self, ctx: Context, error):
-        if isinstance(error, MissingRequiredArgument):
-            logger.warning("옵션을 입력해 주세요.")
-            await ctx.reply("옵션을 입력해 주세요.")
-            
-        elif isinstance(error.original, AttributeError):
+        if isinstance(error.original, AttributeError):
             logger.warning("주식을 찾지 못하였습니다.")
             await ctx.reply("주식을 찾지 못하였습니다.")
             

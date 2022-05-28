@@ -35,6 +35,7 @@ class HelpCommand_Context(commands.Cog):
             embed.add_field(name=".탈퇴", value="이 봇에 저장되어있는 사용자의 정보를 삭제합니다.", inline=False)
             embed.add_field(name=".개인설정", value="개인설정을 확인 또는 수정합니다.", inline=False)
             embed.add_field(name=".단축어설정", value="단축어목록을 확인하거나, 추가 또는 제거합니다.", inline=False)
+            embed.add_field(name=".관심종목", value="관심종목에 추가된 주식의 가격을 확인하거나, 추가 또는 제거합니다.", inline=False)
             embed.set_footer(text="명령어를 자세히 보려면 「.도움말 <명령어 이름>」 을 써 주세요.")
             await ctx.reply(embed=embed)
             return
@@ -161,11 +162,11 @@ class HelpCommand_Context(commands.Cog):
             command_list = ["관심종목", "관심"]
             command_list.remove(command)
             
-            embed = discord.Embed(title="관심목록", description="관심목록에 추가된 주식의 가격을 확인하거나, 추가 또는 제거합니다.", color=RandomEmbedColor())
+            embed = discord.Embed(title="관심종목", description="관심종목에 추가된 주식의 가격을 확인하거나, 추가 또는 제거합니다.", color=RandomEmbedColor())
             embed.add_field(name="다른이름", value=f"{', '.join(command_list)}", inline=False)
-            embed.add_field(name=".관심목록 주가", value="관심목록에 추가된 주식의 주가를 나열합니다.", inline=False)
-            embed.add_field(name=".관심목록 추가", value="관심목록에 주식을 추가합니다.", inline=False)
-            embed.add_field(name=".관심목록 제거", value="관심목록에서 주식을 제거합니다.", inline=False)
+            embed.add_field(name=".관심종목 주가", value="관심종목에 추가된 주식의 주가를 나열합니다.", inline=False)
+            embed.add_field(name=".관심종목 추가", value="관심종목에 주식을 추가합니다.", inline=False)
+            embed.add_field(name=".관심종목 제거", value="관심종목에서 주식을 제거합니다.", inline=False)
             await ctx.reply(embed=embed)
             return
         

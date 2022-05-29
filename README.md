@@ -88,14 +88,14 @@ DiscordStockBot.py
 >>* .단축어설정 **추가** -번호 [기업번호]
 >>* .단축어설정 **제거** -이름 [단축어로 설정한 이름]
 
-### [관심목록](https://github.com/gudtldn/DiscordStockBot/blob/main/Cogs/InterestStockList.py "소스코드로 가기")
+### [관심종목](https://github.com/gudtldn/DiscordStockBot/blob/main/Cogs/InterestStockList.py "소스코드로 가기")
 ---
-> 관심목록에 추가된 주식의 가격을 확인하거나, 추가 또는 제거합니다.
+> 관심종목에 추가된 주식의 가격을 확인하거나, 추가 또는 제거합니다.
 >* 다른이름: 관심
 >> 사용방법
->>* 관심목록 **주가**
->>* 관심목록 **추가** [기업이름 | 기업번호]
->>* 관심목록 **제거** [기업이름 | 기업번호]
+>>* 관심종목 **주가**
+>>* 관심종목 **추가** [기업이름 | 기업번호]
+>>* 관심종목 **제거** [기업이름 | 기업번호]
 
 ### [도움말](https://github.com/gudtldn/DiscordStockBot/blob/main/Cogs/HelpCommand.py "소스코드로 가기")
 ---

@@ -25,7 +25,7 @@ async def _AddUser_code(ctx: Union[Context, SlashContext]):
         return
 
     with setUserInformation() as data:
-        data.json_data.append(AddUser(ctx.author.id)) #사용자 추가
+        data.json_data[str(ctx.author.id)] = AddUser() #사용자 추가
         
     logger.info("등록되었습니다.")
     await ctx.reply("등록되었습니다.")

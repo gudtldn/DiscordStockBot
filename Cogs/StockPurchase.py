@@ -40,8 +40,8 @@ async def _StockPurchase_code(ctx: Union[Context, SlashContext], input_stock_nam
     
     try: int(input_stock_name) #입력받은 stock_name이 int인지 검사
     except: #int가 아닌경우
-        if input_stock_name in GetUserInformation()[GetArrayNum(ctx)]['StockDict'].keys():
-            input_stock_name = GetUserInformation()[GetArrayNum(ctx)]['StockDict'][input_stock_name]
+        if input_stock_name in GetUserInformation()[str(ctx.author.id)]['StockDict'].keys():
+            input_stock_name = GetUserInformation()[str(ctx.author.id)]['StockDict'][input_stock_name]
             
         elif input_stock_name in GetStockDictionary().keys():
             input_stock_name = GetStockDictionary()[input_stock_name]
@@ -66,7 +66,7 @@ async def _StockPurchase_code(ctx: Union[Context, SlashContext], input_stock_nam
     
     if isinstance(num, str):
         if num in ("풀매수", "모두"):
-            num = GetUserInformation()[GetArrayNum(ctx)]['Deposit'] // price
+            num = GetUserInformation()[str(ctx.author.id)]['Deposit'] // price
             if num < 1:
                 logger.info("예수금이 부족합니다.")
                 await ctx.reply("예수금이 부족합니다.")
@@ -80,18 +80,18 @@ async def _StockPurchase_code(ctx: Union[Context, SlashContext], input_stock_nam
             return
         
     else:
-        if GetUserInformation()[GetArrayNum(ctx)]['Deposit'] - (price * num) < 0:
+        if GetUserInformation()[str(ctx.author.id)]['Deposit'] - (price * num) < 0:
             logger.info("예수금이 부족합니다.")
             await ctx.reply("예수금이 부족합니다.")
             return
     
     with setUserInformation() as data:
-        if input_stock_name in GetUserInformation()[GetArrayNum(ctx)]['Stock'].keys(): #Stock안에 stock_name이 있는가?
-            data.json_data[GetArrayNum(ctx)]['Stock'][input_stock_name]['Quantity'] += num
+        if input_stock_name in GetUserInformation()[str(ctx.author.id)]['Stock'].keys(): #Stock안에 stock_name이 있는가?
+            data.json_data[str(ctx.author.id)]['Stock'][input_stock_name]['Quantity'] += num
         else:
-            data.json_data[GetArrayNum(ctx)]['Stock'][input_stock_name] = {"Quantity": num, "PurchasePrice": 0} #PurchasePrice는 나중에 구현 예정
+            data.json_data[str(ctx.author.id)]['Stock'][input_stock_name] = {"Quantity": num, "PurchasePrice": 0} #PurchasePrice는 나중에 구현 예정
         
-        data.json_data[GetArrayNum(ctx)]['Deposit'] -= (price * num) #예수금 저장
+        data.json_data[str(ctx.author.id)]['Deposit'] -= (price * num) #예수금 저장
     
     logger.info(f"{soup_stock_name}의 주식이 {price:,}원에 {num:,}주가 매수되었습니다.")
     await ctx.reply(f"{soup_stock_name}의 주식이 {price:,}원에 {num:,}주가 매수되었습니다.")

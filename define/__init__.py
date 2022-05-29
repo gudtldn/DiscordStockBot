@@ -61,9 +61,8 @@ def RandomEmbedColor():
     value = f"0x{r():02x}{r():02x}{r():02x}"
     return int(value, 16)
 
-def AddUser(ID: int):
-    dictionary = {
-        "UserID": ID,
+def AddUser():
+    return {
         "Deposit": 10000000,
         "TotalAssets": 10000000,
         "SupportFund": 0,
@@ -79,7 +78,6 @@ def AddUser(ID: int):
         "InterestStock": [],
         "Stock": {}
     }
-    return dictionary
 
 def GetStockDictionary() -> dict:
     with open("./json/StockDictionary.json", "r", encoding="utf-8") as Inf:
@@ -104,30 +102,22 @@ def GetStockInformation(stock_num: str):
     stock_list: list = sorted([dict(zip(stock_key, value)) for value in stock_value], key=lambda key: key['date'], reverse=True)
     return None if stock_list[0]['date'] == "날짜" else stock_list
 
-def GetUserInformation() -> list[dict]: #Information.json에 있는 값 불러오기
+def GetUserInformation() -> dict: #Information.json에 있는 값 불러오기
     with open("./json/UserInformation.json", "r", encoding="utf-8") as Inf:
         return load(Inf)
 
-def _SetUserInformation(json_data: list[dict]):
+def _SetUserInformation(json_data: dict):
     with open("./json/UserInformation.json", "w", encoding="utf-8") as Inf:
         dump(json_data, Inf, indent="\t", ensure_ascii=False)
 
-def GetArrayNum(ctx: Union[Context, SlashContext, int]): #ctx.author.id가 들어있는 배열의 번호를 반환
+def _IsVaildUser(ctx: Union[Context, SlashContext, str]): #ctx.author.id를 가진 유저가 Information.json에 존재하는지 여부
     if isinstance(ctx, (Context, SlashContext)):
-        ctx: int = ctx.author.id
-
-    for num, i in enumerate(GetUserInformation()):
-        if i['UserID'] == ctx:
-            return num
-        
-def _IsVaildUser(ctx: Union[Context, SlashContext, int]): #ctx.author.id를 가진 유저가 Information.json에 존재하는지 여부
-    if isinstance(ctx, (Context, SlashContext)):
-        ctx: int = ctx.author.id
-        
-    for i in GetUserInformation():
-        if i['UserID'] == ctx:
-            return True
-    return False
+        ctx: str = str(ctx.author.id)
+    
+    if ctx in GetUserInformation().keys():
+        return True
+    else:
+        return False
 
 def ErrorCheck(error, error_context): #찾으려는 에러가 error.args에 있는지 여부
     return error_context in error.args
@@ -137,12 +127,12 @@ async def CheckUser(ctx: Union[Context, SlashContext]):
         logger.info("Guild is None")
         return True
     
-    for i in GetUserInformation():
-        if i['UserID'] == ctx.author.id:
-            return False
-    logger.info("먼저 `.사용자등록` 부터 해 주세요.")
-    await ctx.reply("먼저 `.사용자등록` 부터 해 주세요.")
-    return True
+    if str(ctx.author.id) in GetUserInformation().keys():
+        return False
+    else:
+        logger.info("먼저 `.사용자등록` 부터 해 주세요.")
+        await ctx.reply("먼저 `.사용자등록` 부터 해 주세요.")
+        return True
 
 ################################################################################ 데코레이터 선언 ################################################################################
 

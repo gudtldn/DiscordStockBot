@@ -71,7 +71,7 @@ async def get_text_from_url(stock_num): #코루틴 정의
 async def get_text_(author_id):
     futures: list[asyncio.Task] = [
         asyncio.ensure_future(get_text_from_url(keyword))
-            for keyword in GetUserInformation()[GetArrayNum(author_id)]['InterestStock']
+            for keyword in GetUserInformation()[author_id]['InterestStock']
     ]
     return await asyncio.gather(*futures)
 
@@ -87,13 +87,13 @@ async def _Interest_Stock_List_code(ctx: Union[Context, SlashContext], option: s
         await ctx.defer(hidden=True)
     
     if option is None or option == "주가":
-        if not GetUserInformation()[GetArrayNum(ctx)]['InterestStock']:
+        if not GetUserInformation()[str(ctx.author.id)]['InterestStock']:
             logger.info("관심종목을 추가해 주세요.")
             await ctx.reply("관심종목을 추가해 주세요.")
             return
         
         async def _crawling():
-            crawl_data = await get_text_(ctx.author.id)
+            crawl_data = await get_text_(str(ctx.author.id))
             embed = Embed(title=f"{ctx.author.name}님의 관심종목", color=RandomEmbedColor())
             for _stock in crawl_data:
                 embed.add_field(
@@ -116,7 +116,7 @@ async def _Interest_Stock_List_code(ctx: Union[Context, SlashContext], option: s
             await ctx.reply("이름을 입력해 주세요.")
             return
         
-        elif len(GetUserInformation()[GetArrayNum(ctx)]['InterestStock']) == 10:
+        elif len(GetUserInformation()[str(ctx.author.id)]['InterestStock']) == 10:
             logger.warning("관심종목은 최대 10개까지 추가할 수 있습니다.")
             await ctx.reply("관심종목은 최대 10개까지 추가할 수 있습니다.")
             return
@@ -126,8 +126,8 @@ async def _Interest_Stock_List_code(ctx: Union[Context, SlashContext], option: s
 
         try: int(_stock_name) #입력받은 문자가 숫자인지 확인
         except:
-            if _stock_name in GetUserInformation()[GetArrayNum(ctx)]['StockDict'].keys():
-                _stock_name = GetUserInformation()[GetArrayNum(ctx)]['StockDict'][_stock_name]
+            if _stock_name in GetUserInformation()[str(ctx.author.id)]['StockDict'].keys():
+                _stock_name = GetUserInformation()[str(ctx.author.id)]['StockDict'][_stock_name]
                 
             elif _stock_name in GetStockDictionary().keys():
                 _stock_name = GetStockDictionary()[_stock_name]
@@ -144,13 +144,13 @@ async def _Interest_Stock_List_code(ctx: Union[Context, SlashContext], option: s
             return
         
         with setUserInformation() as data:
-            if _stock_name in data.json_data[GetArrayNum(ctx)]['InterestStock']:
+            if _stock_name in data.json_data[str(ctx.author.id)]['InterestStock']:
                 logger.warning("이미 추가되어있는 주식 입니다.")
                 await ctx.reply("이미 추가되어있는 주식 입니다.")
                 return
             
             else:
-                data.json_data[GetArrayNum(ctx)]['InterestStock'].append(_stock_name)
+                data.json_data[str(ctx.author.id)]['InterestStock'].append(_stock_name)
         
         logger.warning("관심종목에 추가되었습니다.")
         await ctx.reply("관심종목에 추가되었습니다.")
@@ -161,7 +161,7 @@ async def _Interest_Stock_List_code(ctx: Union[Context, SlashContext], option: s
             await ctx.reply("이름을 입력해 주세요.")
             return
         
-        if not GetUserInformation()[GetArrayNum(ctx)]['InterestStock']:
+        if not GetUserInformation()[str(ctx.author.id)]['InterestStock']:
             logger.info("관심종목에 아무것도 없습니다.")
             await ctx.reply("관심종목에 아무것도 없습니다.")
             return
@@ -171,8 +171,8 @@ async def _Interest_Stock_List_code(ctx: Union[Context, SlashContext], option: s
 
         try: int(_stock_name) #입력받은 문자가 숫자인지 확인
         except:
-            if _stock_name in GetUserInformation()[GetArrayNum(ctx)]['StockDict'].keys():
-                _stock_name: str = GetUserInformation()[GetArrayNum(ctx)]['StockDict'][_stock_name]
+            if _stock_name in GetUserInformation()[str(ctx.author.id)]['StockDict'].keys():
+                _stock_name: str = GetUserInformation()[str(ctx.author.id)]['StockDict'][_stock_name]
                 
             elif _stock_name in GetStockDictionary().keys():
                 _stock_name: str = GetStockDictionary()[_stock_name]
@@ -188,19 +188,19 @@ async def _Interest_Stock_List_code(ctx: Union[Context, SlashContext], option: s
             await ctx.reply("주식을 찾지 못하였습니다.")
             return
         
-        if _stock_name in GetUserInformation()[GetArrayNum(ctx)]['InterestStock']:
+        if _stock_name in GetUserInformation()[str(ctx.author.id)]['InterestStock']:
             with setUserInformation() as data:
                 logger.info(f"관심종목에서 제거되었습니다.")
                 await ctx.reply(f"관심종목에서 제거되었습니다.")
-                data.json_data[GetArrayNum(ctx)]['InterestStock'].remove(_stock_name)
+                data.json_data[str(ctx.author.id)]['InterestStock'].remove(_stock_name)
             return
             
         logger.warning(f"{input_stock_name}이/가 목록에 존재하지 않습니다.")
         await ctx.reply(f"{input_stock_name}이/가 목록에 존재하지 않습니다.")
     
     else:
-        logger.warning("옵션을 다시 입력해 주세요.")
-        await ctx.reply("옵션을 다시 입력해 주세요.")
+        logger.warning("옵션을 확인해 주세요.")
+        await ctx.reply("옵션을 확인해 주세요.")
         return
 
 ######################################################################################################################################################

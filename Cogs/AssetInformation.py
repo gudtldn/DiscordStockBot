@@ -37,7 +37,7 @@ async def get_text_from_url(author_id, stock_num):  # 코루틴 정의
                 soup.select_one("#content > div.section.inner_sub > div:nth-child(1) > table > tbody > tr:nth-child(3) > td:nth-child(4) > span").text.replace(",", "")) #어제 시세
             compared_price: int = price - yesterday_price #어제대비 가격
             compared_per: float = round((price - yesterday_price) / yesterday_price * 100, 2) #어제대비 가격%
-            balance: int = GetUserInformation()[GetArrayNum(author_id)]['Stock'][stock_num]['Quantity'] #가지고 있는 주식 수량
+            balance: int = GetUserInformation()[author_id]['Stock'][stock_num]['Quantity'] #가지고 있는 주식 수량
             price_sign = "" if compared_price <= 0 else "+" #부호설정
             if compared_price == 0:
                 price_sign_img = "<:0:957290558982869053>" #보합
@@ -47,7 +47,7 @@ async def get_text_from_url(author_id, stock_num):  # 코루틴 정의
                 price_sign_img = "<:m:957290558857048086>" #하락
 
             with getUserInformation() as data:
-                price_str = f"{price_sign}{compared_price:,}원" if data.json_data[GetArrayNum(author_id)]['Settings']['ShowComparedPrice'] else f"{price:,}원"
+                price_str = f"{price_sign}{compared_price:,}원" if data.json_data[author_id]['Settings']['ShowComparedPrice'] else f"{price:,}원"
             
             logger.info(f"Done. {time() - timer}seconds")
 
@@ -64,7 +64,7 @@ async def get_text_(author_id):
     # 아직 실행된 것이 아니라, 실행할 것을 계획하는 단계
     futures: list[asyncio.Task] = [
         asyncio.ensure_future(get_text_from_url(author_id, keyword))
-            for keyword in GetUserInformation()[GetArrayNum(author_id)]['Stock']
+            for keyword in GetUserInformation()[author_id]['Stock']
     ]
 
     stock_dict = await asyncio.gather(*futures)
@@ -89,7 +89,7 @@ async def _AssetInformation_code(ctx: Union[Context, SlashContext, MenuContext],
     
     if await CheckUser(ctx): return
     
-    author_id: int = ctx.author.id
+    author_id: str = str(ctx.author.id)
     user_name: str = ctx.author.name
     
     if option is not None: #부가 옵션이 전달되어 있을 때
@@ -98,9 +98,9 @@ async def _AssetInformation_code(ctx: Union[Context, SlashContext, MenuContext],
             member_assets = []
             
             for member in members:
-                if _IsVaildUser(member.id):
-                    if GetUserInformation()[GetArrayNum(member.id)]['Settings']['InformationDisclosure']:
-                        member_assets.append((member.name, GetUserInformation()[GetArrayNum(member.id)]['TotalAssets']))
+                if _IsVaildUser(str(member.id)):
+                    if GetUserInformation()[str(member.id)]['Settings']['InformationDisclosure']:
+                        member_assets.append((member.name, GetUserInformation()[str(member.id)]['TotalAssets']))
                     
             member_assets.sort(key=lambda total: total[1], reverse=True) #총 자산을 기준으로 리스트 정렬
             
@@ -115,10 +115,10 @@ async def _AssetInformation_code(ctx: Union[Context, SlashContext, MenuContext],
             return
         
         else:
-            author_id: int = option.id
+            author_id: str = str(option.id)
             user_name: str = option.name
             
-            if not GetUserInformation()[GetArrayNum(author_id)]['Settings']['InformationDisclosure']:
+            if not GetUserInformation()[author_id]['Settings']['InformationDisclosure']:
                 logger.info(f"{user_name}님의 정보가 비공개되어 있습니다.")
                 await ctx.reply(f"{user_name}님의 정보가 비공개되어 있습니다.")
                 return
@@ -127,8 +127,8 @@ async def _AssetInformation_code(ctx: Union[Context, SlashContext, MenuContext],
         crawl_data = await get_text_(author_id)
         
         with setUserInformation() as data:
-            data.json_data[GetArrayNum(author_id)]['TotalAssets'] = \
-                crawl_data['TotalAssets'] + data.json_data[GetArrayNum(author_id)]['Deposit'] #다 합친걸 총 자산에 저장
+            data.json_data[author_id]['TotalAssets'] = \
+                crawl_data['TotalAssets'] + data.json_data[author_id]['Deposit'] #다 합친걸 총 자산에 저장
         
         with getUserInformation() as data:
             price_sign = "" if crawl_data['TotalCompared_Price'] <= 0 else "+" #부호설정
@@ -139,21 +139,21 @@ async def _AssetInformation_code(ctx: Union[Context, SlashContext, MenuContext],
             else:
                 price_sign_img = "<:m:957290558857048086>" #하락
             
-            compared_per: float = round(crawl_data['TotalCompared_Price'] / (data.json_data[GetArrayNum(author_id)]['TotalAssets'] - crawl_data['TotalCompared_Price']) * 100, 2)
+            compared_per: float = round(crawl_data['TotalCompared_Price'] / (data.json_data[author_id]['TotalAssets'] - crawl_data['TotalCompared_Price']) * 100, 2)
             
             embed = discord.Embed(title=f"{user_name}님의 자산정보", color=RandomEmbedColor())
-            embed.add_field(name="예수금", value=f"{data.json_data[GetArrayNum(author_id)]['Deposit']:,}원")
+            embed.add_field(name="예수금", value=f"{data.json_data[author_id]['Deposit']:,}원")
             
-            if len(data.json_data[GetArrayNum(author_id)]['Stock']): #가지고 있는 주식 수가 1개 이상이라면
-                embed.add_field(name="총 자산", value=f"{data.json_data[GetArrayNum(author_id)]['TotalAssets']:,}원\n\
+            if len(data.json_data[author_id]['Stock']): #가지고 있는 주식 수가 1개 이상이라면
+                embed.add_field(name="총 자산", value=f"{data.json_data[author_id]['TotalAssets']:,}원\n\
 {price_sign_img} {price_sign}{crawl_data['TotalCompared_Price']:,}원 | {price_sign}{compared_per}%")
             else:
-                embed.add_field(name="총 자산", value=f"{data.json_data[GetArrayNum(author_id)]['TotalAssets']:,}원")
+                embed.add_field(name="총 자산", value=f"{data.json_data[author_id]['TotalAssets']:,}원")
             
-            if data.json_data[GetArrayNum(author_id)]['Settings']['ShowSupportFund']:
-                embed.add_field(name="지원금으로 얻은 돈", value=f"{data.json_data[GetArrayNum(author_id)]['SupportFund']:,}원", inline=False)
+            if data.json_data[author_id]['Settings']['ShowSupportFund']:
+                embed.add_field(name="지원금으로 얻은 돈", value=f"{data.json_data[author_id]['SupportFund']:,}원", inline=False)
                 
-            if len(data.json_data[GetArrayNum(author_id)]['Stock']) != 0:
+            if len(data.json_data[author_id]['Stock']) != 0:
                 embed.add_field(name="="*25, value="_ _", inline=False)
         
         for add_embed in crawl_data['stock_dict']:
@@ -165,7 +165,7 @@ async def _AssetInformation_code(ctx: Union[Context, SlashContext, MenuContext],
         async with ctx.typing():
             await ctx.reply(embed=await _crawling())
     else:
-        hidden = not GetUserInformation()[GetArrayNum(author_id)]['Settings']['InformationDisclosure']
+        hidden = not GetUserInformation()[author_id]['Settings']['InformationDisclosure']
         await ctx.defer(hidden=hidden)
         await ctx.reply(embed=await _crawling())
 
@@ -227,7 +227,7 @@ class AssetInformation_SlashContext(commands.Cog):
     async def _AssetInformation_Context_Menu(self, ctx: MenuContext):
         logger.info(f"[{type(ctx)}] {ctx.author.name}: {ctx.invoked_with} {ctx.target_id}")
         
-        author_id: int = ctx.target_author.id
+        author_id: str = str(ctx.target_author.id)
         user_name: str = ctx.target_author.name
 
         if not _IsVaildUser(author_id):
@@ -235,7 +235,7 @@ class AssetInformation_SlashContext(commands.Cog):
             await ctx.reply(f"{user_name}님은 아직 등록되지 않은 유저입니다.")
             return
         
-        if ctx.author_id != author_id and not GetUserInformation()[GetArrayNum(author_id)]['Settings']['InformationDisclosure']:
+        if ctx.author_id != author_id and not GetUserInformation()[author_id]['Settings']['InformationDisclosure']:
             logger.info(f"{user_name}님의 정보가 비공개되어 있습니다.")
             await ctx.reply(f"{user_name}님의 정보가 비공개되어 있습니다.")
             return
@@ -244,8 +244,8 @@ class AssetInformation_SlashContext(commands.Cog):
             crawl_data = await get_text_(author_id)
 
             with setUserInformation() as data:
-                data.json_data[GetArrayNum(author_id)]['TotalAssets'] = \
-                    crawl_data['TotalAssets'] + data.json_data[GetArrayNum(author_id)]['Deposit'] #다 합친걸 총 자산에 저장
+                data.json_data[author_id]['TotalAssets'] = \
+                    crawl_data['TotalAssets'] + data.json_data[author_id]['Deposit'] #다 합친걸 총 자산에 저장
 
             with getUserInformation() as data:
                 price_sign = "" if crawl_data['TotalCompared_Price'] <= 0 else "+" #부호설정
@@ -256,21 +256,21 @@ class AssetInformation_SlashContext(commands.Cog):
                 else:
                     price_sign_img = "<:m:957290558857048086>" #하락
                 
-                compared_per: float = round(crawl_data['TotalCompared_Price'] / (data.json_data[GetArrayNum(author_id)]['TotalAssets'] - crawl_data['TotalCompared_Price']) * 100, 2)
+                compared_per: float = round(crawl_data['TotalCompared_Price'] / (data.json_data[author_id]['TotalAssets'] - crawl_data['TotalCompared_Price']) * 100, 2)
                 
                 embed = discord.Embed(title=f"{user_name}님의 자산정보", color=RandomEmbedColor())
-                embed.add_field(name="예수금", value=f"{data.json_data[GetArrayNum(author_id)]['Deposit']:,}원")
+                embed.add_field(name="예수금", value=f"{data.json_data[author_id]['Deposit']:,}원")
                 
-                if len(data.json_data[GetArrayNum(author_id)]['Stock']): #가지고 있는 주식 수가 1개 이상이라면
-                    embed.add_field(name="총 자산", value=f"{data.json_data[GetArrayNum(author_id)]['TotalAssets']:,}원\n\
+                if len(data.json_data[author_id]['Stock']): #가지고 있는 주식 수가 1개 이상이라면
+                    embed.add_field(name="총 자산", value=f"{data.json_data[author_id]['TotalAssets']:,}원\n\
 {price_sign_img} {price_sign}{crawl_data['TotalCompared_Price']:,}원 | {price_sign}{compared_per}%")
                 else:
-                    embed.add_field(name="총 자산", value=f"{data.json_data[GetArrayNum(author_id)]['TotalAssets']:,}원")
+                    embed.add_field(name="총 자산", value=f"{data.json_data[author_id]['TotalAssets']:,}원")
                 
-                if data.json_data[GetArrayNum(author_id)]['Settings']['ShowSupportFund']:
-                    embed.add_field(name="지원금으로 얻은 돈", value=f"{data.json_data[GetArrayNum(author_id)]['SupportFund']:,}원", inline=False)
+                if data.json_data[author_id]['Settings']['ShowSupportFund']:
+                    embed.add_field(name="지원금으로 얻은 돈", value=f"{data.json_data[author_id]['SupportFund']:,}원", inline=False)
                     
-                if len(data.json_data[GetArrayNum(author_id)]['Stock']) != 0:
+                if len(data.json_data[author_id]['Stock']) != 0:
                     embed.add_field(name="="*25, value="_ _", inline=False)
             
             for add_embed in crawl_data['stock_dict']:
@@ -279,7 +279,7 @@ class AssetInformation_SlashContext(commands.Cog):
             return embed
 
         if ctx.author_id == author_id:
-            await ctx.defer(hidden=not GetUserInformation()[GetArrayNum(author_id)]['Settings']['InformationDisclosure'])
+            await ctx.defer(hidden=not GetUserInformation()[author_id]['Settings']['InformationDisclosure'])
         else:
             await ctx.defer()
         await ctx.reply(embed=await _crawling())

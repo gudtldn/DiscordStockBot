@@ -22,7 +22,7 @@ async def _Withdrawal_code(ctx: Union[Context, SlashContext], string: str):
     
     if string == '탈퇴확인':
         with setUserInformation() as data:
-            del(data.json_data[GetArrayNum(ctx)])
+            del(data.json_data[str(ctx.author.id)])
         
         logger.info('회원탈퇴가 완료되었습니다.')
         await ctx.reply('회원탈퇴가 완료되었습니다.')

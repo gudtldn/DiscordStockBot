@@ -22,26 +22,26 @@ async def _SupportFund_code(ctx: Union[Context, SlashContext]):
         
     cool_down = 3600 * 4 #쿨타임
     
-    if int(time()) - GetUserInformation()[GetArrayNum(ctx)]['SupportFundTime'] > cool_down: #만약 저장되있는 현재시간 - 저장된시간이 cool_down을 넘는다면
+    if int(time()) - GetUserInformation()[str(ctx.author.id)]['SupportFundTime'] > cool_down: #만약 저장되있는 현재시간 - 저장된시간이 cool_down을 넘는다면
         
         random_added_deposit = randint(1, 10) * 10000
 
         with setUserInformation() as data:
-            data.json_data[GetArrayNum(ctx)]['Deposit'] += random_added_deposit
-            data.json_data[GetArrayNum(ctx)]['SupportFund'] += random_added_deposit
-            data.json_data[GetArrayNum(ctx)]['SupportFundTime'] = int(time())
+            data.json_data[str(ctx.author.id)]['Deposit'] += random_added_deposit
+            data.json_data[str(ctx.author.id)]['SupportFund'] += random_added_deposit
+            data.json_data[str(ctx.author.id)]['SupportFundTime'] = int(time())
         
         logger.info(f'{random_added_deposit:,}원이 지급되었습니다.')
-        if GetUserInformation()[GetArrayNum(ctx)]['Settings']['ShowSupportFundCooldown']:
-            cool_down_unix = GetUserInformation()[GetArrayNum(ctx)]['SupportFundTime'] + cool_down
+        if GetUserInformation()[str(ctx.author.id)]['Settings']['ShowSupportFundCooldown']:
+            cool_down_unix = GetUserInformation()[str(ctx.author.id)]['SupportFundTime'] + cool_down
             await ctx.reply(f'{random_added_deposit:,}원이 지급되었습니다.\n(다음 지원금은 <t:{cool_down_unix}:T> 이후에 받을 수 있습니다.)')
         
         else:
             await ctx.reply(f'{random_added_deposit:,}원이 지급되었습니다.')
         
     else:
-        now_time = convertSecToTimeStruct(GetUserInformation()[GetArrayNum(ctx)]['SupportFundTime'] - int(time()) + cool_down)
-        cool_down_unix = GetUserInformation()[GetArrayNum(ctx)]['SupportFundTime'] + cool_down
+        now_time = convertSecToTimeStruct(GetUserInformation()[str(ctx.author.id)]['SupportFundTime'] - int(time()) + cool_down)
+        cool_down_unix = GetUserInformation()[str(ctx.author.id)]['SupportFundTime'] + cool_down
         logger.info(f'지원금을 받으려면 {now_time.hour}시간 {now_time.min}분 {now_time.sec}초를 더 기다려야 합니다. | (<t:{cool_down_unix}:T> 이후에 받을 수 있습니다.)')
         await ctx.reply(f'지원금을 받으려면 {now_time.hour}시간 {now_time.min}분 {now_time.sec}초를 더 기다려야 합니다.\n(<t:{cool_down_unix}:T> 이후에 받을 수 있습니다.)')
 

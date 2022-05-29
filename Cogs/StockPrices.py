@@ -40,8 +40,8 @@ async def _StockPrices_code(ctx: Union[Context, SlashContext], input_stock_name:
     try: int(input_stock_name) #입력받은 문자가 숫자인지 확인
     except:
         if _IsVaildUser(ctx):
-            if input_stock_name in GetUserInformation()[GetArrayNum(ctx)]['StockDict'].keys():
-                input_stock_name = GetUserInformation()[GetArrayNum(ctx)]['StockDict'][input_stock_name]
+            if input_stock_name in GetUserInformation()[str(ctx.author.id)]['StockDict'].keys():
+                input_stock_name = GetUserInformation()[str(ctx.author.id)]['StockDict'][input_stock_name]
                 
             elif input_stock_name in GetStockDictionary().keys():
                 input_stock_name = GetStockDictionary()[input_stock_name]
@@ -86,7 +86,7 @@ async def _StockPrices_code(ctx: Union[Context, SlashContext], input_stock_name:
     )
     embed.add_field(name=f"{price:,}원", value=f"전일대비: {price_sign}{compared_price:,} | {price_sign}{compared_per:,}%", inline=False)
     if _IsVaildUser(ctx):
-        if GetUserInformation()[GetArrayNum(ctx)]['Settings']['ShowStockChartImage'] == True:
+        if GetUserInformation()[str(ctx.author.id)]['Settings']['ShowStockChartImage'] == True:
             chart_img_url = f"https://ssl.pstatic.net/imgfinance/chart/item/area/day/{input_stock_name}.png?sidcode=16444779{randint(1, 99999):05}"
             img_data = BytesIO(requests.get(chart_img_url, allow_redirects=True).content)
             chart_img = discord.File(img_data, filename="chart_img.png")

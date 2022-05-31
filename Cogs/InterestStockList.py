@@ -152,7 +152,7 @@ async def _Interest_Stock_List_code(ctx: Union[Context, SlashContext], option: s
             else:
                 data.json_data[str(ctx.author.id)]['InterestStock'].append(_stock_name)
         
-        logger.warning("관심종목에 추가되었습니다.")
+        logger.info("관심종목에 추가되었습니다.")
         await ctx.reply("관심종목에 추가되었습니다.")
     
     elif option == "제거":

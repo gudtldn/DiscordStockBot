@@ -55,7 +55,13 @@ async def _StockSelling_code(ctx: Union[Context, SlashContext], input_stock_name
     url = f"https://finance.naver.com/item/sise.naver?code={input_stock_name}"
     soup = bs(requests.get(url, headers={"User-agent": ua}).text, "lxml")
     
-    price: int = int(soup.select_one("#_nowVal").text.replace(",", "")) #현재 시세
+    try:
+        price: int = int(soup.select_one("#_nowVal").text.replace(",", "")) #현재 시세
+    except ValueError:
+        logger.warning("매수하려는 주식을 찾지 못하였습니다.")
+        await ctx.reply("매수하려는 주식을 찾지 못하였습니다.")
+        return
+        
     soup_stock_name: str = soup.select_one("#middle > div.h_company > div.wrap_company > h2 > a").text #주식회사 이름
     stop_trading: str = soup.select_one("#content > div.section.inner_sub > div:nth-child(1) > table > tbody > tr:nth-child(4) > td:nth-child(4) > span").text #시가
 

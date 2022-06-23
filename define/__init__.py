@@ -35,8 +35,6 @@ def _Logging(): #변수의 혼용을 막기위해 함수로 만듦
 
     now = str(datetime.today())[:19].replace(" ", "_", 1).replace(":", "-")
 
-    open(f"./logs/{now}.log", "w", encoding="utf-8").close()
-
     global logger
     logger = logging.getLogger()
     if DEBUGGING:

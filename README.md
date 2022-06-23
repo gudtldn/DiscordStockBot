@@ -28,6 +28,7 @@ DiscordStockBot.py
 >>* 개인설정 **지원금표시** [true | false]
 >>* 개인설정 **차트표시** [true | false]
 >>* 개인설정 **쿨타임표시** [true | false]
+>>* 개인설정 **관심주가** [true | false]
 
 ### [자산정보](https://github.com/gudtldn/DiscordStockBot/blob/main/Cogs/AssetInformation.py "소스코드로 가기")
 ---

@@ -84,7 +84,7 @@ async def _Interest_Stock_List_code(ctx: Union[Context, SlashContext], option: s
     if await CheckUser(ctx): return
     
     if isinstance(ctx, SlashContext):
-        await ctx.defer(hidden=True)
+        await ctx.defer(hidden=not GetUserInformation()['Settings']['ShowInterestStockList'])
     
     if option is None or option == "주가":
         if not GetUserInformation()[str(ctx.author.id)]['InterestStock']:

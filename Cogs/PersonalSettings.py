@@ -40,7 +40,8 @@ async def _PersonalSettings_code(ctx: Union[Context, SlashContext], setting: str
             "ShowSupportFund": "지원금으로 얻은 돈 표시 여부",
             "ShowStockChartImage": "주식차트 표시 여부",
             "ShowSupportFundCooldown": "지원금 쿨타임 바로 표시 여부",
-            "ShowComparedPrice": "자산정보에 어제 대비 가격 표시 여부"
+            "ShowComparedPrice": "자산정보에 어제 대비 가격 표시 여부",
+            "ShowInterestStockList": "관심주가 공개표시 여부"
         }
 
         for _key, _value in GetUserInformation()[str(ctx.author.id)]['Settings'].items():
@@ -89,6 +90,13 @@ async def _PersonalSettings_code(ctx: Union[Context, SlashContext], setting: str
         
         await reply(f"자산정보에 어제 대비 가격 표시 여부가 {boolean}로 설정되었습니다.")
         return
+
+    elif setting in ("ShowInterestStockList", "관심주가"):
+        with setUserInformation() as data:
+            data.json_data[str(ctx.author.id)]['Settings']['ShowInterestStockList'] = boolean
+        
+        await reply(f"관심주가 공개표시 여부가 {boolean}로 설정되었습니다.")
+        return
         
     else:
         await reply("다시 입력해 주세요.")
@@ -134,6 +142,10 @@ class PersonalSettings_SlashContext(commands.Cog):
                     create_choice(
                         name="자산정보에 어제 대비 가격 표시 여부",
                         value="ShowComparedPrice"
+                    ),
+                    create_choice(
+                        name="관심주가 공개표시 여부",
+                        value="ShowInterestStockList"
                     )
                 ]
             ),

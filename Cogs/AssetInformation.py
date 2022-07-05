@@ -118,9 +118,14 @@ async def _AssetInformation_code(ctx: Union[Context, SlashContext, MenuContext],
             author_id: str = str(option.id)
             user_name: str = option.name
             
-            if not GetUserInformation()[author_id]['Settings']['InformationDisclosure']:
-                logger.info(f"{user_name}님의 정보가 비공개되어 있습니다.")
-                await ctx.reply(f"{user_name}님의 정보가 비공개되어 있습니다.")
+            if _IsVaildUser(author_id):
+                if not GetUserInformation()[author_id]['Settings']['InformationDisclosure']:
+                    logger.info(f"{user_name}님의 정보가 비공개되어 있습니다.")
+                    await ctx.reply(f"{user_name}님의 정보가 비공개되어 있습니다.")
+                    return
+            else:
+                logger.warning("등록되어 있지 않은 유저입니다.")
+                await ctx.reply("등록되어 있지 않은 유저입니다.")
                 return
     
     async def _crawling():

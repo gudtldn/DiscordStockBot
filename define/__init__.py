@@ -33,7 +33,7 @@ else:
 def _Logging(): #변수의 혼용을 막기위해 함수로 만듦
     import logging
 
-    now = str(datetime.today())[:19].replace(" ", "_", 1).replace(":", "-")
+    now = str(datetime.today().strftime("%Y-%m-%d_%H-%M-%S"))
 
     global logger
     logger = logging.getLogger()
